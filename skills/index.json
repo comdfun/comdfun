@@ -391,8 +391,8 @@
       "outputs": [],
       "references": [],
       "description": "DeFi foundations for vaults and ERC-4626, yield, lending, stablecoins, oracles, real-world assets and liquidity risk.",
-      "sha256": "87ca08d01a1c4145de75f689613a01539606ef70be0a2c82bc9d44fa898254fe",
-      "bytes": 7113
+      "sha256": "d18de7e97d4ef765605533590a2fafb4ed38f43e2d227ba091e57ccd9b170940",
+      "bytes": 6121
     },
     "deploy-script": {
       "id": "deploy-script",
@@ -508,8 +508,8 @@
       "outputs": [],
       "references": [],
       "description": "Facts about Robinhood Chain, the network Company.md runs on: ids, RPCs, explorers, core addresses and Orbit behaviour.",
-      "sha256": "9560ef3505553804b4984e564eebaea2e45c3878e82df4337891b1863a455f69",
-      "bytes": 5752
+      "sha256": "ff7338ee6a81d8d0a17aac84325cf49489539ebae5edf224df929caa2e6b55e5",
+      "bytes": 5699
     },
     "eth-security": {
       "id": "eth-security",
@@ -1148,8 +1148,8 @@
       "outputs": [],
       "references": [],
       "description": "Uniswap v4 hook design: the singleton PoolManager, flash accounting, hook permissions, deltas, fees and periphery.",
-      "sha256": "1af9b43e1043c322f88668f02d471f3fad90dafbb477303d565eafb53e07713c",
-      "bytes": 6762
+      "sha256": "3291bc6973b8623acc01885f8a4cb029ace1ed726bebc33982af51a3853f6450",
+      "bytes": 6779
     },
     "uniswap-v4-security": {
       "id": "uniswap-v4-security",
@@ -1166,8 +1166,8 @@
       "outputs": [],
       "references": [],
       "description": "Security-first Uniswap v4 hook development: the attack surface of callbacks, deltas, pool keys and hook state.",
-      "sha256": "b2c10fe6ff0361ab9d3c932c5c17157490c68ebcec7c0759d81cc6b5f5321054",
-      "bytes": 7275
+      "sha256": "9ea6a7cd0c2cff919b4a43dcd0343f36231b623655b92defbf953e4c9f9a137a",
+      "bytes": 6390
     },
     "workflow-planner": {
       "id": "workflow-planner",

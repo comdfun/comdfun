@@ -122,7 +122,7 @@ const r = await publishRepo({ jobId, title, dir, org?, token?, baseRepo?, branch
 // => { dryRun, repoUrl, fullName, branch, commit, pullRequestUrl?, created?, tarball? }
 ```
 
-- Org from `org` or `GITHUB_ORG` (default `comd-filings`); token from `token` or `GITHUB_TOKEN`.
+- Org from `org` or `GITHUB_ORG` (default `comdfun`); token from `token` or `GITHUB_TOKEN`.
 - New matter: repo `<slug(title)>-<jobId[0..8]>` is created with `POST /orgs/{org}/repos` if missing; the tree
   is committed (author "Company.md Records Office" <team@comd.fun>) and pushed to `main`.
 - Continuation (`baseRepo: "owner/name"` or URL): the default branch is fetched, the tree replaces its contents

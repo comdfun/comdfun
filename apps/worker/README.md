@@ -22,8 +22,8 @@ The worker is distributed only through GitHub Releases, never the npm registry. 
 ```sh
 comd_dir="$(mktemp -d)"
 (cd "$comd_dir" \
-  && curl -fsSLO https://github.com/comd-fun/worker/releases/latest/download/comd-worker.tgz \
-          -O https://github.com/comd-fun/worker/releases/latest/download/SHA256SUMS \
+  && curl -fsSLO https://github.com/comdfun/worker/releases/latest/download/comd-worker.tgz \
+          -O https://github.com/comdfun/worker/releases/latest/download/SHA256SUMS \
   && sha256sum -c SHA256SUMS)          # macOS: shasum -a 256 -c SHA256SUMS
 npm install --global "$comd_dir/comd-worker.tgz"
 comd help
@@ -122,7 +122,7 @@ and task data are all inspectable.
 |---|---|
 | `COMD_SERVER` | control plane URL (default `https://api.comd.fun`; also `--server`) |
 | `COMD_HOME` | config directory (default `~/.comd`; also `--home`) |
-| `COMD_WORKER_REPO` | releases repository for updates (default `comd-fun/worker`) |
+| `COMD_WORKER_REPO` | releases repository for updates (default `comdfun/worker`) |
 | `COMD_PREMIUM_MODELS` | regex of model ids treated as premium |
 | `COMD_MODEL`, `COMD_EFFORT` | override the advertised model / effort (same as `--model`, `--effort`) |
 | `COMD_MOCK_MODE`, `COMD_MOCK_PREMIUM` | test runtime (`--runtime mock`) behaviour |

@@ -120,7 +120,7 @@ export class MockServices implements Services {
   constructor(opts: { store: BlobStore; sitesDomain: string; githubOrg?: string; attesterKey?: Hex | null }) {
     this.store = opts.store;
     this.sitesDomain = opts.sitesDomain;
-    this.githubOrg = opts.githubOrg ?? "comd-filings";
+    this.githubOrg = opts.githubOrg ?? "comdfun";
     this.ephemeralAttester = !opts.attesterKey;
     this.attester = privateKeyToAccount(opts.attesterKey ?? generatePrivateKey());
   }

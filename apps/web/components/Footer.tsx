@@ -66,9 +66,7 @@ export function Footer() {
           <nav aria-label="$COMD" className="c-violet">
             <h4>$COMD</h4>
             <Link href="/token">The token</Link>
-            <Link href="/swap">Swap</Link>
-            <Link href="/stake">Stake</Link>
-            <Link href="/bond">Bond</Link>
+            <Link href="/swap">Trade</Link>
             <Link href="/flywheel">The flywheel</Link>
             <Link href="/docs/comd">Token docs</Link>
             <Link href="/docs/api">API reference</Link>

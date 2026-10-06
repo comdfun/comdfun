@@ -12,8 +12,6 @@ export function sigFor(path: string) {
   if (m("/agents") || m("/mint") || m("/pair")) return "counsel";
   if (m("/launch")) return "retain";
   if (m("/swap") || m("/token")) return "comd";
-  if (m("/stake")) return "stake";
-  if (m("/bond")) return "bond";
   if (m("/flywheel")) return "flywheel";
   if (m("/incorporations")) return "incorporations";
   if (m("/docs")) return "docs";

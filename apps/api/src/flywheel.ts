@@ -1,13 +1,11 @@
 /**
  * The $COMD flywheel, for the website (GET /flywheel) and the floor-sweep desk (GET /flywheel/sweep-candidates).
  *
- *   ComdTaxHook   5% of every buy and sell of the COMD/ETH pool, in ETH → Flywheel; plus the inventory cap: COMD
- *                 above the (decaying) cap is trimmed after a swap and split 85% burn / 6% Bond / 4.5% stakers
- *                 (RewardDripper → sCOMD) / 4.5% Counsel seats (RewardDistributor); trimmed ETH funds the BuyWall
- *   Flywheel      buckets (default 50/50): buyback(minOut) burns COMD; sweep(...) buys Company.md Counsel NFTs
- *   BuyWall       the protocol's standing ETH bid below price; keeper rebalance() for a capped tip
- *   StakedComd    sCOMD (ERC-4626), fed by RewardDripper.drip()
- *   Bond          sells the 6% reserve for ETH at priceEth (wei per 1e18 COMD) once enabled
+ *   Pons          mints and trades $COMD (5% tax set in Pons); it pays the creator wallet in ETH, which lands in the
+ *                 Flywheel (receive()) and is counted as totalTaxIn
+ *   Flywheel      two buckets (default 50/50): buyback(minOut) swaps ETH → COMD through its IBuybackSwapper
+ *                 (UniswapV4PoolSwapper, pointed at the Pons pool after graduation) and sends it to the dead address;
+ *                 sweep(...) buys Company.md Counsel NFTs
  *   RevenueRouter job revenue in COMD: 80% Counsel rewards / 20% firm treasury
  *
  * Every section is read independently (a missing or failing contract yields `null` + an error, never a 500).
@@ -22,7 +20,7 @@
  * `withinMaxPrice` (≤ maxSweepPrice) and `affordable` (≤ the sweep bucket). Sweeping stays an owner/keeper action.
  */
 import { getAddress, type Abi, type Address } from "viem";
-import { bondAbi, buyWallAbi, comdTaxHookAbi, flywheelAbi, revenueRouterAbi, rewardDripperAbi, stakedComdAbi } from "@company/abi";
+import { flywheelAbi, revenueRouterAbi, uniswapV4PoolSwapperAbi } from "@company/abi";
 import type { App } from "./app.ts";
 import type { ChainEvent } from "./chain.ts";
 
@@ -38,10 +36,11 @@ export class FlywheelView {
   async stats(): Promise<Record<string, unknown>> {
     const cfg = this.app.cfg;
     if (this.cache && this.app.now() - this.cache.at < this.ttlMs) return this.cache.body;
-    const contracts = { flywheel: cfg.flywheel, comdTaxHook: cfg.comdTaxHook, buyWall: cfg.buyWall, stakedComd: cfg.stakedComd, rewardDripper: cfg.rewardDripper, bond: cfg.bond, comdRouter: cfg.comdRouter, revenueRouter: cfg.revenueRouter, rewardDistributor: cfg.rewardDistributor, comd: cfg.comd, counselNft: cfg.counselNft };
+    const contracts = { flywheel: cfg.flywheel, swapper: cfg.swapper, revenueRouter: cfg.revenueRouter, rewardDistributor: cfg.rewardDistributor, incorporations: cfg.incorporations, comd: cfg.comd, counselNft: cfg.counselNft };
+    const pons = { url: cfg.ponsUrl };
     const keeper = this.app.keeper?.status();
     const keeperView = keeper ? { enabled: keeper.enabled, address: keeper.address, reason: keeper.reason, lastTickAt: keeper.lastTickAt, tasks: Object.fromEntries(Object.entries(keeper.tasks).map(([n, t]) => [n, { enabled: t.enabled, runs: t.runs, lastRunAt: t.lastRunAt, lastTx: t.lastTx, lastSkip: t.lastSkip, lastResult: t.lastResult }])) } : null;
-    if (!this.app.chain.configured) return { chainId: cfg.chainId, contracts, configured: false, reason: "RPC_URL not configured", keeper: keeperView };
+    if (!this.app.chain.configured) return { chainId: cfg.chainId, contracts, configured: false, reason: "RPC_URL not configured", pons, swapper: { address: cfg.swapper, configured: false }, keeper: keeperView };
     const c = this.app.chain;
     const errors: Record<string, string> = {};
     const r = <T>(addr: Address, abi: unknown, fn: string, args: readonly unknown[] = []) => c.readContract<T>(addr, abi as Abi, fn, args);
@@ -49,63 +48,20 @@ export class FlywheelView {
       if (!addr) return null;
       try { return await fn(addr); } catch (e) { errors[name] = (e as Error).message.split("\n")[0].slice(0, 200); return null; }
     };
-    const field = (o: any, name: string, i: number) => (o && typeof o === "object" ? (o[name] ?? o[i]) : undefined);
 
-    const [flywheel, hook, buyWall, staking, bond, revenueRouter] = await Promise.all([
+    const [flywheel, revenueRouter] = await Promise.all([
       section("flywheel", cfg.flywheel, async (fw) => {
-        const [taxIn, boughtBack, burned, swept, sweepSpent, buckets, bps, ids, maxSweep, keeperAddr, owner] = await Promise.all([
+        const [taxIn, boughtBack, burned, swept, sweepSpent, buckets, bps, ids, maxSweep, keeperAddr, owner, swapperAddr] = await Promise.all([
           r<bigint>(fw, flywheelAbi, "totalTaxIn"), r<bigint>(fw, flywheelAbi, "totalBoughtBack"), r<bigint>(fw, flywheelAbi, "totalBurned"),
           r<bigint>(fw, flywheelAbi, "totalSwept"), r<bigint>(fw, flywheelAbi, "sweepSpent"), r<readonly bigint[]>(fw, flywheelAbi, "bucketBalances"),
           r<readonly number[]>(fw, flywheelAbi, "bps"), r<readonly bigint[]>(fw, flywheelAbi, "sweptTokenIds"), r<bigint>(fw, flywheelAbi, "maxSweepPrice"),
-          r<Address>(fw, flywheelAbi, "keeper"), r<Address>(fw, flywheelAbi, "owner"),
+          r<Address>(fw, flywheelAbi, "keeper"), r<Address>(fw, flywheelAbi, "owner"), r<Address>(fw, flywheelAbi, "swapper").catch(() => null as Address | null),
         ]);
         return {
           bps: { buyback: Number(bps[0]), sweep: Number(bps[1]) }, buckets: { buyback: s(buckets[0]), sweep: s(buckets[1]) },
           totals: { taxIn: s(taxIn), boughtBack: s(boughtBack), burned: s(burned), swept: Number(swept), sweepSpent: s(sweepSpent) },
-          sweptTokenIds: ids.map((x) => Number(x)), maxSweepPrice: s(maxSweep), keeper: keeperAddr, owner,
+          sweptTokenIds: ids.map((x) => Number(x)), maxSweepPrice: s(maxSweep), keeper: keeperAddr, owner, swapper: swapperAddr,
         };
-      }),
-      section("hook", cfg.comdTaxHook, async (h) => {
-        const [taxBps, totalTaxed, pendingTax, stats, cap, currentCap, inventory, lastInventory, params, claimEth, claimComd] = await Promise.all([
-          r<number>(h, comdTaxHookAbi, "taxBps"), r<bigint>(h, comdTaxHookAbi, "totalTaxed"), r<bigint>(h, comdTaxHookAbi, "pendingTax"), r<any>(h, comdTaxHookAbi, "stats"),
-          r<bigint>(h, comdTaxHookAbi, "cap"), r<bigint>(h, comdTaxHookAbi, "currentCap"), r<bigint>(h, comdTaxHookAbi, "inventory"), r<bigint>(h, comdTaxHookAbi, "lastInventory"),
-          r<any>(h, comdTaxHookAbi, "params"), r<bigint>(h, comdTaxHookAbi, "claimEth"), r<bigint>(h, comdTaxHookAbi, "claimComd"),
-        ]);
-        const st = ["trimmedComd", "trimmedEth", "split", "burned", "toBond", "toStakers", "toSeats"];
-        const pr = ["capFloor", "capDecayPerDay", "burnBps", "bondBps", "stakersBps", "seatsBps", "refStepTicks"];
-        return {
-          taxBps: Number(taxBps), totalTaxed: s(totalTaxed), pendingTax: s(pendingTax),
-          stats: Object.fromEntries(st.map((k, i) => [k, s(field(stats, k, i))])),
-          cap: s(cap), currentCap: s(currentCap), inventory: s(inventory), lastInventory: s(lastInventory),
-          params: Object.fromEntries(pr.map((k, i) => { const v = field(params, k, i); return [k, k.endsWith("Bps") || k === "refStepTicks" ? Number(v) : s(v)]; })),
-          claims: { eth: s(claimEth), comd: s(claimComd) },
-        };
-      }),
-      section("buyWall", cfg.buyWall, async (w) => {
-        const [posted, floor, preview, bought, tips, parked, lower, upper, liq, can] = await Promise.all([
-          r<bigint>(w, buyWallAbi, "wallEthPosted"), r<number>(w, buyWallAbi, "floorTick"), r<number>(w, buyWallAbi, "previewFloorTick"), r<bigint>(w, buyWallAbi, "totalWallBought"),
-          r<bigint>(w, buyWallAbi, "totalTips"), r<bigint>(w, buyWallAbi, "parkedEth"), r<number>(w, buyWallAbi, "wallLower"), r<number>(w, buyWallAbi, "wallUpper"),
-          r<bigint>(w, buyWallAbi, "wallLiquidity"), r<boolean>(w, buyWallAbi, "canRebalance"),
-        ]);
-        return { postedEth: s(posted), floorTick: Number(floor), previewFloorTick: Number(preview), totalBought: s(bought), totalTips: s(tips), parkedEth: s(parked), wallLower: Number(lower), wallUpper: Number(upper), wallLiquidity: s(liq), canRebalance: can };
-      }),
-      section("staking", cfg.stakedComd ?? cfg.rewardDripper, async () => {
-        const out: Record<string, unknown> = {};
-        if (cfg.stakedComd) {
-          const [assets, shares] = await Promise.all([r<bigint>(cfg.stakedComd, stakedComdAbi, "totalAssets"), r<bigint>(cfg.stakedComd, stakedComdAbi, "totalSupply")]);
-          out.totalAssets = s(assets);
-          out.totalShares = s(shares);
-        }
-        if (cfg.rewardDripper) {
-          const d = cfg.rewardDripper;
-          const [rate, capPerDay, pending, dripped] = await Promise.all([r<bigint>(d, rewardDripperAbi, "ratePerSecond"), r<bigint>(d, rewardDripperAbi, "streamCapPerDay"), r<bigint>(d, rewardDripperAbi, "pending"), r<bigint>(d, rewardDripperAbi, "totalDripped")]);
-          Object.assign(out, { ratePerSecond: s(rate), streamCapPerDay: s(capPerDay), pending: s(pending), totalDripped: s(dripped) });
-        }
-        return out;
-      }),
-      section("bond", cfg.bond, async (b) => {
-        const [enabled, priceEth, reserve, sold, proceeds] = await Promise.all([r<boolean>(b, bondAbi, "enabled"), r<bigint>(b, bondAbi, "priceEth"), r<bigint>(b, bondAbi, "reserve"), r<bigint>(b, bondAbi, "totalSold"), r<bigint>(b, bondAbi, "totalProceeds")]);
-        return { enabled, priceEth: s(priceEth), reserve: s(reserve), sold: s(sold), proceeds: s(proceeds) };
       }),
       section("revenueRouter", cfg.revenueRouter, async (rr) => {
         const [toRewards, toTreasury, bps] = await Promise.all([r<bigint>(rr, revenueRouterAbi, "totalToRewards"), r<bigint>(rr, revenueRouterAbi, "totalToTreasury"), r<readonly number[]>(rr, revenueRouterAbi, "bps")]);
@@ -118,11 +74,7 @@ export class FlywheelView {
       const head = await c.blockNumber();
       const span = Math.max(1, Number(cfg.storage.FLYWHEEL_EVENT_BLOCKS ?? 50_000));
       const sources: [Address | null, unknown, string, string[]][] = [
-        [cfg.flywheel, flywheelAbi, "flywheel", ["TaxIn", "Buyback", "Swept", "SweptAwarded", "BpsSet"]],
-        [cfg.comdTaxHook, comdTaxHookAbi, "hook", ["Trimmed", "Split", "Flushed", "CapUpdated"]],
-        [cfg.buyWall, buyWallAbi, "buyWall", ["Rebalanced", "WallPosted", "WallClosed", "WallParked"]],
-        [cfg.rewardDripper, rewardDripperAbi, "rewardDripper", ["Dripped", "RewardNotified"]],
-        [cfg.bond, bondAbi, "bond", ["Bonded"]],
+        [cfg.flywheel, flywheelAbi, "flywheel", ["TaxIn", "Buyback", "Swept", "SweptAwarded", "BpsSet", "SwapperSet"]],
         [cfg.revenueRouter, revenueRouterAbi, "revenueRouter", ["Distributed"]],
       ];
       const all: (ChainEvent & { source: string })[] = [];
@@ -134,18 +86,31 @@ export class FlywheelView {
         .map((e) => ({ type: e.eventName, source: e.source, blockNumber: e.blockNumber, txHash: e.txHash, ...Object.fromEntries(Object.entries(e.args).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])) }));
     } catch (e) { errors.events = (e as Error).message.slice(0, 200); }
 
+    // the swapper the Flywheel actually uses (its swapper() wins over SWAPPER / the deployment key); configured once
+    // the owner has pointed it at the Pons pool (UniswapV4PoolSwapper.setPoolKey after graduation)
+    const isZero = (a: Address | null | undefined) => !a || /^0x0{40}$/i.test(a);
+    const swapperAddr: Address | null = !isZero(flywheel?.swapper) ? flywheel!.swapper! : !isZero(cfg.swapper) ? cfg.swapper : null;
+    let swapperConfigured = false;
+    if (swapperAddr) {
+      try { swapperConfigured = await r<boolean>(swapperAddr, uniswapV4PoolSwapperAbi, "configured"); } catch { swapperConfigured = true; /* another IBuybackSwapper without configured(): assume ready */ }
+    }
+    const swapper = { address: swapperAddr, configured: swapperConfigured, onFlywheel: !isZero(flywheel?.swapper) };
+
     const body = {
       chainId: cfg.chainId,
       contracts,
-      configured: !!(cfg.flywheel || cfg.comdTaxHook),
-      tax: { taxBps: (hook as any)?.taxBps ?? null, totalTaxed: (hook as any)?.totalTaxed ?? null, pending: (hook as any)?.pendingTax ?? null, toFlywheel: flywheel?.totals.taxIn ?? null },
-      flywheel, hook, buyWall, staking, bond, revenueRouter,
+      configured: !!cfg.flywheel,
+      pons,
+      swapper,
+      // Pons sets and collects the 5% tax; what reaches the Flywheel (receive()/notifyTax) is totalTaxIn
+      tax: { totalTaxIn: flywheel?.totals.taxIn ?? null, toFlywheel: flywheel?.totals.taxIn ?? null, source: "pons" },
+      flywheel, revenueRouter,
       // flat aliases kept from V2 for existing readers
       bps: flywheel?.bps ?? null, buckets: flywheel?.buckets ?? null, totals: flywheel?.totals ?? null, sweptTokenIds: flywheel?.sweptTokenIds ?? [], maxSweepPrice: flywheel?.maxSweepPrice ?? null,
       events,
       errors,
       keeper: keeperView,
-      units: { eth: "wei", comd: "atomic (18 decimals)", ticks: "COMD per ETH pool ticks (currency0 = ETH)" },
+      units: { eth: "wei", comd: "atomic (18 decimals)" },
       computedAt: new Date(this.app.now()).toISOString(),
     };
     this.cache = { at: this.app.now(), body };

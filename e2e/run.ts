@@ -1,5 +1,5 @@
 /**
- * Company.md — end-to-end on a local chain (V4 contracts).
+ * Company.md — end-to-end on a local chain (V5 contracts).
  *
  *   cd e2e && npm run e2e          (node --import tsx run.ts)
  *
@@ -15,10 +15,8 @@
  *   5. a customer buys COMD through ComdRouter (5% ETH tax → Flywheel), approves Permit2 once and pays in COMD with
  *      x402 + Permit2 (the web's signing code path) for research, an oracle ruling, a 2-run retainer, a launch and a
  *      continuation — settled on chain into the RevenueRouter
- *   6. verifies on chain: keeper flush / buyback-and-burn / RevenueRouter 80/20 / BuyWall rebalance / RewardDripper
- *      drip, a Counsel floor sweep through MockMarketplace, an inventory trim (owner lowers the cap decay, time passes,
- *      a sell trims 85% burn / 6% Bond / 4.5% stakers / 4.5% seats), sCOMD staking, a Bond buy with ETH, reputation
- *      feedback, the oracle attestation through OracleConsumerExample, seat COMD reward roots and claims, the launch
+ *   6. verifies on chain: keeper flush / buyback-and-burn / RevenueRouter 80/20, a Counsel floor sweep through
+ *      MockMarketplace, reputation feedback, the oracle attestation through OracleConsumerExample, seat COMD reward roots and claims, the launch
  *      token from ProjectFactory and a contributor's claim after the lock, and GET /flywheel against the chain
  * Prints a PASS/FAIL table; exit code 1 on any FAIL.
  *
@@ -39,8 +37,8 @@ import {
 } from "viem";
 import { mnemonicToAccount } from "viem/accounts";
 import {
-  bondAbi, buyWallAbi, comdRouterAbi, comdTaxHookAbi, contributorDistributorAbi, counselNFTAbi, flywheelAbi, identityRegistryAbi, launchTokenAbi, mockMarketplaceAbi,
-  oracleConsumerExampleAbi, projectFactoryAbi, reputationRegistryAbi, revenueRouterAbi, rewardDistributorAbi, rewardDripperAbi, stakedComdAbi,
+  comdRouterAbi, comdTaxHookAbi, contributorDistributorAbi, counselNFTAbi, flywheelAbi, identityRegistryAbi, launchTokenAbi, mockMarketplaceAbi,
+  oracleConsumerExampleAbi, projectFactoryAbi, reputationRegistryAbi, revenueRouterAbi, rewardDistributorAbi,
 } from "@company/abi";
 
 // ============================================================================================ setup
@@ -77,8 +75,8 @@ export const REGISTRAR = acct(8); // DEPLOYER_PRIVATE_KEY of the api (ProjectFac
 export const SETTLER = acct(9); // Permit2 spender, reputation batcher, RewardDistributor SETTLER_ROLE
 export const ATTESTER = acct(10); // oracle attestations (signs only)
 export const KEEPER = acct(11); // Flywheel.keeper(); the api keeper loop (KEEPER_PRIVATE_KEY)
-export const SELLER = acct(13); // lists a Counsel on MockMarketplace for the floor sweep; bonds with ETH
-export const TREASURY = acct(14); // firm treasury: 20% of job revenue, Bond proceeds
+export const SELLER = acct(13); // lists a Counsel on MockMarketplace for the floor sweep
+export const TREASURY = acct(14); // firm treasury: 20% of job revenue
 export const ADMIN_TOKEN = randomBytes(16).toString("hex");
 const E18 = 10n ** 18n;
 const fmt = (v: bigint, d = 18, p = 4) => { const s = Number(v) / 10 ** d; return s.toLocaleString("en-US", { maximumFractionDigits: p }); };
@@ -358,8 +356,8 @@ export async function deploy(apiUrl: string) {
     if (backup) writeFileSync(depFile, backup); else rmSync(depFile, { force: true });
   }
   assert(D.deployedPoolManager === true, "test-chain path deploys a v4 PoolManager");
-  assert(!("usdg" in D) && !("mockUsdg" in D), "USDG is gone from the address book");
-  const keys = ["comdToken", "counselNFT", "identityRegistry", "reputationRegistry", "rewardDistributor", "revenueRouter", "flywheel", "comdTaxHook", "comdRouter", "buyWall", "stakedComd", "rewardDripper", "bond", "projectFactory", "contributorDistributor", "mockMarketplace"];
+  for (const k of ["usdg", "mockUsdg", "buyWall", "stakedComd", "rewardDripper", "bond"]) assert(!(k in D), `${k} is gone from the address book`);
+  const keys = ["comdToken", "counselNFT", "identityRegistry", "reputationRegistry", "rewardDistributor", "revenueRouter", "flywheel", "comdTaxHook", "comdRouter", "projectFactory", "contributorDistributor", "mockMarketplace"];
   for (const k of keys) {
     const code = await pub.getCode({ address: D[k] });
     assert(code && code.length > 2, `${k} has no code`);
@@ -378,13 +376,11 @@ export async function seedPool() {
   const r = await run(FORGE, ["script", "script/SeedPool.s.sol:SeedPool", "--rpc-url", RPC, "--broadcast", "--slow"], { cwd: path.join(ROOT, "contracts"), env, logName: "seedpool.log" });
   assert(r.code === 0, `SeedPool.s.sol failed: ${r.out.slice(-500)}`);
   assert(await read<boolean>(D.comdTaxHook, comdTaxHookAbi, "seeded"), "hook seeded");
-  const inv = await read<bigint>(D.comdTaxHook, comdTaxHookAbi, "inventory");
-  const cap = await read<bigint>(D.comdTaxHook, comdTaxHookAbi, "cap");
   const dust = await comdOf(ADMIN.address);
-  assert(inv + dust === 10n ** 27n || inv + dust >= 10n ** 27n - 10n, `inventory ${inv} + POL dust ${dust} = supply`);
-  assert(cap === inv, "cap starts at the seeded inventory");
+  const inPool = await comdOf(await read<Address>(D.comdTaxHook, comdTaxHookAbi, "poolManager"));
+  assert(inPool + dust === 10n ** 27n, `pool ${inPool} + POL dust ${dust} = supply`);
   const tax = await read<number>(D.comdTaxHook, comdTaxHookAbi, "taxBps");
-  return `100% of supply seeded single-sided at a 10 ETH opening market cap (inventory ${fmt(inv, 18, 0)} COMD, dust ${dust}); tax ${Number(tax) / 100}%`;
+  return `100% of supply seeded single-sided at a 10 ETH opening market cap (${fmt(inPool, 18, 0)} COMD in the pool, dust ${dust}); tax ${Number(tax) / 100}%`;
 }
 
 export async function startApi(port: number, extraEnv: Record<string, string | undefined> = {}) {
@@ -402,8 +398,7 @@ export async function startApi(port: number, extraEnv: Record<string, string | u
     HEARTBEAT_MS: "3000", READS_PER_MINUTE: "100000", REQUESTS_PER_MINUTE: "100000", QUOTES_PER_MINUTE: "1000", SETTLE_WAIT_MS: "30000", FLYWHEEL_CACHE_SECONDS: "0",
     // keeper: every task on, small thresholds and spacing for a test chain (anvil gas is cheap, tips are tiny)
     KEEPER_PRIVATE_KEY: pk(11), KEEPER_INTERVAL_SECONDS: "2", KEEPER_DISTRIBUTE_MIN_COMD: "1", KEEPER_DISTRIBUTE_EVERY_SECONDS: "1",
-    KEEPER_BUYBACK_MIN_WEI: "1000000000000", KEEPER_BUYBACK_EVERY_SECONDS: "1", KEEPER_FLUSH_EVERY_SECONDS: "1", KEEPER_REBALANCE_EVERY_SECONDS: "1",
-    KEEPER_DRIP_EVERY_SECONDS: "5", KEEPER_REQUIRE_PROFIT: "false",
+    KEEPER_BUYBACK_MIN_WEI: "1000000000000", KEEPER_BUYBACK_EVERY_SECONDS: "1", KEEPER_FLUSH_EVERY_SECONDS: "1",
     // Records Office stays dry-run: never hand the sandbox's GitHub credentials to the api
     DATABASE_URL: undefined, GITHUB_TOKEN: undefined, GH_TOKEN: undefined, PAYTO_ADDRESS: undefined, ANTHROPIC_API_KEY: undefined, OPENAI_API_KEY: undefined, SERVICES_MODE: undefined,
     ...extraEnv,
@@ -423,7 +418,7 @@ export async function startApi(port: number, extraEnv: Record<string, string | u
   assert(h.art === "art", `art ${h.art}`);
   assert(h.payments.mode === "chain" && h.payments.symbol === "COMD" && getAddress(h.payments.asset) === getAddress(D.comdToken), `payments ${JSON.stringify(h.payments)}`);
   assert(getAddress(h.contracts.payTo) === getAddress(D.revenueRouter), "payTo must be the RevenueRouter");
-  for (const k of ["flywheel", "comdTaxHook", "buyWall", "stakedComd", "rewardDripper", "bond"]) assert(h.contracts[k] && getAddress(h.contracts[k]) === getAddress(D[k]), `/health contracts.${k}`);
+  for (const k of ["flywheel", "comdTaxHook", "comdRouter"]) assert(h.contracts[k] && getAddress(h.contracts[k]) === getAddress(D[k]), `/health contracts.${k}`);
   assert(h.keeper?.enabled === true && getAddress(h.keeper.address) === KEEPER.address, `keeper ${JSON.stringify(h.keeper)}`);
   return `${process.env.E2E_TSX === "1" ? "tsx" : "node dist/main.js"} · block ${h.chain.blockNumber} · services ${h.services.verifier}/${h.services.publisher}/${h.services.deployer} · ${h.skills.count} skills · ${fmt(BigInt(h.payments.amount), 18, 0)} COMD per action → RevenueRouter · keeper on`;
 }
@@ -529,8 +524,6 @@ export async function pairWorkers() {
 
 let paid: Record<string, Awaited<ReturnType<typeof pay>>> = {};
 const BUY_ETH = 1n * E18;
-const SELL_COMD = 20_000_000n * E18;
-const STAKE_COMD = 100_000n * E18;
 const LIST_PRICE = E18 / 1000n; // 0.001 ETH
 let heldTax = false;
 let swept = 0;
@@ -801,123 +794,23 @@ async function seatRewards() {
   return `epoch ${epoch}: COMD root ${comd.root.slice(0, 10)}… total ${fmt(BigInt(comd.total), 18, 2)} COMD across ${comd.entries.length} seats; #${top.tokenId} claimed ${fmt(BigInt(mine.amount), 18, 2)} COMD; double claim refused`;
 }
 
-/** The customer stakes COMD into sCOMD (ERC-4626) so the RewardDripper has someone to stream to. */
-async function stake() {
-  await send(7, D.comdToken, erc20Abi, "approve", [D.stakedComd, STAKE_COMD]);
-  await send(7, D.stakedComd, stakedComdAbi, "deposit", [STAKE_COMD, CUSTOMER.address]);
-  const shares = await read<bigint>(D.stakedComd, stakedComdAbi, "balanceOf", [CUSTOMER.address]);
-  const assets = await read<bigint>(D.stakedComd, stakedComdAbi, "totalAssets");
-  assert(shares > 0n && assets === STAKE_COMD, `sCOMD shares ${shares}, totalAssets ${assets}`);
-  return `${fmt(STAKE_COMD, 18, 0)} COMD → ${fmt(shares, 24, 0)}e6 sCOMD shares`;
-}
-
-let trimmed: { comd: bigint; eth: bigint; toBond: bigint; toStakers: bigint; toSeats: bigint } | null = null;
-/**
- * Inventory cap: the owner lowers the cap decay (setParams within bounds), time passes so the cap ratchets down to
- * the inventory after the buys, and a sell pushes inventory above the cap → the hook trims and splits the COMD.
- */
-async function trim() {
-  const H = D.comdTaxHook;
-  const p: any = await read(H, comdTaxHookAbi, "params");
-  await send(0, H, comdTaxHookAbi, "setParams", [{ capFloor: 1_000n * E18, capDecayPerDay: 1_000_000n * E18, burnBps: p.burnBps, bondBps: p.bondBps, stakersBps: p.stakersBps, seatsBps: p.seatsBps, refStepTicks: p.refStepTicks }]);
-  const cap = await read<bigint>(H, comdTaxHookAbi, "cap");
-  const lastInv = await read<bigint>(H, comdTaxHookAbi, "lastInventory");
-  const days = cap > lastInv ? Number((cap - lastInv) / (1_000_000n * E18)) + 2 : 1;
-  await rpc("evm_increaseTime", [days * 86_400]);
-  await rpc("evm_mine", []);
-  const cur = await read<bigint>(H, comdTaxHookAbi, "currentCap");
-  assert(cur === lastInv, `after ${days} days the cap ratchets to the last inventory (${cur} vs ${lastInv})`);
-  const st0: any = await read(H, comdTaxHookAbi, "stats");
-  const supply0 = await read<bigint>(D.comdToken, erc20Abi, "totalSupply");
-  const [bond0, drip0, rd0, wall0] = await Promise.all([comdOf(D.bond), comdOf(D.rewardDripper), comdOf(D.rewardDistributor), ethOf(D.buyWall)]);
-  const deadline = BigInt((await chainNow()) + 3600);
-  await send(7, D.comdToken, erc20Abi, "approve", [D.comdRouter, SELL_COMD]);
-  const e0 = await ethOf(CUSTOMER.address);
-  await send(7, D.comdRouter, comdRouterAbi, "swapExactComdForETH", [SELL_COMD, 0n, CUSTOMER.address, deadline]);
-  assert((await ethOf(CUSTOMER.address)) > e0 - E18 / 100n, "seller received ETH");
-  const st1: any = await read(H, comdTaxHookAbi, "stats");
-  const d = (k: string) => BigInt(st1[k]) - BigInt(st0[k]);
-  assert(d("trimmedComd") > 0n && d("trimmedEth") > 0n, `no trim (stats ${JSON.stringify(st1, (_, v) => (typeof v === "bigint" ? v.toString() : v))})`);
-  const split = d("split");
-  assert(d("toBond") === (split * BigInt(p.bondBps)) / 10_000n && d("toStakers") === (split * BigInt(p.stakersBps)) / 10_000n && d("toSeats") === (split * BigInt(p.seatsBps)) / 10_000n, "6 / 4.5 / 4.5 split");
-  assert(d("burned") === split - d("toBond") - d("toStakers") - d("toSeats"), "burn takes the rest (85%)");
-  const [bond1, drip1, rd1] = await Promise.all([comdOf(D.bond), comdOf(D.rewardDripper), comdOf(D.rewardDistributor)]);
-  assert(bond1 - bond0 === d("toBond") && drip1 - drip0 === d("toStakers") && rd1 - rd0 === d("toSeats"), "COMD reached Bond / RewardDripper / RewardDistributor");
-  const supply1 = await read<bigint>(D.comdToken, erc20Abi, "totalSupply");
-  assert(supply0 - supply1 === d("burned"), `burned ${d("burned")} = supply drop ${supply0 - supply1}`);
-  const claimEth = await read<bigint>(H, comdTaxHookAbi, "claimEth");
-  const wallIn = (await ethOf(D.buyWall)) - wall0 + claimEth;
-  assert(wallIn === d("trimmedEth"), `trimmed ETH ${d("trimmedEth")} → BuyWall ${wallIn}`);
-  trimmed = { comd: d("trimmedComd"), eth: d("trimmedEth"), toBond: d("toBond"), toStakers: d("toStakers"), toSeats: d("toSeats") };
-  return `owner setParams(cap decay 1M COMD/day); +${days} days; sold ${fmt(SELL_COMD, 18, 0)} COMD → trimmed ${fmt(d("trimmedComd"), 18, 0)} COMD + ${fmt(d("trimmedEth"), 18, 6)} ETH (→ BuyWall); split burn ${fmt(d("burned"), 18, 0)} / Bond ${fmt(d("toBond"), 18, 0)} / stakers ${fmt(d("toStakers"), 18, 0)} / seats ${fmt(d("toSeats"), 18, 0)}`;
-}
-
-/** Keeper: BuyWall.rebalance() posts the trimmed ETH as the protocol's bid (threshold lowered by the owner). */
-async function buyWallRebalance() {
-  assert(trimmed, "no trim");
-  const p: any = await read(D.buyWall, buyWallAbi, "params");
-  await send(0, D.buyWall, buyWallAbi, "setParams", [{ floorDecayTicksPerDay: p.floorDecayTicksPerDay, wallGapTicks: p.wallGapTicks, wallWidthTicks: p.wallWidthTicks, rebalanceThreshold: E18 / 1000n, minWallFill: p.minWallFill, tipBps: p.tipBps, tipCap: p.tipCap }]);
-  const ev = await until("keeper rebalance", async () => { const e = await eventsOf(D.buyWall, buyWallAbi, "Rebalanced"); return e.length ? e : null; }, 120_000, 1000);
-  for (const e of ev) assert(getAddress(e.args.keeper) === KEEPER.address, "rebalance() sent by the keeper");
-  const t = await keeperTasks();
-  assert(t.rebalance.runs >= 1, `keeper rebalance ${JSON.stringify(t.rebalance)}`);
-  const [posted, parked, tips, floor] = await Promise.all([read<bigint>(D.buyWall, buyWallAbi, "wallEthPosted"), read<bigint>(D.buyWall, buyWallAbi, "parkedEth"), read<bigint>(D.buyWall, buyWallAbi, "totalTips"), read<number>(D.buyWall, buyWallAbi, "floorTick")]);
-  assert(posted + parked > 0n, "wall ETH posted or parked");
-  assert(tips > 0n, "keeper tip paid");
-  return `owner setParams(threshold 0.001 ETH); keeper rebalance ${t.rebalance.runs}×: wall ${fmt(posted, 18, 6)} ETH posted${parked ? `, ${fmt(parked, 18, 6)} parked` : ""} at floor tick ${floor}; tips ${fmt(tips, 18, 8)} ETH`;
-}
-
-/** Keeper: RewardDripper.drip() streams the stakers' 4.5% of the trim into sCOMD. */
-async function drip() {
-  assert(trimmed && trimmed.toStakers > 0n, "nothing for stakers");
-  const ev = await until("keeper drip", async () => { const e = await eventsOf(D.rewardDripper, rewardDripperAbi, "Dripped"); return e.length ? e : null; }, 120_000, 1000);
-  for (const e of ev) assert(getAddress((await pub.getTransactionReceipt({ hash: e.transactionHash })).from) === KEEPER.address, "drip() sent by the keeper");
-  const assets = await read<bigint>(D.stakedComd, stakedComdAbi, "totalAssets");
-  assert(assets > STAKE_COMD, `sCOMD totalAssets ${assets} grew past the stake`);
-  const t = await keeperTasks();
-  const value = await read<bigint>(D.stakedComd, stakedComdAbi, "convertToAssets", [await read<bigint>(D.stakedComd, stakedComdAbi, "balanceOf", [CUSTOMER.address])]);
-  return `keeper drip ${t.drip.runs}×: sCOMD totalAssets ${fmt(assets, 18, 2)} COMD (stake ${fmt(STAKE_COMD, 18, 0)}); the staker's shares are worth ${fmt(value, 18, 2)} COMD; rate ${fmt(await read<bigint>(D.rewardDripper, rewardDripperAbi, "ratePerSecond"), 18, 4)} COMD/s`;
-}
-
-/** Bond: the owner enables it; anyone buys COMD from the 6% reserve with ETH at priceEth; proceeds to the treasury. */
-async function bondBuy() {
-  await send(0, D.bond, bondAbi, "setEnabled", [true]);
-  const reserve = await read<bigint>(D.bond, bondAbi, "reserve");
-  assert(reserve > 0n, "Bond reserve filled by the trim");
-  const ethIn = E18 / 10_000n;
-  const out = await read<bigint>(D.bond, bondAbi, "quote", [ethIn]);
-  assert(out > 0n && out <= reserve, `quote ${out} within reserve ${reserve}`);
-  const [c0, t0e] = await Promise.all([comdOf(SELLER.address), ethOf(TREASURY.address)]);
-  await send(13, D.bond, bondAbi, "buyWithEth", [out], ethIn);
-  assert((await comdOf(SELLER.address)) - c0 === out, "buyer received the quoted COMD");
-  assert((await ethOf(TREASURY.address)) - t0e === ethIn, "ETH proceeds to the treasury");
-  assert((await read<bigint>(D.bond, bondAbi, "totalSold")) === out && (await read<bigint>(D.bond, bondAbi, "totalProceeds")) === ethIn, "totals");
-  const price = await read<bigint>(D.bond, bondAbi, "priceEth");
-  return `enabled; ${fmt(ethIn, 18, 6)} ETH → ${fmt(out, 18, 0)} COMD at ${price} wei/COMD from a ${fmt(reserve, 18, 0)} COMD reserve; ETH to the treasury`;
-}
-
-/** GET /flywheel against the chain: tax, 2 buckets, hook stats + cap, buy wall, staking, bond, revenue router, events. */
+/** GET /flywheel against the chain: tax, 2 buckets, revenue router, swept tokens, events, keeper. */
 async function flywheelView() {
   const f = (await get("/flywheel")).body;
   assert(f.configured === true, "configured");
   assert(Object.keys(f.errors ?? {}).length === 0, `section errors ${JSON.stringify(f.errors)}`);
   const hk = D.comdTaxHook;
-  assert(f.tax.totalTaxed === String(await read<bigint>(hk, comdTaxHookAbi, "totalTaxed")) && f.tax.taxBps === 500, "tax");
+  assert(f.tax.totalTaxed === String(await read<bigint>(hk, comdTaxHookAbi, "totalTaxed")) && f.tax.taxBps === 500 && f.tax.toFlywheel === String(await read<bigint>(D.flywheel, flywheelAbi, "totalTaxIn")), "tax");
   assert(Object.keys(f.flywheel.buckets).sort().join() === "buyback,sweep" && Object.keys(f.flywheel.bps).sort().join() === "buyback,sweep", "two buckets");
   const [bk, sw] = await read<readonly bigint[]>(D.flywheel, flywheelAbi, "bucketBalances");
   assert(f.flywheel.buckets.buyback === String(bk) && f.flywheel.buckets.sweep === String(sw), "bucket balances");
   assert(f.flywheel.totals.burned === String(await read<bigint>(D.flywheel, flywheelAbi, "totalBurned")) && f.flywheel.sweptTokenIds.includes(swept), "flywheel totals + swept ids");
-  const st: any = await read(hk, comdTaxHookAbi, "stats");
-  for (const k of ["trimmedComd", "burned", "toBond", "toStakers", "toSeats"]) assert(f.hook.stats[k] === String(st[k]), `hook.stats.${k}`);
-  assert(f.hook.inventory === String(await read<bigint>(hk, comdTaxHookAbi, "inventory")) && f.hook.cap && f.hook.currentCap, "cap / currentCap / inventory");
-  assert(f.buyWall.postedEth === String(await read<bigint>(D.buyWall, buyWallAbi, "wallEthPosted")) && typeof f.buyWall.floorTick === "number" && BigInt(f.buyWall.totalTips) > 0n, "buy wall");
-  assert(f.staking.totalAssets === String(await read<bigint>(D.stakedComd, stakedComdAbi, "totalAssets")) && f.staking.ratePerSecond && f.staking.streamCapPerDay, "staking");
-  assert(f.bond.enabled === true && f.bond.priceEth && BigInt(f.bond.sold) > 0n && f.bond.reserve === String(await read<bigint>(D.bond, bondAbi, "reserve")), "bond");
   assert(f.revenueRouter.totalToRewards === String(await read<bigint>(D.revenueRouter, revenueRouterAbi, "totalToRewards")) && f.revenueRouter.bps.rewards === 8000 && f.revenueRouter.bps.treasury === 2000, "revenue router");
+  for (const k of ["buyWall", "staking", "bond"]) assert(!(k in f), `no ${k} section`);
   const kinds = new Set(f.events.map((e: any) => `${e.source}.${e.type}`));
-  for (const k of ["flywheel.Buyback", "flywheel.Swept", "hook.Trimmed", "hook.Split", "buyWall.Rebalanced", "bond.Bonded", "revenueRouter.Distributed"]) assert(kinds.has(k), `event ${k} in /flywheel events`);
-  assert(f.keeper?.enabled === true, "keeper in /flywheel");
-  return `all sections match the chain; ${f.events.length} recent events (${[...kinds].sort().join(", ")})`;
+  for (const k of ["flywheel.TaxIn", "flywheel.Buyback", "flywheel.Swept", "revenueRouter.Distributed"]) assert(kinds.has(k), `event ${k} in /flywheel events`);
+  assert(f.keeper?.enabled === true && Object.keys(f.keeper.tasks).join() === "flush,buyback,distribute", `keeper ${JSON.stringify(f.keeper?.tasks && Object.keys(f.keeper.tasks))}`);
+  return `tax, buckets, totals, swept ids and revenue router match the chain; ${f.events.length} recent events (${[...kinds].sort().join(", ")}); keeper tasks flush/buyback/distribute`;
 }
 
 async function webShapes() {
@@ -946,11 +839,13 @@ async function contributorClaim() {
   const entry = l.rewardSnapshot.claims[0];
   const idx = HOLDERS.findIndex((h) => h.address.toLowerCase() === entry.account.toLowerCase());
   const view = (await get(`/launches/${l.id}/claims/${entry.account}`)).body;
+  await rpc("evm_increaseTime", [3601]);
+  await rpc("evm_mine", []);
   const b0 = await read<bigint>(l.tokenAddr, erc20Abi, "balanceOf", [view.account]);
   await send(idx + 1, D.contributorDistributor, contributorDistributorAbi, "claim", [BigInt(view.launchId), view.account, BigInt(view.amount), view.proof]);
   const b1 = await read<bigint>(l.tokenAddr, erc20Abi, "balanceOf", [view.account]);
   assert(b1 - b0 === BigInt(view.amount), "contributor received the claimed amount");
-  return `${l.rewardSnapshot.claims.length} contributors (2% workers + 8% connected, cap 30%); after the lock ${view.account.slice(0, 10)}… claimed ${fmt(BigInt(view.amount), 18, 0)} ${l.token.symbol ?? "tokens"}`;
+  return `${l.rewardSnapshot.claims.length} contributors (2% workers + 8% connected, cap 30%); after evm_increaseTime 3601 ${view.account.slice(0, 10)}… claimed ${fmt(BigInt(view.amount), 18, 0)} ${l.token.symbol ?? "tokens"}`;
 }
 
 // ============================================================================================ main
@@ -977,7 +872,7 @@ export async function bootStack(o: { apiEnv?: Record<string, string | undefined>
   record("anvil --chain-id 46630", true, RPC);
 
   if (!(await check("Permit2 at the canonical address", permit2))) return false;
-  if (!(await check("Deploy.s.sol (v4 PoolManager, COMD, ERC-8004, Counsel, rewards, flywheel, hook, wall, staking, bond, launches)", () => deploy(API)))) return false;
+  if (!(await check("Deploy.s.sol (v4 PoolManager, COMD, ERC-8004, Counsel, rewards, flywheel, tax hook, router, launches)", () => deploy(API)))) return false;
   if (!(await check("SeedPool.s.sol (100% of COMD into the official COMD/ETH pool)", seedPool))) return false;
   if (!(await check("control plane up with real @company/services, COMD payments and the keeper", () => startApi(apiPort, o.apiEnv)))) return false;
   if (o.seats === false) return true;
@@ -1011,17 +906,9 @@ async function main() {
   await check("Flywheel.sweep buys a listed Counsel through MockMarketplace", floorSweep);
   await check("reputation feedback batches on the ReputationRegistry", feedbackOnChain);
   await check("seat COMD reward root posted and claimed", seatRewards);
-  // ---- everything below moves chain time forward (no more Permit2 payments after this point)
-  const staked = await check("stake COMD into sCOMD", stake);
-  const trimmedOk = await check("inventory trim: owner lowers cap decay, time passes, a sell trims 85/6/4.5/4.5", trim);
-  if (trimmedOk) await check("keeper: BuyWall.rebalance() posts the trimmed ETH", buyWallRebalance);
-  else record("keeper: BuyWall.rebalance() posts the trimmed ETH", false, "skipped: no trim");
-  if (trimmedOk && staked) await check("keeper: RewardDripper.drip() streams into sCOMD", drip);
-  else record("keeper: RewardDripper.drip() streams into sCOMD", false, "skipped: no trim or no stake");
-  if (trimmedOk) await check("Bond: buy COMD from the reserve with ETH", bondBuy);
-  else record("Bond: buy COMD from the reserve with ETH", false, "skipped: empty reserve");
-  await check("GET /flywheel matches the chain (tax, buckets, hook, wall, staking, bond, router, events)", flywheelView);
+  await check("GET /flywheel matches the chain (tax, buckets, router, swept ids, events, keeper)", flywheelView);
   await check("web-facing read shapes (swarm, jobs, contributors, seats, art)", webShapes);
+  // ---- chain time moves forward from here (no more Permit2 payments after this)
   if (launched) await check("contributor claims the swarm's share after the lock", contributorClaim);
   else record("contributor claims the swarm's share after the lock", false, "skipped: the launch did not go live");
 }

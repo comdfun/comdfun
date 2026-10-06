@@ -3,100 +3,82 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC8004Identity, IERC8004Reputation} from "../src/interfaces/IERC8004.sol";
 
 import {Deploy} from "../script/Deploy.s.sol";
-import {SeedPool} from "../script/SeedPool.s.sol";
-import {ComdToken} from "../src/ComdToken.sol";
-import {ComdTaxHook} from "../src/ComdTaxHook.sol";
-import {ComdRouter} from "../src/ComdRouter.sol";
+import {MockComd} from "../src/mocks/MockComd.sol";
 import {Flywheel} from "../src/Flywheel.sol";
+import {UniswapV4PoolSwapper} from "../src/swap/UniswapV4PoolSwapper.sol";
+import {Incorporations} from "../src/Incorporations.sol";
 import {RewardDistributor} from "../src/RewardDistributor.sol";
 import {RevenueRouter} from "../src/RevenueRouter.sol";
 import {ProjectFactory} from "../src/launch/ProjectFactory.sol";
-import {BuyWall} from "../src/BuyWall.sol";
-import {StakedComd} from "../src/StakedComd.sol";
-import {RewardDripper} from "../src/RewardDripper.sol";
-import {Bond} from "../src/Bond.sol";
 import {LaunchGuardHook} from "../src/launch/LaunchGuardHook.sol";
 
 contract DeployTest is Test {
     Deploy script;
-    SeedPool seeder;
     Deploy.Config c;
 
     function setUp() public {
         script = new Deploy();
-        seeder = new SeedPool();
         c.deployer = address(script); // in tests the script contract itself makes every call
         c.admin = makeAddr("admin");
         c.treasury = makeAddr("treasury");
-        c.pol = address(seeder); // the SeedPool helper acts as the POL wallet
         c.settler = makeAddr("settler");
         c.keeper = makeAddr("keeper");
         c.registrar = makeAddr("registrar");
         c.maxSweepPrice = 0.5 ether;
-        c.bondPriceEth = 1e10;
         c.counselBaseURI = "https://api.comd.fun/agents/by-token/";
     }
 
-    function test_deployAndSeed() public {
+    function test_deployTestChainWithMockComd() public {
         vm.chainId(46630);
         Deploy.Deployment memory d = script.deploy(c);
         assertTrue(d.deployedPoolManager);
+        assertTrue(d.deployedMockComd);
         assertTrue(d.mockMarketplace != address(0));
         assertEq(d.seaportAdapter, address(0));
 
-        ComdToken t = ComdToken(d.comd);
+        MockComd t = MockComd(d.comd);
         assertEq(t.totalSupply(), 1_000_000_000e18);
-        assertEq(t.balanceOf(c.pol), 1_000_000_000e18, "100% to POL");
-        assertEq(t.balanceOf(address(script)), 0);
+        assertEq(t.decimals(), 18);
+        assertEq(t.balanceOf(address(script)), 1_000_000_000e18, "mock supply to the deployer");
 
-        uint160 flags = uint160(
-            Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG
-                | Hooks.AFTER_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
-        );
-        assertEq(uint160(d.hook) & Hooks.ALL_HOOK_MASK, flags);
         assertEq(uint160(d.launchGuardHook) & Hooks.ALL_HOOK_MASK, uint160(Hooks.BEFORE_INITIALIZE_FLAG));
-        ComdTaxHook h = ComdTaxHook(payable(d.hook));
         Flywheel fw = Flywheel(payable(d.flywheel));
-        assertEq(h.pol(), c.pol);
-        assertEq(address(h.flywheel()), d.flywheel);
-        assertEq(h.router(), d.router);
-        assertEq(h.buyWall(), d.buyWall);
-        assertEq(h.bond(), d.bond);
-        assertEq(h.dripper(), d.rewardDripper);
-        assertEq(h.distributor(), d.rewardDistributor);
-        assertEq(address(BuyWall(payable(d.buyWall)).hook()), d.hook);
-        assertEq(BuyWall(payable(d.buyWall)).owner(), c.admin);
-        assertEq(RewardDripper(d.rewardDripper).vault(), d.stakedComd);
-        assertEq(StakedComd(d.stakedComd).asset(), d.comd);
-        assertEq(StakedComd(d.stakedComd).owner(), c.admin);
-        assertEq(address(Bond(d.bond).comd()), d.comd);
-        assertEq(Bond(d.bond).priceEth(), 1e10);
-        assertEq(Bond(d.bond).owner(), c.admin);
-        assertEq(Bond(d.bond).treasury(), c.treasury);
-        assertFalse(Bond(d.bond).enabled());
-        assertEq(fw.hook(), d.hook);
-        assertEq(address(fw.router()), d.router);
+        assertEq(address(fw.comd()), d.comd);
+        assertEq(address(fw.counsel()), d.counsel);
+        assertEq(address(fw.swapper()), d.swapper);
         assertEq(fw.keeper(), c.keeper);
         assertTrue(fw.adapterAllowed(d.mockMarketplace));
         assertEq(fw.maxSweepPrice(), 0.5 ether);
         // Ownable2Step hand-over: admin accepts
-        assertEq(h.pendingOwner(), c.admin);
+        assertEq(fw.owner(), address(script));
         assertEq(fw.pendingOwner(), c.admin);
-        vm.startPrank(c.admin);
-        h.acceptOwnership();
+        vm.prank(c.admin);
         fw.acceptOwnership();
-        vm.stopPrank();
-        assertEq(h.owner(), c.admin);
         assertEq(fw.owner(), c.admin);
+
+        UniswapV4PoolSwapper sw = UniswapV4PoolSwapper(payable(d.swapper));
+        assertEq(address(sw.poolManager()), d.poolManager);
+        assertEq(address(sw.comd()), d.comd);
+        assertEq(sw.owner(), c.admin, "ADMIN configures the pool key after the Pons graduation");
+        assertFalse(sw.configured(), "unconfigured until graduation");
+
+        Incorporations inc = Incorporations(payable(d.incorporations));
+        assertEq(address(inc.comd()), d.comd);
+        assertEq(inc.rewardDistributor(), d.rewardDistributor);
+        assertEq(address(inc.swapper()), d.swapper);
+        assertEq(inc.owner(), c.admin);
+
         assertEq(RevenueRouter(d.revenueRouter).owner(), c.admin);
         assertEq(RevenueRouter(d.revenueRouter).rewardDistributor(), d.rewardDistributor);
         assertEq(address(RevenueRouter(d.revenueRouter).comd()), d.comd);
         assertEq(RevenueRouter(d.revenueRouter).treasury(), c.treasury);
 
         RewardDistributor dist = RewardDistributor(payable(d.rewardDistributor));
+        assertEq(address(dist.comd()), d.comd);
         assertTrue(dist.hasRole(0x00, c.admin));
         assertFalse(dist.hasRole(0x00, address(script)));
         assertTrue(dist.hasRole(dist.SETTLER_ROLE(), c.settler));
@@ -114,47 +96,67 @@ contract DeployTest is Test {
         assertEq(IERC8004Identity(d.identityRegistry).owner(), c.admin);
         assertEq(IERC8004Reputation(d.reputationRegistry).getIdentityRegistry(), d.identityRegistry);
 
-        // SeedPool: one call opens the pool with 100% of supply
-        seeder.seed(h, 10 ether, 1_000_000_000e18);
-        assertTrue(h.seeded());
-        assertEq(h.cap(), h.inventory(), "cap starts at the seeded inventory");
-        assertLt(t.balanceOf(c.pol), 1e12, "only rounding dust left");
-        vm.deal(makeAddr("buyer"), 1 ether);
-        vm.prank(makeAddr("buyer"));
-        uint256 out = ComdRouter(payable(d.router)).swapExactETHForComd{value: 1 ether}(0, makeAddr("buyer"), block.timestamp);
-        assertGt(out, 0);
+        // the Flywheel accepts ETH right away; buybacks wait for the swapper's pool key
+        vm.deal(makeAddr("pons"), 1 ether);
+        vm.prank(makeAddr("pons"));
+        (bool sent,) = d.flywheel.call{value: 1 ether}("");
+        assertTrue(sent);
+        (uint256 b, uint256 s) = fw.bucketBalances();
+        assertEq(b, 0.5 ether);
+        assertEq(s, 0.5 ether);
+        vm.prank(c.keeper);
+        vm.expectRevert(UniswapV4PoolSwapper.PoolNotSet.selector);
+        fw.buyback(0);
     }
 
-    function test_mainnetRequiresPoolManagerCode() public {
+    function test_mainnetRequiresComdTokenAndPoolManager() public {
         vm.chainId(4663);
+        c.comd = address(0);
         c.poolManager = 0x8366a39CC670B4001A1121B8F6A443A643e40951;
+        vm.expectRevert(bytes("COMD_TOKEN required on this chain: set it to the Pons $COMD token address"));
+        script.deploy(c);
+        c.comd = makeAddr("no-code");
+        vm.expectRevert(bytes("COMD_TOKEN has no code"));
+        script.deploy(c);
+        c.comd = address(new MockComd());
         vm.expectRevert(bytes("PoolManager has no code"));
         script.deploy(c);
         c.poolManager = address(0);
         vm.expectRevert(bytes("POOL_MANAGER required on this chain"));
         script.deploy(c);
+        // unknown chain ids are treated as real chains too
+        vm.chainId(999_999);
+        c.comd = address(0);
+        vm.expectRevert(bytes("COMD_TOKEN required on this chain: set it to the Pons $COMD token address"));
+        script.deploy(c);
     }
 
-    function test_mainnetWithExternalsNoMockMarketplace() public {
+    function test_mainnetWithExternalsNoMocks() public {
         vm.chainId(31337);
-        Deploy.Deployment memory local = script.deploy(c); // deploys a PoolManager we can reuse
+        Deploy.Deployment memory local = script.deploy(c); // deploys a PoolManager + MockComd we can reuse
+        assertTrue(local.deployedMockComd);
         vm.chainId(4663);
         c.poolManager = local.poolManager;
+        c.comd = local.comd; // stands in for the Pons token
         c.seaport = makeAddr("seaport");
         Deploy.Deployment memory d = script.deploy(c);
         assertFalse(d.deployedPoolManager);
+        assertFalse(d.deployedMockComd);
+        assertEq(d.comd, local.comd, "external token used as is");
         assertEq(d.mockMarketplace, address(0), "no mock marketplace on mainnet");
         assertTrue(d.seaportAdapter != address(0));
         assertTrue(Flywheel(payable(d.flywheel)).adapterAllowed(d.seaportAdapter));
+        assertEq(IERC20Metadata(d.comd).decimals(), 18);
     }
 
     function test_configFromEnvDefaults() public {
         vm.chainId(4663);
         Deploy.Config memory e = script.configFromEnv(address(0xBEEF));
         assertEq(e.admin, address(0xBEEF));
-        assertEq(e.pol, address(0xBEEF));
+        assertEq(e.treasury, address(0xBEEF));
+        assertEq(e.keeper, address(0xBEEF));
+        assertEq(e.comd, address(0), "COMD_TOKEN unset in this test env");
         assertEq(e.poolManager, 0x8366a39CC670B4001A1121B8F6A443A643e40951);
-        assertEq(e.bondPriceEth, 1e10);
         assertEq(e.maxSweepPrice, 0.5 ether);
         vm.chainId(46630);
         e = script.configFromEnv(address(0xBEEF));
@@ -166,8 +168,30 @@ contract DeployTest is Test {
         Deploy.Deployment memory d = script.deploy(c);
         string memory json = script.toJson(c, d);
         assertEq(vm.parseJsonUint(json, ".chainId"), 46630);
-        assertEq(vm.parseJsonAddress(json, ".comdTaxHook"), d.hook);
-        assertEq(vm.parseJsonAddress(json, ".bond"), d.bond);
+        assertEq(vm.parseJsonAddress(json, ".comdToken"), d.comd);
+        assertEq(vm.parseJsonAddress(json, ".counselNFT"), d.counsel);
+        assertEq(vm.parseJsonAddress(json, ".identityRegistry"), d.identityRegistry);
+        assertEq(vm.parseJsonAddress(json, ".reputationRegistry"), d.reputationRegistry);
+        assertEq(vm.parseJsonAddress(json, ".rewardDistributor"), d.rewardDistributor);
         assertEq(vm.parseJsonAddress(json, ".revenueRouter"), d.revenueRouter);
+        assertEq(vm.parseJsonAddress(json, ".flywheel"), d.flywheel);
+        assertEq(vm.parseJsonAddress(json, ".swapper"), d.swapper);
+        assertEq(vm.parseJsonAddress(json, ".incorporations"), d.incorporations);
+        assertEq(vm.parseJsonAddress(json, ".projectFactory"), d.projectFactory);
+        assertEq(vm.parseJsonAddress(json, ".contributorDistributor"), d.contributorDistributor);
+        assertEq(vm.parseJsonAddress(json, ".launchGuardHook"), d.launchGuardHook);
+        assertEq(vm.parseJsonAddress(json, ".create2Deployer"), d.create2Deployer);
+        assertEq(vm.parseJsonAddress(json, ".mockMarketplace"), d.mockMarketplace);
+        assertEq(vm.parseJsonAddress(json, ".seaportAdapter"), address(0));
+        assertEq(vm.parseJsonAddress(json, ".admin"), c.admin);
+        assertEq(vm.parseJsonAddress(json, ".treasury"), c.treasury);
+        assertEq(vm.parseJsonAddress(json, ".keeper"), c.keeper);
+        assertEq(vm.parseJsonAddress(json, ".settler"), c.settler);
+        assertEq(vm.parseJsonAddress(json, ".registrar"), c.registrar);
+        assertEq(vm.parseJsonAddress(json, ".poolManager"), d.poolManager);
+        assertFalse(vm.keyExistsJson(json, ".comdTaxHook"));
+        assertFalse(vm.keyExistsJson(json, ".comdRouter"));
+        assertFalse(vm.keyExistsJson(json, ".bond"));
+        assertFalse(vm.keyExistsJson(json, ".pol"));
     }
 }

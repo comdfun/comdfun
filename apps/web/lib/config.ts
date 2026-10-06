@@ -21,6 +21,12 @@ export const PAY_DECIMALS = 18;
 export const DEFAULT_PRICE = 100n * 10n ** 18n;
 /** The approval step asks Permit2 for ten requests' worth. */
 export const APPROVAL_REQUESTS = 10n;
-/** Token economics (V2). */
+/** Token economics: $COMD is launched on Pons (1B supply, ETH pair, 5% tax set in Pons → the Flywheel). */
 export const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 export const TAX_BPS_DEFAULT = 500;
+/** Pons: the launchpad that minted $COMD and runs its trading (bonding curve, then a locked Uniswap v4 pool). */
+export const PONS_URL = process.env.NEXT_PUBLIC_PONS_URL || "https://pons.fun";
+/** Uniswap trade link, set after graduation; the link is hidden while unset. */
+export const UNISWAP_URL = process.env.NEXT_PUBLIC_UNISWAP_URL || "";
+/** The graduated pool id (bytes32), when known; enables the live price read through the swapper. */
+export const COMD_POOL_ID = process.env.NEXT_PUBLIC_COMD_POOL_ID || "";

@@ -15,17 +15,14 @@ const abisDir = join(pkg, "src", "abis");
 
 // [export name, artifact "<File>.sol/<Contract>"]
 const ARTIFACTS = [
-  ["ComdToken", "ComdToken.sol/ComdToken"],
+  // $COMD is the external Pons token: a plain ERC-20 ABI (MockComd stands in on test chains; no burn()).
+  ["ComdToken", "MockComd.sol/MockComd"],
   ["CounselNFT", "CounselNFT.sol/CounselNFT"],
   ["IdentityRegistry", "IdentityRegistryUpgradeable.sol/IdentityRegistryUpgradeable"],
   ["ReputationRegistry", "ReputationRegistryUpgradeable.sol/ReputationRegistryUpgradeable"],
-  ["ComdTaxHook", "ComdTaxHook.sol/ComdTaxHook"],
-  ["ComdRouter", "ComdRouter.sol/ComdRouter"],
-  ["BuyWall", "BuyWall.sol/BuyWall"],
   ["Flywheel", "Flywheel.sol/Flywheel"],
-  ["StakedComd", "StakedComd.sol/StakedComd"],
-  ["RewardDripper", "RewardDripper.sol/RewardDripper"],
-  ["Bond", "Bond.sol/Bond"],
+  ["BuybackSwapper", "IBuybackSwapper.sol/IBuybackSwapper"],
+  ["UniswapV4PoolSwapper", "UniswapV4PoolSwapper.sol/UniswapV4PoolSwapper"],
   ["MarketplaceAdapter", "IMarketplaceAdapter.sol/IMarketplaceAdapter"],
   ["SeaportAdapter", "SeaportAdapter.sol/SeaportAdapter"],
   ["MockMarketplace", "MockMarketplace.sol/MockMarketplace"],
@@ -42,35 +39,32 @@ const ARTIFACTS = [
 
 // address-book keys (deployments/<chainId>.json) in a stable order
 const ADDRESS_KEYS = [
-  "comdToken",
+  "comdToken", // external (Pons); MockComd on test chains
   "counselNFT",
   "identityRegistry",
   "reputationRegistry",
-  "comdTaxHook",
-  "comdRouter",
-  "buyWall",
-  "flywheel",
-  "stakedComd",
-  "rewardDripper",
-  "bond",
   "rewardDistributor",
   "revenueRouter",
+  "flywheel",
+  "swapper",
+  "incorporations",
   "projectFactory",
   "contributorDistributor",
   "launchGuardHook",
-  "incorporations",
+  "create2Deployer",
   "mockMarketplace",
   "seaportAdapter",
-  "create2Deployer",
   "poolManager",
   "weth",
   "permit2",
   "admin",
-  "pol",
   "treasury",
+  "keeper",
+  "settler",
+  "registrar",
 ];
 
-// external defaults (SPEC §1) used when a chain has no deployment file yet
+// external defaults used when a chain has no deployment file yet (COMD_TOKEN comes from the Pons launch)
 const EXTERNAL_DEFAULTS = {
   4663: {
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",

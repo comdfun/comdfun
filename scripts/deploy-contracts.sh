@@ -5,9 +5,9 @@
 #   DEPLOYER_PRIVATE_KEY=0x… ADMIN=0x… scripts/deploy-contracts.sh testnet      # chain 46630
 #   DEPLOYER_PRIVATE_KEY=0x… ADMIN=0x… scripts/deploy-contracts.sh mainnet      # chain 4663
 #
-# Env: RPC_URL (default per network), DEPLOYER_PRIVATE_KEY (required), what Deploy.s.sol reads (ADMIN, POL (alias
-# POL_WALLET; receives 100% of the 1,000,000,000 COMD), TREASURY, SETTLER, KEEPER, REGISTRAR, POOL_MANAGER,
-# BOND_PRICE_WEI [1e10 wei per COMD], SEAPORT, MAX_SWEEP_PRICE, COUNSEL_BASE_URI [https://api.comd.fun/agents/by-token/]),
+# Env: RPC_URL (default per network), DEPLOYER_PRIVATE_KEY (required), COMD_TOKEN (the $COMD address from Pons;
+# required on mainnet, MockComd on testnet when unset), what Deploy.s.sol reads (ADMIN, TREASURY, SETTLER, KEEPER, REGISTRAR, POOL_MANAGER,
+# SEAPORT, MAX_SWEEP_PRICE, COUNSEL_BASE_URI [https://api.comd.fun/agents/by-token/]),
 # FORGE/CAST (binaries),
 # FORGE_ARGS (extra flags, e.g. "--verify --verifier blockscout --verifier-url https://…/api/"),
 # DRY_RUN=1 (simulate without --broadcast), CONFIRM_MAINNET=yes (skip the interactive prompt).
@@ -40,7 +40,7 @@ if [ "$NET" = mainnet ]; then
   if [ -z "${ADMIN:-}" ] || [ "$(echo "$ADMIN" | tr A-F a-f)" = "$(echo "$deployer" | tr A-F a-f)" ]; then
     echo "mainnet: set ADMIN to a multisig (not the deployer)"; exit 1
   fi
-  [ -n "${POL:-${POL_WALLET:-}}" ] || { echo "mainnet: POL (or POL_WALLET) must be set explicitly"; exit 1; }
+  [ -n "${COMD_TOKEN:-}" ] || { echo "mainnet: COMD_TOKEN (the \$COMD address from Pons) must be set"; exit 1; }
   for v in TREASURY SETTLER KEEPER REGISTRAR; do
     [ -n "${!v:-}" ] || { echo "mainnet: $v must be set explicitly"; exit 1; }
   done
@@ -64,7 +64,5 @@ node "$ROOT/packages/abi/scripts/gen-abi.mjs"
 echo; echo "== Railway variables (paste into the api / web services)"
 node "$ROOT/scripts/deployment-env.mjs" "$CHAIN"
 echo
-echo "Next (DEPLOY.md §2): commit contracts/deployments/$CHAIN.json + packages/abi; the POL wallet seeds 100% of COMD"
-echo "into the COMD/ETH pool in one transaction (SeedPool.s.sol, §7); ADMIN accepts ownership of ComdTaxHook and"
-echo "Flywheel; open the free Counsel mint (§8); set the api/web variables above and redeploy api (keeper on) and web;"
-echo "release the worker (§10). The Bond starts disabled (ADMIN: setEnabled(true) when ready)."
+echo "Next (DEPLOY.md): commit contracts/deployments/$CHAIN.json + packages/abi; ADMIN accepts ownership of Flywheel;"
+echo "set the printed variables on Railway; after the Pons graduation call setPoolKey on the swapper."

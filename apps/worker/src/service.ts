@@ -25,7 +25,7 @@ export function systemdUnit(s: ServiceSpec): string {
   return [
     "[Unit]",
     "Description=Company.md worker (comd start)",
-    "Documentation=https://github.com/comd-fun/worker",
+    "Documentation=https://github.com/comdfun/worker",
     "After=network-online.target",
     "Wants=network-online.target",
     "",

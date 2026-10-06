@@ -4,195 +4,130 @@ pragma solidity ^0.8.26;
 import {Deployers} from "v4-core/test/utils/Deployers.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
+import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
-import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
+import {Currency} from "v4-core/src/types/Currency.sol";
+import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
-import {ComdToken} from "../../src/ComdToken.sol";
+import {MockComd} from "../../src/mocks/MockComd.sol";
 import {CounselNFT} from "../../src/CounselNFT.sol";
 import {RewardDistributor} from "../../src/RewardDistributor.sol";
 import {RevenueRouter} from "../../src/RevenueRouter.sol";
 import {Flywheel} from "../../src/Flywheel.sol";
-import {ComdTaxHook, IFlywheelTaxSink} from "../../src/ComdTaxHook.sol";
-import {BuyWall, IComdTaxHookForWall} from "../../src/BuyWall.sol";
-import {StakedComd} from "../../src/StakedComd.sol";
-import {RewardDripper} from "../../src/RewardDripper.sol";
-import {Bond} from "../../src/Bond.sol";
-import {ComdRouter} from "../../src/ComdRouter.sol";
+import {Incorporations} from "../../src/Incorporations.sol";
+import {IBuybackSwapper} from "../../src/interfaces/IBuybackSwapper.sol";
+import {UniswapV4PoolSwapper} from "../../src/swap/UniswapV4PoolSwapper.sol";
 import {MockMarketplace} from "../../src/mocks/MockMarketplace.sol";
+import {MockSwapper} from "../mocks/Mocks.sol";
 import {MerkleHelper} from "./MerkleHelper.sol";
 
-/// @notice Full Company.md system on a real v4 PoolManager: official COMD/ETH pool (tax + capped inventory + buy
-///         wall) opened with 100% of supply at a 10 ETH market cap (1e8 COMD per ETH), then 20 ETH of buys.
+/// @notice Company.md system in Pons mode: COMD is an external plain ERC-20 (MockComd, 1B to this test contract),
+///         the Flywheel receives ETH from anyone and swaps through a pluggable IBuybackSwapper. By default the
+///         swapper is a fixed-rate MockSwapper (1 ETH = 1e8 COMD); `setUpV4Pool()` adds a real, hookless v4
+///         ETH/COMD pool on a local PoolManager behind a UniswapV4PoolSwapper.
 abstract contract Base is Deployers, MerkleHelper {
     using StateLibrary for IPoolManager;
     using PoolIdLibrary for PoolKey;
 
     address admin = makeAddr("admin");
-    address pol = makeAddr("pol");
     address treasury = makeAddr("treasury");
     address settler = makeAddr("settler");
     address keeper = makeAddr("keeper");
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address carol = makeAddr("carol");
-    address market = makeAddr("market");
+    address market = makeAddr("market"); // stands in for Pons's payout: sends ETH to the Flywheel
 
-    ComdToken comd;
+    MockComd comd;
     CounselNFT counsel;
     RewardDistributor distributor;
     RevenueRouter revenue;
     Flywheel flywheel;
-    ComdTaxHook hook;
-    ComdRouter router;
-    BuyWall wall;
-    StakedComd vault;
-    RewardDripper dripper;
-    Bond bond;
+    MockSwapper swapper;
+    Incorporations inc;
     MockMarketplace marketplace;
+
+    // real v4 pool (setUpV4Pool)
+    UniswapV4PoolSwapper v4swapper;
     PoolKey poolKey;
 
-    uint160 constant HOOK_FLAGS = uint160(
-        Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG
-            | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
-    );
+    address constant DEAD = 0x000000000000000000000000000000000000dEaD;
     uint256 constant SUPPLY = 1_000_000_000e18;
-    uint256 constant MCAP = 10 ether;
+    uint256 constant RATE = 1e8; // COMD per ETH (10 ETH market cap for 1B COMD)
     uint256 constant BPS = 10_000;
+    uint24 constant POOL_FEE = 3_000;
+    int24 constant POOL_SPACING = 60;
+    int24 constant POOL_TICK = 184_200; // ≈ 1e8 COMD per ETH
 
     function setUpSystem() internal {
         deployFreshManagerAndRouters();
-        comd = new ComdToken(pol);
+        comd = new MockComd();
         counsel = new CounselNFT(admin, treasury, "https://api.comd.fun/agents/by-token/");
         distributor = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         revenue = new RevenueRouter(IERC20(address(comd)), address(distributor), treasury, admin);
-        vault = new StakedComd(IERC20(address(comd)), admin);
-        dripper = new RewardDripper(IERC20(address(comd)), address(vault), admin);
-        bond = new Bond(IERC20(address(comd)), treasury, 1e10, admin);
-        flywheel = new Flywheel(ERC20Burnable(address(comd)), IERC721(address(counsel)), admin, keeper);
-        hook = _deployHook(address(uint160(0x4444) << 144 | HOOK_FLAGS));
-        wall = new BuyWall(IComdTaxHookForWall(address(hook)), admin);
-        poolKey = hook.poolKey();
-        router = new ComdRouter(manager, IERC20(address(comd)), IHooks(address(hook)), 0, 200);
+        flywheel = new Flywheel(IERC20(address(comd)), IERC721(address(counsel)), admin, keeper);
+        swapper = new MockSwapper(IERC20(address(comd)), RATE * 1e18);
+        comd.transfer(address(swapper), 300_000_000e18);
+        vm.deal(address(swapper), 100 ether);
         marketplace = new MockMarketplace();
+        inc = new Incorporations(
+            IERC20(address(comd)), address(distributor), IBuybackSwapper(address(swapper)), admin
+        );
 
         vm.startPrank(admin);
-        hook.setRouter(address(router));
-        hook.setBuyWall(address(wall));
-        flywheel.setHook(address(hook));
-        flywheel.setRouter(address(router));
+        flywheel.setSwapper(address(swapper));
         flywheel.setAdapter(address(marketplace), true);
         distributor.grantRole(distributor.SETTLER_ROLE(), settler);
         vm.stopPrank();
     }
 
-    function _deployHook(address at) internal returns (ComdTaxHook h) {
-        deployCodeTo(
-            "ComdTaxHook.sol:ComdTaxHook",
-            abi.encode(
-                manager,
-                address(comd),
-                pol,
-                IFlywheelTaxSink(address(flywheel)),
-                admin,
-                address(bond),
-                address(dripper),
-                address(distributor)
-            ),
-            at
-        );
-        h = ComdTaxHook(payable(at));
-    }
-
-    function initAndSeed() internal {
-        vm.startPrank(pol);
-        comd.approve(address(hook), SUPPLY);
-        hook.initializeAndSeed(MCAP, SUPPLY);
-        vm.stopPrank();
-    }
-
-    /// @dev Seed + 20 ETH of buys so the pool also holds ETH (sells possible, tax taken physically).
-    function initSeedAndTrade() internal {
-        initAndSeed();
-        _buy(market, 20 ether);
-        hook.flush(); // the first buy's tax was held as claims (the PoolManager had no ETH yet)
-    }
-
-    function _buy(address who, uint256 ethIn) internal returns (uint256 out) {
-        vm.deal(who, who.balance + ethIn);
-        vm.prank(who);
-        out = router.swapExactETHForComd{value: ethIn}(0, who, block.timestamp);
-    }
-
-    function _sell(address who, uint256 amountIn) internal returns (uint256 out) {
-        if (comd.balanceOf(who) < amountIn) deal(address(comd), who, amountIn);
-        vm.startPrank(who);
-        comd.approve(address(router), amountIn);
-        out = router.swapExactComdForETH(amountIn, 0, who, block.timestamp);
-        vm.stopPrank();
-    }
-
-    /// @dev Raw swap through the v4 PoolSwapTest router (a third-party router: always taxed).
-    function _rawSwap(bool zeroForOne, int256 amountSpecified, uint256 value) internal returns (BalanceDelta) {
-        return swapRouter.swap{value: value}(
+    /// @dev Hookless ETH/COMD pool at ≈ 1e8 COMD per ETH with full-range liquidity (≈ 5 ETH + 5e8 COMD), and a
+    ///      UniswapV4PoolSwapper (owner admin) configured for it. Pons's real pool has Pons's hook instead.
+    function setUpV4Pool() internal {
+        poolKey = PoolKey(Currency.wrap(address(0)), Currency.wrap(address(comd)), POOL_FEE, POOL_SPACING, IHooks(address(0)));
+        manager.initialize(poolKey, TickMath.getSqrtPriceAtTick(POOL_TICK));
+        comd.approve(address(modifyLiquidityRouter), type(uint256).max);
+        vm.deal(address(this), address(this).balance + 10 ether);
+        modifyLiquidityRouter.modifyLiquidity{value: 6 ether}(
             poolKey,
-            SwapParams({
-                zeroForOne: zeroForOne,
-                amountSpecified: amountSpecified,
-                sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
-            }),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
+            ModifyLiquidityParams({tickLower: -887_220, tickUpper: 887_220, liquidityDelta: 5e22, salt: 0}),
             ""
         );
+        v4swapper = new UniswapV4PoolSwapper(manager, IERC20(address(comd)), admin);
+        vm.prank(admin);
+        v4swapper.setPoolKey(POOL_FEE, POOL_SPACING, IHooks(address(0)));
+    }
+
+    /// @dev Switch the Flywheel and Incorporations to the real v4 pool swapper.
+    function useV4Swapper() internal {
+        vm.startPrank(admin);
+        flywheel.setSwapper(address(v4swapper));
+        inc.setSwapper(address(v4swapper));
+        vm.stopPrank();
+    }
+
+    /// @dev Pons pays the creator wallet in ETH; the wallet (or Pons directly) forwards it to the Flywheel.
+    function _tax(uint256 eth) internal {
+        vm.deal(market, market.balance + eth);
+        vm.prank(market);
+        (bool ok,) = address(flywheel).call{value: eth}("");
+        require(ok, "tax in");
     }
 
     function _tick() internal view returns (int24 t) {
         (, t,,) = manager.getSlot0(poolKey.toId());
     }
 
-    function _sqrtP() internal view returns (uint160 p) {
-        (p,,,) = manager.getSlot0(poolKey.toId());
-    }
-
-    /// @dev Tax conservation: everything the hook charged is at the Flywheel (buckets + spent) or pending as claims.
+    /// @dev Tax conservation: everything received is at the Flywheel (buckets) or was spent (buyback / sweeps).
     function _assertTaxConservation() internal view {
         (uint256 b, uint256 s) = flywheel.bucketBalances();
         assertEq(flywheel.totalTaxIn(), b + s + flywheel.totalBoughtBack() + flywheel.sweepSpent(), "flywheel conservation");
-        assertEq(hook.totalTaxed(), flywheel.totalTaxIn() + hook.pendingTax(), "hook conservation");
         assertEq(address(flywheel).balance, b + s, "flywheel ETH == buckets");
-        assertEq(address(hook).balance, 0, "hook holds no ETH");
-    }
-
-    /// @dev Trim split conservation: burn + 6% + 4.5% + 4.5% == everything split; trimmed COMD = split from trims
-    ///      + still-pending claims (+ wall purchases are split too, counted in stats.split).
-    function _assertSplitConservation() internal view {
-        ComdTaxHook.Stats memory st = hook.stats();
-        assertEq(st.burned + st.toBond + st.toStakers + st.toSeats, st.split, "split parts sum");
-        assertEq(st.trimmedComd + wall.totalWallBought(), st.split + hook.claimComd(), "trimmed == split + pending");
-        assertEq(comd.balanceOf(address(hook)), 0, "hook holds no COMD at rest");
-    }
-
-    /// @dev Max cap decay (1,000,000 COMD/day) so trims can be produced in a few simulated days.
-    function _fastDecay() internal {
-        ComdTaxHook.Params memory p = hook.params();
-        p.capDecayPerDay = 1_000_000e18;
-        vm.prank(admin);
-        hook.setParams(p);
-    }
-
-    /// @dev Produce a trim: buy `eth` (opens room), let the cap decay `days_` days, sell everything back.
-    ///      With fast decay the trim is ≈ days_ × 1,000,000 COMD (if less than what was bought).
-    function _forceTrim(address who, uint256 eth, uint256 days_) internal returns (uint256 got) {
-        got = _buy(who, eth);
-        vm.warp(block.timestamp + days_ * 1 days);
-        vm.roll(block.number + 1);
-        _sell(who, got);
+        assertEq(comd.balanceOf(address(flywheel)), 0, "flywheel holds no COMD (all buybacks burned)");
+        assertEq(comd.balanceOf(DEAD), flywheel.totalBurned() + inc.totalBurned(), "dead address == burned");
     }
 }

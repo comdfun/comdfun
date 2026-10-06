@@ -72,7 +72,7 @@ function parseRepo(ref: string): { owner: string; name: string } {
 
 export async function publishRepo(input: PublishRepoInput): Promise<PublishRepoResult> {
   const env = input.env ?? process.env;
-  const org = input.org ?? env.GITHUB_ORG ?? "comd-filings";
+  const org = input.org ?? env.GITHUB_ORG ?? "comdfun";
   const token = input.token ?? env.GITHUB_TOKEN;
   const { owner, name } = input.baseRepo ? parseRepo(input.baseRepo) : { owner: org, name: repoSlug(input.title, input.jobId) };
   if (!token) return dryRun(input, owner, name, env);

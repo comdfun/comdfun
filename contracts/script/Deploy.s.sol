@@ -3,8 +3,8 @@ pragma solidity ^0.8.26;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
@@ -12,18 +12,14 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {PoolManager} from "v4-core/src/PoolManager.sol";
 import {IERC8004Identity, IERC8004Reputation} from "../src/interfaces/IERC8004.sol";
 
-import {ComdToken} from "../src/ComdToken.sol";
+import {MockComd} from "../src/mocks/MockComd.sol";
 import {CounselNFT} from "../src/CounselNFT.sol";
 import {RewardDistributor} from "../src/RewardDistributor.sol";
 import {RevenueRouter} from "../src/RevenueRouter.sol";
 import {Flywheel} from "../src/Flywheel.sol";
-import {ComdTaxHook, IFlywheelTaxSink} from "../src/ComdTaxHook.sol";
-import {BuyWall, IComdTaxHookForWall} from "../src/BuyWall.sol";
-import {StakedComd} from "../src/StakedComd.sol";
-import {RewardDripper} from "../src/RewardDripper.sol";
-import {Bond} from "../src/Bond.sol";
-import {ComdRouter} from "../src/ComdRouter.sol";
-import {Incorporations, IComdRouterSwaps, IRewardDripperLike} from "../src/Incorporations.sol";
+import {UniswapV4PoolSwapper} from "../src/swap/UniswapV4PoolSwapper.sol";
+import {IBuybackSwapper} from "../src/interfaces/IBuybackSwapper.sol";
+import {Incorporations} from "../src/Incorporations.sol";
 import {ProjectFactory} from "../src/launch/ProjectFactory.sol";
 import {LaunchGuardHook} from "../src/launch/LaunchGuardHook.sol";
 import {ERC8004Bootstrap} from "../src/ERC8004Bootstrap.sol";
@@ -31,24 +27,26 @@ import {Create2Deployer} from "../src/utils/Create2Deployer.sol";
 import {MockMarketplace} from "../src/mocks/MockMarketplace.sol";
 import {SeaportAdapter} from "../src/marketplace/SeaportAdapter.sol";
 
-/// @title Deploy — Company.md on Robinhood Chain (mainnet 4663 / testnet 46630)
+/// @title Deploy — Company.md on Robinhood Chain (mainnet 4663 / testnet 46630), Pons mode
 /// @notice UNAUDITED — experimental.
 /// @dev forge script script/Deploy.s.sol:Deploy --rpc-url $RPC_URL --broadcast --slow
-///   Env-only (CI friendly): no prompts, no files required; the deployments JSON is printed to stdout
-///   between the markers DEPLOYMENTS_JSON_BEGIN / DEPLOYMENTS_JSON_END.
-///   Env (all optional unless marked). ADMIN must call acceptOwnership() on ComdTaxHook and Flywheel.
+///   Single stage, env-only (CI friendly): no prompts, no files required; the deployments JSON is printed to stdout
+///   between the markers DEPLOYMENTS_JSON_BEGIN / DEPLOYMENTS_JSON_END and written to deployments/<chainId>.json.
+///   $COMD is minted by Pons — this script never deploys a token on a real chain.
+///   Env (all optional unless marked):
 ///   DEPLOYER_PRIVATE_KEY  (required) broadcaster; holds nothing and owns nothing after the run
-///   ADMIN                 owner/admin of everything (default: deployer). Use a multisig on mainnet. Flywheel and
-///                         ComdTaxHook are Ownable2Step: ADMIN must call acceptOwnership() on both.
-///   POL (or POL_WALLET)   receives 100% of COMD and runs script/SeedPool.s.sol (default: ADMIN)
-///   TREASURY              firm treasury: 20% of COMD job revenue, Bond ETH proceeds, Counsel royalties (default: ADMIN)
+///   COMD_TOKEN            (required on mainnet 4663 and any non-test chain) the Pons $COMD address.
+///                         Test chains (46630, 31337): a MockComd (1B, 18 dec, to the deployer) is deployed if unset.
+///   ADMIN                 owner/admin of everything (default: deployer). Use a multisig on mainnet. Flywheel is
+///                         Ownable2Step: ADMIN must call acceptOwnership() on it after the run.
+///   TREASURY              firm treasury: 20% of COMD job revenue, Counsel royalties (default: ADMIN)
 ///   SETTLER, KEEPER, REGISTRAR   (default: ADMIN)
-///   BOND_PRICE_WEI        wei per 1e18 COMD for the reserve Bond (default 1e10); Bond starts disabled
 ///   POOL_MANAGER          mainnet default 0x8366…40951; testnet/local: deploys a v4 PoolManager if unset
 ///   SEAPORT               optional: deploys a SeaportAdapter for it and allowlists it in the Flywheel
 ///   MAX_SWEEP_PRICE       wei, default 0.5 ether
 ///   COUNSEL_BASE_URI      default "https://api.comd.fun/agents/by-token/"
 ///   WRITE_DEPLOYMENTS     default true: writes deployments/<chainId>.json
+///   After the Pons graduation: ADMIN calls UniswapV4PoolSwapper.setPoolKey(fee, tickSpacing, ponsHook).
 contract Deploy is Script {
     uint256 constant MAINNET = 4663;
     uint256 constant TESTNET = 46630;
@@ -57,22 +55,17 @@ contract Deploy is Script {
     address constant TESTNET_WETH = 0x7943e237c7F95DA44E0301572D358911207852Fa;
     address constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
 
-    uint160 constant HOOK_FLAGS = uint160(
-        Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG
-            | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
-    );
     uint160 constant GUARD_FLAGS = uint160(Hooks.BEFORE_INITIALIZE_FLAG);
 
     struct Config {
         address deployer;
         address admin;
         address treasury;
-        address pol;
         address settler;
         address keeper;
         address registrar;
-        address poolManager; // 0 = deploy PoolManager (testnet/local only)
-        uint256 bondPriceEth; // wei per 1e18 COMD
+        address comd; // 0 = deploy MockComd (test chains only)
+        address poolManager; // 0 = deploy PoolManager (test chains only)
         address seaport; // 0 = no SeaportAdapter
         uint256 maxSweepPrice;
         string counselBaseURI;
@@ -80,10 +73,6 @@ contract Deploy is Script {
 
     struct Deployment {
         address poolManager;
-        address stakedComd;
-        address rewardDripper;
-        address bond;
-        address buyWall;
         address create2Deployer;
         address comd;
         address counsel;
@@ -94,8 +83,7 @@ contract Deploy is Script {
         address rewardDistributor;
         address revenueRouter;
         address flywheel;
-        address hook;
-        address router;
+        address swapper;
         address projectFactory;
         address contributorDistributor;
         address launchGuardHook;
@@ -103,6 +91,7 @@ contract Deploy is Script {
         address mockMarketplace;
         address seaportAdapter;
         bool deployedPoolManager;
+        bool deployedMockComd;
     }
 
     function run() external returns (Deployment memory d) {
@@ -125,12 +114,11 @@ contract Deploy is Script {
         c.deployer = me;
         c.admin = vm.envOr("ADMIN", me);
         c.treasury = vm.envOr("TREASURY", c.admin);
-        c.pol = vm.envOr("POL", vm.envOr("POL_WALLET", c.admin));
         c.settler = vm.envOr("SETTLER", c.admin);
         c.keeper = vm.envOr("KEEPER", c.admin);
         c.registrar = vm.envOr("REGISTRAR", c.admin);
+        c.comd = vm.envOr("COMD_TOKEN", address(0));
         c.poolManager = vm.envOr("POOL_MANAGER", block.chainid == MAINNET ? MAINNET_POOL_MANAGER : address(0));
-        c.bondPriceEth = vm.envOr("BOND_PRICE_WEI", uint256(1e10));
         c.seaport = vm.envOr("SEAPORT", address(0));
         c.maxSweepPrice = vm.envOr("MAX_SWEEP_PRICE", uint256(0.5 ether));
         c.counselBaseURI = vm.envOr("COUNSEL_BASE_URI", string("https://api.comd.fun/agents/by-token/"));
@@ -142,6 +130,16 @@ contract Deploy is Script {
 
     /// @notice Deploys everything. All calls are made by `c.deployer` (broadcaster, or this script in tests).
     function deploy(Config memory c) public returns (Deployment memory d) {
+        // ---- externals: the Pons $COMD token and the v4 PoolManager
+        if (c.comd == address(0)) {
+            require(_isTestChain(), "COMD_TOKEN required on this chain: set it to the Pons $COMD token address");
+            c.comd = address(new MockComd());
+            d.deployedMockComd = true;
+        } else {
+            require(c.comd.code.length > 0, "COMD_TOKEN has no code");
+            IERC20Metadata(c.comd).decimals(); // must be an ERC-20 (decimals are read on-chain, not assumed)
+        }
+        d.comd = c.comd;
         if (c.poolManager == address(0)) {
             require(_isTestChain(), "POOL_MANAGER required on this chain");
             c.poolManager = address(new PoolManager(c.admin));
@@ -152,9 +150,6 @@ contract Deploy is Script {
         d.poolManager = c.poolManager;
         Create2Deployer c2 = new Create2Deployer();
         d.create2Deployer = address(c2);
-
-        // ---- token: 100% to the POL wallet, which seeds it into the official pool (SeedPool.s.sol)
-        d.comd = address(new ComdToken(c.pol));
 
         // ---- seats + identity
         d.counsel = address(new CounselNFT(c.admin, c.treasury, c.counselBaseURI));
@@ -167,21 +162,11 @@ contract Deploy is Script {
         _handOver(address(dist), c.admin, c.deployer);
         d.revenueRouter = address(new RevenueRouter(IERC20(d.comd), d.rewardDistributor, c.treasury, c.admin));
 
-        // ---- staking + bond (destinations of the trim split)
-        d.stakedComd = address(new StakedComd(IERC20(d.comd), c.admin));
-        d.rewardDripper = address(new RewardDripper(IERC20(d.comd), d.stakedComd, c.admin));
-        d.bond = address(new Bond(IERC20(d.comd), c.treasury, c.bondPriceEth, c.admin));
-
-        // ---- flywheel, hook (mined address), buy wall, router
-        Flywheel fw = new Flywheel(ERC20Burnable(d.comd), IERC721(d.counsel), c.deployer, c.keeper);
+        // ---- swapper (unconfigured until the Pons graduation: ADMIN calls setPoolKey) + flywheel
+        d.swapper = address(new UniswapV4PoolSwapper(IPoolManager(c.poolManager), IERC20(d.comd), c.admin));
+        Flywheel fw = new Flywheel(IERC20(d.comd), IERC721(d.counsel), c.deployer, c.keeper);
         d.flywheel = address(fw);
-        d.hook = _deployHook(c, d, c2);
-        d.buyWall = address(new BuyWall(IComdTaxHookForWall(d.hook), c.admin));
-        d.router = address(new ComdRouter(IPoolManager(c.poolManager), IERC20(d.comd), IHooks(d.hook), 0, 200));
-        ComdTaxHook(payable(d.hook)).setRouter(d.router);
-        ComdTaxHook(payable(d.hook)).setBuyWall(d.buyWall);
-        fw.setHook(d.hook);
-        fw.setRouter(d.router);
+        fw.setSwapper(d.swapper);
         fw.setMaxSweepPrice(c.maxSweepPrice);
         if (_isTestChain()) {
             d.mockMarketplace = address(new MockMarketplace());
@@ -193,7 +178,6 @@ contract Deploy is Script {
         }
         if (c.admin != c.deployer) {
             fw.transferOwnership(c.admin); // Ownable2Step: ADMIN accepts
-            ComdTaxHook(payable(d.hook)).transferOwnership(c.admin);
         }
 
         // ---- launches (pairing allowlist: ETH, COMD)
@@ -211,29 +195,10 @@ contract Deploy is Script {
         f.grantRole(f.REGISTRAR_ROLE(), c.registrar);
         _handOver(address(f), c.admin, c.deployer);
 
-        // ---- incorporations
+        // ---- incorporations (1% fee → Counsel rewards; ETH paths through the same swapper)
         d.incorporations = address(
-            new Incorporations(
-                ERC20Burnable(d.comd), IComdRouterSwaps(d.router), IRewardDripperLike(d.rewardDripper), c.admin
-            )
+            new Incorporations(IERC20(d.comd), d.rewardDistributor, IBuybackSwapper(d.swapper), c.admin)
         );
-    }
-
-    function _deployHook(Config memory c, Deployment memory d, Create2Deployer c2) internal returns (address) {
-        bytes memory init = abi.encodePacked(
-            type(ComdTaxHook).creationCode,
-            abi.encode(
-                c.poolManager,
-                d.comd,
-                c.pol,
-                IFlywheelTaxSink(d.flywheel),
-                c.deployer,
-                d.bond,
-                d.rewardDripper,
-                d.rewardDistributor
-            )
-        );
-        return c2.deploy(mineSalt(address(c2), keccak256(init), HOOK_FLAGS), init);
     }
 
     /// @dev ERC-8004 v2 registries are UUPS implementations whose initialize() is reinitializer(2) onlyOwner:
@@ -299,53 +264,44 @@ contract Deploy is Script {
         string memory k = "deployment";
         vm.serializeUint(k, "chainId", block.chainid);
         vm.serializeUint(k, "deployedAtBlock", block.number);
-        vm.serializeAddress(k, "admin", c.admin);
-        vm.serializeAddress(k, "pol", c.pol);
-        vm.serializeAddress(k, "treasury", c.treasury);
-        vm.serializeAddress(k, "weth", block.chainid == MAINNET ? MAINNET_WETH : TESTNET_WETH);
-        vm.serializeAddress(k, "permit2", PERMIT2);
-        vm.serializeAddress(k, "poolManager", d.poolManager);
-        vm.serializeAddress(k, "stakedComd", d.stakedComd);
-        vm.serializeAddress(k, "rewardDripper", d.rewardDripper);
-        vm.serializeAddress(k, "bond", d.bond);
-        vm.serializeAddress(k, "buyWall", d.buyWall);
-        vm.serializeBool(k, "deployedPoolManager", d.deployedPoolManager);
-        vm.serializeAddress(k, "create2Deployer", d.create2Deployer);
-        vm.serializeAddress(k, "comdToken", d.comd);
+        vm.serializeAddress(k, "comdToken", d.comd); // external (Pons); MockComd on test chains
         vm.serializeAddress(k, "counselNFT", d.counsel);
         vm.serializeAddress(k, "identityRegistry", d.identityRegistry);
         vm.serializeAddress(k, "reputationRegistry", d.reputationRegistry);
         vm.serializeAddress(k, "rewardDistributor", d.rewardDistributor);
         vm.serializeAddress(k, "revenueRouter", d.revenueRouter);
         vm.serializeAddress(k, "flywheel", d.flywheel);
-        vm.serializeAddress(k, "comdTaxHook", d.hook);
-        vm.serializeAddress(k, "comdRouter", d.router);
+        vm.serializeAddress(k, "swapper", d.swapper);
+        vm.serializeAddress(k, "incorporations", d.incorporations);
         vm.serializeAddress(k, "projectFactory", d.projectFactory);
         vm.serializeAddress(k, "contributorDistributor", d.contributorDistributor);
         vm.serializeAddress(k, "launchGuardHook", d.launchGuardHook);
+        vm.serializeAddress(k, "create2Deployer", d.create2Deployer);
         vm.serializeAddress(k, "mockMarketplace", d.mockMarketplace);
         vm.serializeAddress(k, "seaportAdapter", d.seaportAdapter);
-        json = vm.serializeAddress(k, "incorporations", d.incorporations);
+        vm.serializeAddress(k, "admin", c.admin);
+        vm.serializeAddress(k, "treasury", c.treasury);
+        vm.serializeAddress(k, "keeper", c.keeper);
+        vm.serializeAddress(k, "settler", c.settler);
+        vm.serializeAddress(k, "registrar", c.registrar);
+        vm.serializeAddress(k, "poolManager", d.poolManager);
+        vm.serializeAddress(k, "weth", block.chainid == MAINNET ? MAINNET_WETH : TESTNET_WETH);
+        json = vm.serializeAddress(k, "permit2", PERMIT2);
     }
 
     function _log(Deployment memory d) internal pure {
+        console2.log("COMD (external)       ", d.comd);
         console2.log("PoolManager           ", d.poolManager);
-        console2.log("ComdToken             ", d.comd);
         console2.log("CounselNFT            ", d.counsel);
         console2.log("IdentityRegistry      ", d.identityRegistry);
         console2.log("ReputationRegistry    ", d.reputationRegistry);
         console2.log("RewardDistributor     ", d.rewardDistributor);
         console2.log("RevenueRouter         ", d.revenueRouter);
         console2.log("Flywheel              ", d.flywheel);
-        console2.log("ComdTaxHook           ", d.hook);
-        console2.log("BuyWall               ", d.buyWall);
-        console2.log("StakedComd            ", d.stakedComd);
-        console2.log("RewardDripper         ", d.rewardDripper);
-        console2.log("Bond                  ", d.bond);
-        console2.log("ComdRouter            ", d.router);
+        console2.log("UniswapV4PoolSwapper  ", d.swapper);
+        console2.log("Incorporations        ", d.incorporations);
         console2.log("ProjectFactory        ", d.projectFactory);
         console2.log("ContributorDistributor", d.contributorDistributor);
         console2.log("LaunchGuardHook       ", d.launchGuardHook);
-        console2.log("Incorporations        ", d.incorporations);
     }
 }

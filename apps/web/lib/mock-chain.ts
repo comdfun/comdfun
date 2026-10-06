@@ -3,11 +3,9 @@
 const E18 = 10n ** 18n;
 export const MOCK_CHAIN = {
   counsel: { maxSupply: 2000n, totalSupply: 1402n, phase: 2, price: 0n, maxPerWallet: 2n, mintedBy: 0n },
-  token: { totalSupply: 998_412_336n * E18, initialSupply: 1_000_000_000n * E18, balance: 0n },
-  swap: { comdPerEth: 412_000n, taxBps: 500 },
+  token: { totalSupply: 1_000_000_000n * E18, initialSupply: 1_000_000_000n * E18, dead: 8_102_118n * E18, balance: 0n },
+  swap: { comdPerEth: 412_000n, taxBps: 500, swapperConfigured: false },
   comd: { balance: 0n, allowance: 0n },
-  stake: { totalAssets: 46_210_400n * E18, totalShares: 44_980_000n * E18 * 1_000_000n, ratePerSecond: 244_840_000_000_000_000n, streamCapPerDay: 250_000n * E18 },
-  bond: { enabled: true, priceEth: 10n ** 10n, reserve: 796_174n * E18 },
   incorporations: [
     { address: "0x1a00000000000000000000000000000000000001", name: "Habeas Corpus", symbol: "HABEAS", creator: "0x9fad00000000000000000000000000000000f63f", metadataURI: "", supplySold: 0.42, comdReserve: 1_822_000, trades: 311, createdAgo: 2 },
     { address: "0x1a00000000000000000000000000000000000002", name: "Amicus", symbol: "AMICUS", creator: "0x5167000000000000000000000000000000003281", metadataURI: "", supplySold: 0.18, comdReserve: 641_000, trades: 97, createdAgo: 5 },

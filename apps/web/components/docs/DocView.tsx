@@ -9,8 +9,7 @@ import { DEFAULT_PRICE } from "@/lib/config";
 import { ContactBlock } from "@/components/Footer";
 
 const ROLE: Record<string, string> = {
-  ComdToken: "$COMD, the token", ComdTaxHook: "v4 hook: 5% ETH tax, inventory cap, trims and their split", ComdRouter: "Swaps and quotes", Flywheel: "Tax buckets: buyback-and-burn, Counsel floor sweeps",
-  BuyWall: "Trim ETH posted as a bid under the price", StakedComd: "sCOMD, the staking vault (ERC-4626)", RewardDripper: "Streams staker rewards into sCOMD", Bond: "Sells the bond reserve for ETH",
+  ComdToken: "$COMD, launched on Pons (external token)", Flywheel: "Tax buckets: buyback-and-burn (to 0x…dEaD), Counsel floor sweeps", Swapper: "UniswapV4PoolSwapper: buyback route into Pons's graduated pool",
   CounselNFT: "Company.md Counsel (ERC-721)", IdentityRegistry: "ERC-8004 identities", RevenueRouter: "Job payments: 80% Counsel / 20% firm", RewardDistributor: "Counsel rewards by epoch (COMD)",
   ContributorDistributor: "Launch contributor claims", Incorporations: "Company coins", Permit2: "Uniswap Permit2 (payments)", WETH: "Wrapped ether",
 };

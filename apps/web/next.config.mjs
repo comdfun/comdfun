@@ -45,11 +45,10 @@ const nextConfig = {
   experimental: { externalDir: true },
   async redirects() {
     return [
-      { source: "/trust", destination: "/swap", permanent: true },
-      { source: "/trust/swap", destination: "/swap", permanent: true },
-      { source: "/trust/stake", destination: "/stake", permanent: true },
-      { source: "/trust/bond", destination: "/bond", permanent: true },
-      { source: "/trust/docs", destination: "/docs/comd", permanent: true },
+      { source: "/trust", destination: "/flywheel", permanent: true },
+      { source: "/trust/:path*", destination: "/flywheel", permanent: true },
+      { source: "/stake", destination: "/flywheel", permanent: true },
+      { source: "/bond", destination: "/flywheel", permanent: true },
     ];
   },
   env: {

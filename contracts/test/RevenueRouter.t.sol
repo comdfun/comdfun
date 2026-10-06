@@ -4,17 +4,17 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {RevenueRouter} from "../src/RevenueRouter.sol";
-import {ComdToken} from "../src/ComdToken.sol";
+import {MockComd} from "../src/mocks/MockComd.sol";
 
 contract RevenueRouterTest is Test {
-    ComdToken comd;
+    MockComd comd;
     RevenueRouter rr;
     address admin = makeAddr("admin");
     address rewards = makeAddr("rewardDistributor");
     address treasury = makeAddr("treasury");
 
     function setUp() public {
-        comd = new ComdToken(address(this));
+        comd = new MockComd();
         rr = new RevenueRouter(IERC20(address(comd)), rewards, treasury, admin);
     }
 

@@ -1,8 +1,8 @@
 # Handover — Company.md ($COMD)
 
-Status 2026-10-06: V4, final for launch. **Company.md** / **$COMD** / **comd.fun**, inspired by IMD (imd.fun):
-jobs paid in COMD; 100% of supply in locked liquidity; a 5% ETH tax feeding the Flywheel; IMD's POOL4 mechanics
-(capped inventory with trims, buy wall, sCOMD staking, bond) on the same pool. There are no stablecoin payments. The feature checklist
+Status 2026-10-06: V5, final for launch. **Company.md** / **$COMD** / **comd.fun**, inspired by IMD (imd.fun):
+jobs paid in COMD; 100% of supply in our own pool, locked; a tax-only hook (5% ETH) feeding the Flywheel. No capped
+pool, buy wall, staking or bond (owner decision). There are no stablecoin payments. The feature checklist
 is [PARITY.md](PARITY.md); the spec is [SPEC.md](SPEC.md). Contracts are **unaudited**.
 
 Re-run before any deploy: `npm test`, `npm run contracts:test`, `npm run e2e`, `npm run e2e:ui`,
@@ -18,28 +18,25 @@ Re-run before any deploy: `npm test`, `npm run contracts:test`, `npm run e2e`, `
 | Token supply | 1,000,000,000 COMD, fixed, **100% in liquidity** (one locked single-sided position in the official COMD/ETH pool) | `ComdToken`, `SeedPool.s.sol` |
 | Swap tax | **5% on every buy and sell, in ETH** → Flywheel; hard cap 5% | `ComdTaxHook` |
 | Flywheel split | **50% buyback-and-burn / 50% Counsel floor sweeps** (2.5% / 2.5% of volume; owner-settable) | `Flywheel` |
-| Pool mechanics (inspired by IMD's POOL4) | inventory cap (decay 100,000 COMD/day, floor 100,000) with trims split **85% burn / 6% Bond / 4.5% sCOMD stakers / 4.5% Counsel seats**; trimmed ETH → BuyWall | `ComdTaxHook`, `BuyWall` |
-| Staking | sCOMD (ERC-4626), streamed by RewardDripper (4.5% of trims + 1% Incorporations fee) | `StakedComd`, `RewardDripper` |
-| Bond | sells its COMD (6% of trims) for ETH at `priceEth` (default 1e10 wei per COMD); **starts disabled** | `Bond` |
-| Seat rewards | COMD only: 80% of job revenue + 4.5% of trims, by accepted work, weekly | `RewardDistributor` |
+| Removed (owner decision) | capped pool / trims, buy wall, sCOMD staking, bond | — |
+| Seat rewards | COMD only: 80% of job revenue + the 1% Incorporations fee, by accepted work, weekly | `RewardDistributor` |
 | Counsel mint | free (price 0), 2,000 seats, max 2 per wallet | `CounselNFT` |
 | Premium models | Opus 5.5, Fable 5.1, GPT-6 Astra or GPT-6 class at high effort (`effort` high/xhigh/max); override with `PREMIUM_MODELS` | api |
 | Planner | Managing Partner on the Anthropic API (`ANTHROPIC_MODEL`, default `claude-sonnet-5-5`) | api |
-| GitHub | swarm output in org `comd-filings`; worker releases in `comd-fun/worker` (`comd-worker.tgz` + `SHA256SUMS`) | workflows, worker |
+| GitHub | swarm output in org `comdfun`; worker releases in `comdfun/worker` (`comd-worker.tgz` + `SHA256SUMS`) | workflows, worker |
 | Hosting | Railway: `web` + `api` (1 replica) + Postgres + volume `/data` | infra/, DEPLOY.md |
 
 ## What only you can do (in order)
 
-1. **GitHub:** create the main repository and push this folder; create the org `comd-filings` and the repo
-   `comd-fun/worker` (with one commit); add the Actions secret `WORKER_RELEASE_TOKEN`; create a fine-grained
-   `GITHUB_TOKEN` for `comd-filings`.
+1. **GitHub:** create the main repository and push this folder; create the org `comdfun` and the repo
+   `comdfun/worker` (with one commit); add the Actions secret `WORKER_RELEASE_TOKEN`; create a fine-grained
+   `GITHUB_TOKEN` for `comdfun`.
 2. **Domain and email:** point `comd.fun`, `api.comd.fun` and `*.sites.comd.fun` at Railway (DEPLOY.md §6); set
    up the `team@comd.fun` mailbox with MX, SPF, DKIM and DMARC.
 3. **Wallets/keys:** deployer, `ADMIN` multisig (Safe), POL wallet, settler, registrar (`DEPLOYER_PRIVATE_KEY` in
    api), attester, keeper — fund each with a little ETH on Robinhood Chain. Plus `ANTHROPIC_API_KEY`, a
    WalletConnect project id (allow-list `comd.fun`), the GitHub token.
-4. **Choose the opening market cap** (`INITIAL_MARKET_CAP_WEI`, default 10 ETH for all 1B COMD), the Bond price
-   (`BOND_PRICE_WEI`, default matches that cap) and, if you want floor sweeps on mainnet, the marketplace
+4. **Choose the opening market cap** (`INITIAL_MARKET_CAP_WEI`, default 10 ETH for all 1B COMD) and, if you want floor sweeps on mainnet, the marketplace
    (`SEAPORT`, plus a listings feed for `SWEEP_LISTINGS_URL`).
    For a GitHub deploy: add the secrets `DEPLOYER_PRIVATE_KEY`, `POL_PRIVATE_KEY`, `RPC_URL_MAINNET`,
    `RPC_URL_TESTNET` and the variables `ADMIN`, `POL`, `TREASURY`, `KEEPER`, `SETTLER`, `REGISTRAR`, `ATTESTER`;
@@ -56,8 +53,7 @@ Re-run before any deploy: `npm test`, `npm run contracts:test`, `npm run e2e`, `
       `web`; check `https://api.comd.fun/health`;
    5. release the worker (`git tag worker-v0.1.0 && git push origin worker-v0.1.0`).
 6. **After launch:** watch the keeper (`GET /health`, `GET /services`), review sweep candidates before any floor
-   sweep, decide what to do with swept Counsel (`awardSwept`), enable the Bond when you want it open
-   (`setEnabled(true)`), and consider renouncing owner powers you no longer need (contracts/README.md lists them).
+   sweep, decide what to do with swept Counsel (`awardSwept`), and consider renouncing owner powers you no longer need (contracts/README.md lists them).
 7. **License:** there is no LICENSE file. The README says "All rights reserved" except the Solidity sources, which carry SPDX MIT headers (vendored libraries keep their own licenses). Add a LICENSE if you want to open the rest.
 
 ## Strongly recommended before significant TVL

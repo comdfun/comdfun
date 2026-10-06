@@ -4,7 +4,7 @@ Generated ABIs (`as const`, viem-ready) and the per-chain address book of Compan
 TypeScript source, no build step. **Contracts are UNAUDITED.**
 
 ```ts
-import { addresses, comdRouterAbi, counselNFTAbi, identityRegistryAbi, CHAIN_IDS } from "@company/abi";
+import { addresses, flywheelAbi, counselNFTAbi, identityRegistryAbi, CHAIN_IDS } from "@company/abi";
 
 const book = addresses[CHAIN_IDS.testnet]; // 46630
 if (!book.deployed) throw new Error("not deployed yet"); // missing contracts are 0x000…000
@@ -26,31 +26,29 @@ zero-address placeholders (`deployed: false`) plus the external defaults (PoolMa
 
 | Export | Source contract |
 |---|---|
-| `comdTokenAbi` | ComdToken (ERC-20 + `burn`, `burnFrom`, `permit`) |
-| `comdTaxHookAbi` | ComdTaxHook — official pool: tax (`taxBps`, `totalTaxed`, `pendingTax`), capped inventory (`inventory`, `cap`, `currentCap`, `params`, `stats`, `claimEth`, `claimComd`, `refTick`), `flush`, `observe`, `poolKey`, `slot0`, `initializeAndSeed` |
-| `buyWallAbi` | BuyWall (`rebalance`, `canRebalance`, `wallAmounts`, `wallLiquidity`, `floorTick`, `previewFloorTick`, `params`, `parkedEth`, `totalWallBought`) |
-| `comdRouterAbi` | ComdRouter (`swapExactETHForComd`, `swapExactComdForETH`, `quoteETHForComd`, `quoteComdForETH`) |
-| `flywheelAbi` | Flywheel (2 buckets: buyback / sweep) |
-| `stakedComdAbi`, `rewardDripperAbi`, `bondAbi` | sCOMD vault, staker stream, bond (sells the reserve for ETH: `priceEth`, `quote`, `buyWithEth`) |
+| `comdTokenAbi` | $COMD — the external Pons token: plain ERC-20 ABI (generated from `MockComd`, which stands in on test chains). Do not assume `burn()`; burns are transfers to `DEAD_ADDRESS`. Read `decimals()` on-chain. |
+| `flywheelAbi` | Flywheel (`receive`/`notifyTax` from anyone; 2 buckets: buyback / sweep; `buyback(minOut)` via the swapper → dead address; `totalBurned` = COMD sent to `DEAD_ADDRESS`; `swapper()`, `setSwapper`) |
+| `buybackSwapperAbi`, `uniswapV4PoolSwapperAbi` | `IBuybackSwapper` (`swapExactETHForComd`, `swapExactComdForETH`) and the v4 implementation (`setPoolKey(fee, tickSpacing, hooks)` after the Pons graduation, `poolKey`, `poolId`, `configured`, non-view `quoteETHForComd` / `quoteComdForETH`) |
 | `marketplaceAdapterAbi`, `seaportAdapterAbi`, `mockMarketplaceAbi` | floor-sweep adapters |
 | `counselNFTAbi` | CounselNFT |
 | `identityRegistryAbi`, `reputationRegistryAbi` | vendored CC0 ERC-8004 v2.0.0 (call at the proxy addresses) |
-| `rewardDistributorAbi` | Counsel rewards (COMD from trims and job revenue; ETH via `address(0)` supported) |
+| `rewardDistributorAbi` | Counsel rewards (COMD from job revenue and the Incorporations fee; ETH via `address(0)` supported) |
 | `revenueRouterAbi` | job payTo (COMD: 80% Counsel rewards / 20% treasury) |
-| `incorporationsAbi` | company coins launchpad (priced in COMD) |
+| `incorporationsAbi` | company coins launchpad (priced in COMD; ETH legs through the swapper, `SwapperNotSet()` until configured; `totalToRewards`, `totalBurned`) |
 | `projectFactoryAbi`, `contributorDistributorAbi`, `launchGuardHookAbi`, `launchTokenAbi` | launches |
 | `oracleConsumerExampleAbi`, `create2DeployerAbi` | helpers |
-| `addresses`, `getAddresses(chainId)`, `ZERO_ADDRESS` | address book (keys: `comdToken`, `counselNFT`, `identityRegistry`, `reputationRegistry`, `comdTaxHook`, `comdRouter`, `buyWall`, `flywheel`, `stakedComd`, `rewardDripper`, `bond`, `rewardDistributor`, `revenueRouter`, `projectFactory`, `contributorDistributor`, `launchGuardHook`, `incorporations`, `mockMarketplace`, `seaportAdapter`, `create2Deployer`, `poolManager`, `weth`, `permit2`, `admin`, `pol`, `treasury`) |
+| `addresses`, `getAddresses(chainId)`, `ZERO_ADDRESS` | address book (keys: `comdToken` (external), `counselNFT`, `identityRegistry`, `reputationRegistry`, `rewardDistributor`, `revenueRouter`, `flywheel`, `swapper`, `incorporations`, `projectFactory`, `contributorDistributor`, `launchGuardHook`, `create2Deployer`, `mockMarketplace`, `seaportAdapter`, `poolManager`, `weth`, `permit2`, `admin`, `treasury`, `keeper`, `settler`, `registrar`) |
 | `oracleDomain(chainId)`, `oracleAttestationTypes`, `merkleLeafTypes` | EIP-712 ("Company.md Oracle") / Merkle encodings |
-| `CHAIN_IDS`, `COMD_POOL`, `FLYWHEEL_DEFAULT_BPS`, `TRIM_SPLIT_BPS`, `CAP_DEFAULTS`, `REVENUE_DEFAULT_BPS`, `ETH_ASSET`, `LAUNCH_KINDS` | constants |
+| `CHAIN_IDS`, `DEAD_ADDRESS`, `COMD_SUPPLY`, `FLYWHEEL_DEFAULT_BPS`, `INCORPORATIONS_FEE_BPS`, `REVENUE_DEFAULT_BPS`, `ETH_ASSET`, `LAUNCH_KINDS` | constants |
 
-Changed in V3: Flywheel `bps()`/`bucketBalances()` return two values; `distribute`/`totalRewards`/`RewardsSent` removed;
-new `buyWallAbi`, `stakedComdAbi`, `rewardDripperAbi`, `bondAbi`; address keys `buyWall`, `stakedComd`,
-`rewardDripper`, `bond` added.
-
-Changed in V4: USDG removed everywhere (no `mockUSDGAbi`, no `usdg` address key, no `USDG_DECIMALS`).
-RevenueRouter takes COMD (`comd()`, `bps()` = rewards/treasury, default 80/20). Bond sells the reserve for ETH:
-`priceEth()` (wei per 1e18 COMD), `quote(ethIn)`, `buyWithEth(minOut)` payable, proceeds to the treasury.
+Changed in V6 (Pons mode): $COMD is launched on Pons, so `comdTaxHookAbi`, `comdRouterAbi`, `buyWallAbi`,
+`stakedComdAbi`, `rewardDripperAbi`, `bondAbi` and the address keys `comdTaxHook`, `comdRouter`, `buyWall`,
+`stakedComd`, `rewardDripper`, `bond`, `pol` are gone, as are `COMD_POOL`, `TRIM_SPLIT_BPS`, `CAP_DEFAULTS`.
+New: `buybackSwapperAbi`, `uniswapV4PoolSwapperAbi`, address keys `swapper`, `keeper`, `settler`, `registrar`,
+constants `DEAD_ADDRESS`, `COMD_SUPPLY`, `INCORPORATIONS_FEE_BPS`. Flywheel: `receive()`/`notifyTax()` accept ETH
+from anyone; `hook`/`router` setters replaced by `swapper`/`setSwapper`/`setComd`; `totalBurned` counts dead-address
+transfers. Incorporations: `totalToStakers` → `totalToRewards`, `Fees.toStakers` → `Fees.toRewards`,
+`rewardDistributor()`, `swapper()`.
 
 ## ERC-8004 agent registration (exact signatures)
 
@@ -90,4 +88,4 @@ giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string tag1, st
   OpenZeppelin `StandardMerkleTree.of(values, ["uint256","address","uint256"])` produces exactly this.
 - Oracle attestations: `oracleDomain(chainId)` + `oracleAttestationTypes` with viem `signTypedData`
   (domain has no `verifyingContract`; `chainId` = chain where it is verified).
-- `ComdRouter.quoteETHForComd` / `quoteComdForETH` are non-view (call with `simulateContract`/`eth_call`) and net of the 5% tax.
+- `UniswapV4PoolSwapper.quoteETHForComd` / `quoteComdForETH` are non-view (call with `simulateContract`/`eth_call`); they return whatever the configured pool (Pons's hook included) would deliver.

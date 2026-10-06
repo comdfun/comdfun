@@ -1,20 +1,21 @@
 /**
- * Company.md: the website, for real, with a wallet (V4 contracts).
+ * Company.md: the website, for real, with a wallet (Pons mode).
  *
  *   cd e2e && npm run e2e:ui          (node --import tsx ui.ts)
  *
- * Boots the same local stack as run.ts (anvil 46630, Permit2, Deploy.s.sol + SeedPool.s.sol, Chambers with the real
+ * Boots the same local stack as run.ts (anvil 46630, Permit2, Deploy.s.sol with MockComd, Chambers with the real
  * services and the keeper, six paired mock-runtime seats), builds apps/web in LIVE mode against it (no
  * NEXT_PUBLIC_MOCK; API, RPC, chain 46630 and every contract address from the deployment) and starts it with
  * `next start`. Chromium gets an injected EIP-1193 wallet (window.ethereum + EIP-6963 announce) whose requests are
  * answered in Node by a viem wallet holding an anvil key, and the test drives the real pages:
  *
- *   connect · /mint free mint · /pair (CLI code → register ERC-8004 → sign WorkerAuthorization) · /swap buy COMD with
- *   ETH · /launch approve 1,000 COMD for Permit2, retain a Report (check → Permit2 + QuoteApproval in COMD → admitted →
- *   job completes) · request a ruling (evidence chain → sealed, attestation) · retainer · /flywheel shows the keeper's
- *   buyback-and-burn · /stake stake + unstake (sCOMD) · /incorporations create + buy with ETH + sell · /agents/[id]
- *   claim COMD seat rewards · /launches/[id] contributor claim after the lock · inventory trim (owner + time) → /bond
- *   enabled by the owner with `cast send`, bought with ETH
+ *   connect · /mint free mint · /pair (CLI code → register ERC-8004 → sign WorkerAuthorization) · the wallet receives
+ *   COMD by transfer from the token holder (Pons mode: $COMD is Pons's token; on the test chain a MockComd held by the
+ *   deployer) · /swap is the "Trade $COMD" page (Pons card) · /launch approve 1,000 COMD for Permit2, retain a Report
+ *   (check → Permit2 + QuoteApproval in COMD → admitted → job completes) · request a ruling (evidence chain → sealed,
+ *   attestation) · retainer · /flywheel totals after ETH reaches the Flywheel (as Pons's payout would) ·
+ *   /incorporations create + buy + sell in COMD · /agents/[id] claim COMD seat rewards · /launches/[id] contributor
+ *   claim after the lock · /stake and /bond redirect to /flywheel
  *
  * Every step is asserted in the UI and on chain; screenshots go to e2e/screenshots/. Prints a PASS/FAIL table.
  *
@@ -42,7 +43,7 @@ const {
 } = R;
 const { createWalletClient, http, erc20Abi, getAddress, parseAbi, formatUnits, encodeFunctionData, toHex } = await import("viem");
 const {
-  counselNFTAbi, identityRegistryAbi, bondAbi, stakedComdAbi, incorporationsAbi, rewardDistributorAbi, comdRouterAbi, comdTaxHookAbi, flywheelAbi,
+  counselNFTAbi, identityRegistryAbi, incorporationsAbi, rewardDistributorAbi, flywheelAbi,
 } = await import("@company/abi");
 type Address = `0x${string}`;
 type Hex = `0x${string}`;
@@ -166,8 +167,7 @@ function webEnv(): Record<string, string> {
     NEXT_PUBLIC_API_URL: R.API, NEXT_PUBLIC_RPC_URL: R.RPC, NEXT_PUBLIC_CHAIN_ID: String(CHAIN_ID), NEXT_PUBLIC_SITES_DOMAIN: "sites.localhost",
     NEXT_PUBLIC_EXPLORER_URL: "http://127.0.0.1:1/explorer",
     NEXT_PUBLIC_COUNSEL_NFT: d.counselNFT, NEXT_PUBLIC_COMD_TOKEN: d.comdToken, NEXT_PUBLIC_PERMIT2: PERMIT2,
-    NEXT_PUBLIC_COMD_ROUTER: d.comdRouter, NEXT_PUBLIC_COMD_TAX_HOOK: d.comdTaxHook, NEXT_PUBLIC_FLYWHEEL: d.flywheel, NEXT_PUBLIC_BUY_WALL: d.buyWall,
-    NEXT_PUBLIC_STAKED_COMD: d.stakedComd, NEXT_PUBLIC_REWARD_DRIPPER: d.rewardDripper, NEXT_PUBLIC_BOND: d.bond,
+    NEXT_PUBLIC_FLYWHEEL: d.flywheel, NEXT_PUBLIC_SWAPPER: d.swapper ?? "", NEXT_PUBLIC_PONS_URL: "https://pons.fun",
     NEXT_PUBLIC_INCORPORATIONS: d.incorporations, NEXT_PUBLIC_INCORPORATIONS_FROM_BLOCK: "0", NEXT_PUBLIC_IDENTITY_REGISTRY: d.identityRegistry,
     NEXT_PUBLIC_REVENUE_ROUTER: d.revenueRouter, NEXT_PUBLIC_REWARD_DISTRIBUTOR: d.rewardDistributor, NEXT_PUBLIC_CONTRIBUTOR_DISTRIBUTOR: d.contributorDistributor,
   };
@@ -256,7 +256,6 @@ async function waitText(t: string | RegExp, timeout = 60_000) {
   await page.getByText(t).first().waitFor({ timeout });
 }
 const comdOf = (a: Address) => read<bigint>(D().comdToken, erc20Abi, "balanceOf", [a]);
-const sComdOf = (a: Address) => read<bigint>(D().stakedComd, stakedComdAbi, "balanceOf", [a]);
 const chainNow = async () => Number((await R.pub.getBlock()).timestamp);
 const fmt = (v: bigint, d = 18, p = 4) => Number(formatUnits(v, d)).toLocaleString("en-US", { maximumFractionDigits: p });
 
@@ -328,8 +327,7 @@ async function pairSeat() {
 /** The customer (API-side payer) buys COMD and approves Permit2 so a launch can be paid in the background. */
 let launchJob = "";
 async function startLaunch() {
-  const deadline = BigInt((await chainNow()) + 3600);
-  await send(7, D().comdRouter, comdRouterAbi, "swapExactETHForComd", [0n, CUSTOMER.address, deadline], E18 / 2n);
+  await fundComd(CUSTOMER.address, 5_000n * E18);
   await send(7, D().comdToken, erc20Abi, "approve", [PERMIT2, 1_000n * E18]);
   const p = await pay("launch.open", {
     objective: "Launch $DOCKET, a fixed-supply token for the Company.md UI e2e, through ProjectFactory.",
@@ -337,23 +335,44 @@ async function startLaunch() {
     economics: { poolBps: 8800, initialMarketCapWei: "10000000000000000000", remainderTo: CUSTOMER.address.toLowerCase() },
   });
   launchJob = p.result.jobId;
-  return `customer bought COMD, approved Permit2, paid launch.open in COMD (job ${launchJob.slice(0, 8)}); runs in the background`;
+  return `customer funded with COMD, approved Permit2, paid launch.open in COMD (job ${launchJob.slice(0, 8)}); runs in the background`;
 }
 
-async function swap() {
-  await open("/swap");
+/**
+ * Pons mode: $COMD is minted and traded on Pons, not by our contracts. On the test chain a plain MockComd stands in,
+ * held by the deployer, so wallets receive COMD by transfer from that holder (find it by the Transfer-from-zero mint).
+ */
+let comdHolder: number | null = null;
+async function fundComd(to: Address, amount: bigint) {
+  if (comdHolder === null) {
+    for (const i of [0, 7, 14, 1]) if ((await comdOf(acct(i).address)) >= amount) { comdHolder = i; break; }
+    assert(comdHolder !== null, "no anvil account holds enough COMD (expected the deployer to hold the MockComd supply)");
+  }
+  await send(comdHolder!, D().comdToken, erc20Abi, "transfer", [to, amount]);
+}
+
+async function receiveComd() {
   const c0 = await comdOf(USER.address);
-  const taxed0 = await read<bigint>(D().comdTaxHook, comdTaxHookAbi, "totalTaxed");
-  await page.locator("#swap-in").fill("1");
-  await until("quote", async () => !/—/.test(await page.getByText(/You receive, after the tax/).locator("..").innerText()), 30_000, 500);
-  await waitText(/2\.5% buyback & burn · 2\.5% Counsel floor sweeps/);
-  await clickTx(/^Buy \$COMD$/);
-  await waitText("Filed.", 60_000);
-  await until("COMD arrived", async () => (await comdOf(USER.address)) > c0, 30_000, 500);
+  await fundComd(USER.address, 10_000n * E18);
   const c1 = await comdOf(USER.address);
-  const tax = (await read<bigint>(D().comdTaxHook, comdTaxHookAbi, "totalTaxed")) - taxed0;
-  assert(tax === E18 / 20n, `5% tax in ETH (${tax})`);
-  return `bought ${fmt(c1 - c0, 18, 0)} COMD for 1 ETH through ComdRouter; hook took ${fmt(tax)} ETH tax`;
+  assert(c1 - c0 === 10_000n * E18, `COMD received ${c1 - c0}`);
+  const dec = await read<number>(D().comdToken, erc20Abi, "decimals");
+  assert(Number(dec) === 18, `COMD decimals ${dec}`);
+  return `10,000 COMD transferred to the browser wallet from anvil account ${comdHolder} (the MockComd holder); decimals() = ${dec}`;
+}
+
+async function tradePage() {
+  await open("/swap");
+  await waitText(/Buy & sell \$COMD on Pons/);
+  const pons = page.locator("a.trade-card").first();
+  const href = await pons.getAttribute("href");
+  assert(href && /^https:\/\/pons\.fun/.test(href), `Pons link ${href}`);
+  await waitText(/Launched on Pons/);
+  await waitText(/Buyback & burn/);
+  assert((await page.locator("#swap-in").count()) === 0, "no in-app swap form in Pons mode");
+  const vault = await page.locator("nav.vault-nav a").allInnerTexts();
+  assert(vault.map((v: string) => v.trim()).join("·") === "Trade·Flywheel", `Vault nav ${vault.join(" · ")}`);
+  return `/swap is the "Trade $COMD" page: Pons card → ${href}; Vault nav ${vault.map((v: string) => v.trim()).join(" · ")}; no router swap form`;
 }
 
 async function approveComd() {
@@ -447,50 +466,59 @@ async function retainer() {
   return `retainer ${id.slice(0, 8)} (2 runs × every 30 min, opens a matter) admitted; /heartbeats page shows its label; status ${s.status}`;
 }
 
-/** The keeper's buyback-and-burn shows up on /flywheel (stat + event feed), read live through GET /flywheel. */
+/**
+ * Pons pays the Flywheel in ETH (receive()). Here the test plays Pons: a plain ETH transfer to the Flywheel, then the
+ * page shows the total that arrived and either the keeper's buyback (swapper configured) or the "after graduation" note.
+ */
 async function flywheelPage() {
-  const burned = await until("keeper buyback burned COMD", async () => { const b = await read<bigint>(D().flywheel, flywheelAbi, "totalBurned"); return b > 0n ? b : null; }, 180_000, 1000);
+  const fw = D().flywheel as Address;
+  const in0 = await read<bigint>(fw, flywheelAbi, "totalTaxIn");
+  const w = createWalletClient({ account: acct(13), chain: chainDef(), transport: http(R.RPC) });
+  const hash = await w.sendTransaction({ account: acct(13), chain: chainDef(), to: fw, value: E18 / 2n } as any);
+  await R.pub.waitForTransactionReceipt({ hash });
+  const in1 = await read<bigint>(fw, flywheelAbi, "totalTaxIn");
+  assert(in1 - in0 === E18 / 2n, `totalTaxIn grew by ${in1 - in0}`);
+  const [bk, sw] = await read<readonly bigint[]>(fw, flywheelAbi, "bucketBalances");
+  const swapperAddr = await read<Address>(fw, flywheelAbi, "swapper").catch(() => null);
+  const live = (await get("/flywheel")).body;
+  const configured = !!live.swapper?.configured;
   await open("/flywheel");
-  await until("buyback on the page", async () => {
-    if ((await page.getByText(/bought [\d,]+ \$COMD and burned it/).count()) > 0) return true;
-    await sleep(3000);
+  const want = fmt(in1, 18, 2);
+  await until("ETH total on the page", async () => {
+    const stat = page.locator(".stat", { hasText: "ETH tax collected" }).first();
+    if ((await stat.count()) && (await stat.innerText()).includes(want)) return true;
+    await sleep(2500);
     await page.reload({ waitUntil: "domcontentloaded" });
     return false;
   }, 120_000, 500);
-  await waitText(/The tax wheel/);
-  await waitText(/The capped pool/);
-  const line = await page.getByText(/bought [\d,]+ \$COMD and burned it/).first().innerText();
-  return `Flywheel.totalBurned ${fmt(burned, 18, 0)} COMD on chain; /flywheel shows both engines and "${line.trim()}"`;
+  await waitText(/The buckets/);
+  await waitText(/The job-payment loop/);
+  let tail: string;
+  if (configured) {
+    const burned = await until("keeper buyback burned COMD", async () => { const b = await read<bigint>(fw, flywheelAbi, "totalBurned"); return b > 0n ? b : null; }, 180_000, 1000);
+    await until("buyback event on the page", async () => {
+      if ((await page.getByText(/bought [\d,]+ \$COMD and sent it to the dead address/).count()) > 0) return true;
+      await sleep(3000); await page.reload({ waitUntil: "domcontentloaded" }); return false;
+    }, 120_000, 500);
+    tail = `swapper configured; keeper buyback burned ${fmt(burned, 18, 0)} COMD to 0x…dEaD and the event is on the page`;
+  } else {
+    await waitText(/Buybacks start after graduation, once the pool is configured/);
+    tail = `swapper ${swapperAddr && !/^0x0{40}$/i.test(swapperAddr) ? swapperAddr.slice(0, 10) + "… not configured" : "not set"}; page shows "Buybacks start after graduation, once the pool is configured"`;
+  }
+  assert((await page.getByText(/ETH of tax arrived from Pons/).count()) > 0, "TaxIn event on the page");
+  return `0.5 ETH sent to the Flywheel as Pons would; totalTaxIn ${fmt(in1)} ETH shown, buckets ${fmt(bk)} / ${fmt(sw)} ETH; GET /flywheel pons.url ${live.pons?.url}; ${tail}`;
 }
 
-async function stake() {
-  await open("/stake");
-  await page.locator("#stake-in").waitFor();
-  const s0 = await sComdOf(USER.address);
-  const inp = page.locator("#stake-in");
-  const action = page.locator("button.btn").filter({ hasText: /^(Approve COMD|Stake COMD)$/ });
-  // the wallet reconnects after the page hydrates; keep the amount in until the action button is live
-  await until("amount entered", async () => {
-    if ((await inp.inputValue()) !== "100") await inp.fill("100");
-    return (await action.count()) > 0 && !(await action.first().isDisabled()) && (await inp.inputValue()) === "100";
-  }, 60_000, 500);
-  if ((await read<bigint>(D().comdToken, erc20Abi, "allowance", [USER.address, D().stakedComd])) < 100n * E18) {
-    await clickTx(/^Approve COMD$/);
-    await until("vault allowance", async () => (await read<bigint>(D().comdToken, erc20Abi, "allowance", [USER.address, D().stakedComd])) >= 100n * E18, 60_000, 500);
+async function redirects() {
+  const seen: string[] = [];
+  for (const from of ["/stake", "/bond", "/trust/stake"]) {
+    await page.goto(`${WEB}${from}`, { waitUntil: "domcontentloaded" });
+    const to = new URL(page.url()).pathname;
+    assert(to === "/flywheel", `${from} → ${to}`);
+    seen.push(`${from} → ${to}`);
   }
-  await clickTx(/^Stake COMD$/);
-  await until("sCOMD minted", async () => (await sComdOf(USER.address)) > s0, 60_000, 500);
-  const s1 = await sComdOf(USER.address);
-  await shot("stake-staked");
-  await page.getByRole("group", { name: "Direction" }).getByRole("button", { name: "Unstake" }).click();
-  await until("Max shows", async () => (await page.getByRole("button", { name: "Max" }).count()) > 0, 30_000, 500);
-  await page.getByRole("button", { name: "Max" }).click();
-  const c0 = await comdOf(USER.address);
-  await clickTx(/^Unstake$/);
-  await until("sCOMD redeemed", async () => (await sComdOf(USER.address)) === 0n, 60_000, 500);
-  const c1 = await comdOf(USER.address);
-  assert(c1 - c0 >= 99n * E18, `redeemed ${c1 - c0}`);
-  return `staked 100 COMD → ${fmt(s1 - s0, 24, 2)} sCOMD (24 decimals); unstaked all → ${fmt(c1 - c0, 18, 4)} COMD back`;
+  await waitText(/The buckets/);
+  return seen.join(", ");
 }
 
 async function incorporate() {
@@ -507,24 +535,34 @@ async function incorporate() {
   await page.getByText("$HABEAS").first().click();
   await page.waitForURL(`**/incorporations/${coin}`, { timeout: 30_000 }).catch(async () => { await open(`/incorporations/${coin}`); });
   await waitText("$HABEAS");
-  await page.locator("#inc-amt").fill("0.05");
+  // Pons mode: ETH legs are disabled until Incorporations.swapper() is set; pay with COMD
+  const ethBtn = page.getByRole("group", { name: "Pay with" }).getByRole("button", { name: "Pay ETH" });
+  const ethOff = await ethBtn.isDisabled();
+  await page.getByRole("group", { name: "Pay with" }).getByRole("button", { name: "Pay COMD" }).click();
+  await page.locator("#inc-amt").fill("200");
   await until("buy quote", async () => !/about\s*—/.test(await page.getByText(/You receive about/).innerText()), 30_000, 500);
+  const approveBuy = btn(/^Approve$/);
+  if (await approveBuy.count()) { await clickTx(/^Approve$/); await until("approve mined", async () => (await btn(/^Buy$/).count()) > 0, 60_000, 500); }
+  const comdBefore = await comdOf(USER.address);
   await clickTx(/^Buy$/);
   await until("coins bought", async () => (await read<bigint>(coin, erc20Abi, "balanceOf", [USER.address])) > 0n, 60_000, 500);
+  assert(comdBefore - (await comdOf(USER.address)) === 200n * E18, "paid 200 COMD");
   const bought = await read<bigint>(coin, erc20Abi, "balanceOf", [USER.address]);
   await shot("incorporation-bought");
   await page.getByRole("group", { name: "Buy or sell" }).getByRole("button", { name: "Sell" }).click();
+  await page.getByRole("group", { name: "Receive" }).getByRole("button", { name: "Get COMD" }).click();
   const half = bought / 2n;
   await page.locator("#inc-amt").fill(formatUnits(half, 18));
   await until("sell quote", async () => !/about\s*—/.test(await page.getByText(/You receive about/).innerText()), 30_000, 500);
   const approve = btn(/^Approve$/);
   if (await approve.count()) { await clickTx(/^Approve$/); await until("approve mined", async () => (await btn(/^Sell$/).count()) > 0, 60_000, 500); }
-  const eth0 = await R.pub.getBalance({ address: USER.address });
+  const comd0 = await comdOf(USER.address);
   await clickTx(/^Sell$/);
   await until("coins sold", async () => (await read<bigint>(coin, erc20Abi, "balanceOf", [USER.address])) < bought, 60_000, 500);
   const left = await read<bigint>(coin, erc20Abi, "balanceOf", [USER.address]);
   const trades = await R.pub.getContractEvents({ address: D().incorporations, abi: incorporationsAbi, eventName: "Trade", args: { coin }, fromBlock: 0n });
-  return `created $HABEAS ${coin}; bought ${formatUnits(bought, 18).split(".")[0]} with 0.05 ETH; sold ${formatUnits(bought - left, 18).split(".")[0]} for ETH (balance Δ ${formatUnits((await R.pub.getBalance({ address: USER.address })) - eth0, 18).slice(0, 10)}); ${trades.length} Trade events`;
+  const toRewards = await read<bigint>(D().incorporations, incorporationsAbi, "totalToRewards").catch(() => null);
+  return `created $HABEAS ${coin}; ETH paths ${ethOff ? "disabled (swapper not set) with the Pons note" : "enabled (swapper set)"}; bought ${formatUnits(bought, 18).split(".")[0]} with 200 COMD; sold ${formatUnits(bought - left, 18).split(".")[0]} for ${fmt((await comdOf(USER.address)) - comd0, 18, 2)} COMD; ${trades.length} Trade events${toRewards != null ? `; 1% fee → Counsel rewards ${fmt(toRewards, 18, 2)} COMD` : ""}`;
 }
 
 async function claimSeatRewards() {
@@ -540,7 +578,7 @@ async function claimSeatRewards() {
   }, 300_000, 5000);
   await open(`/agents/${tokenId}`);
   await waitText("Claim counsel rewards");
-  await waitText(/4\.5% of every COMD the pool trims and 80% of every job payment/);
+  await waitText(/80% of every job payment and the 1% fee on every Incorporations trade/);
   const box = page.locator(".folder", { hasText: "Claim counsel rewards" });
   const claimBtns = box.getByRole("button", { name: /^Claim/ });
   await until("claim buttons", async () => (await claimBtns.count()) > 0, 60_000, 1000);
@@ -587,55 +625,6 @@ async function contributorClaim() {
   return `/launches/${launchId.slice(0, 8)} ($${l.token.symbol}, on-chain launch ${view.launchId}) → Look up → Claim after evm_increaseTime 3601 → +${formatUnits(b1 - b0, 18).split(".")[0]} ${l.token.symbol}`;
 }
 
-/**
- * Inventory trim (fills the Bond reserve): the owner buys COMD, lowers the cap decay (setParams within bounds), time
- * passes so the cap ratchets to the inventory, and a sell pushes inventory above the cap → the hook trims 85/6/4.5/4.5.
- */
-async function hookTrim() {
-  const H = D().comdTaxHook;
-  const SELL = 20_000_000n * E18;
-  const deadline = () => chainNow().then((t) => BigInt(t + 3600));
-  await send(0, D().comdRouter, comdRouterAbi, "swapExactETHForComd", [0n, ADMIN.address, await deadline()], 3n * E18);
-  const p: any = await read(H, comdTaxHookAbi, "params");
-  await send(0, H, comdTaxHookAbi, "setParams", [{ capFloor: 1_000n * E18, capDecayPerDay: 1_000_000n * E18, burnBps: p.burnBps, bondBps: p.bondBps, stakersBps: p.stakersBps, seatsBps: p.seatsBps, refStepTicks: p.refStepTicks }]);
-  const cap = await read<bigint>(H, comdTaxHookAbi, "cap");
-  const lastInv = await read<bigint>(H, comdTaxHookAbi, "lastInventory");
-  const days = cap > lastInv ? Number((cap - lastInv) / (1_000_000n * E18)) + 2 : 1;
-  await rpc("evm_increaseTime", [days * 86_400]);
-  await rpc("evm_mine", []);
-  const st0: any = await read(H, comdTaxHookAbi, "stats");
-  const bond0 = await read<bigint>(D().bond, bondAbi, "reserve");
-  await send(0, D().comdToken, erc20Abi, "approve", [D().comdRouter, SELL]);
-  await send(0, D().comdRouter, comdRouterAbi, "swapExactComdForETH", [SELL, 0n, ADMIN.address, await deadline()]);
-  const st1: any = await read(H, comdTaxHookAbi, "stats");
-  const d = (k: string) => BigInt(st1[k]) - BigInt(st0[k]);
-  assert(d("trimmedComd") > 0n, "no trim");
-  const reserve = await read<bigint>(D().bond, bondAbi, "reserve");
-  assert(reserve - bond0 === d("toBond") && reserve > 0n, `Bond reserve ${reserve}`);
-  return `owner bought 3 ETH of COMD, setParams(cap decay 1M/day), +${days} days, sold 20,000,000 COMD → trimmed ${fmt(d("trimmedComd"), 18, 0)} COMD: burn ${fmt(d("burned"), 18, 0)} / Bond ${fmt(d("toBond"), 18, 0)} / stakers ${fmt(d("toStakers"), 18, 0)} / seats ${fmt(d("toSeats"), 18, 0)}`;
-}
-
-async function bond() {
-  // the owner opens the bond from the command line, as an operator would
-  const r = await R.run(R.CAST, ["send", D().bond, "setEnabled(bool)", "true", "--private-key", pk(0), "--rpc-url", R.RPC], { logName: "cast-bond.log" });
-  assert(r.code === 0, `cast send setEnabled failed: ${r.out.slice(-300)}`);
-  assert(await read<boolean>(D().bond, bondAbi, "enabled"), "Bond.enabled()");
-  await open("/bond");
-  await until("bond shows Open", async () => (await page.locator(".stat", { hasText: "Status" }).innerText()).includes("Open"), 60_000, 1000);
-  const c0 = await comdOf(USER.address);
-  const ethIn = E18 / 10_000n;
-  const quoted = await read<bigint>(D().bond, bondAbi, "quote", [ethIn]);
-  await page.locator("#bond-in").fill(formatUnits(ethIn, 18));
-  await until("bond quote", async () => !/—/.test(await page.getByText(/You receive, at the fixed price/).locator("..").innerText()), 30_000, 500);
-  await clickTx(/^Bond ETH$/);
-  await until("bonded", async () => (await comdOf(USER.address)) > c0, 60_000, 500);
-  const got = (await comdOf(USER.address)) - c0;
-  assert(got === quoted, `got ${got} != quote ${quoted}`);
-  const ev = await R.pub.getContractEvents({ address: D().bond, abi: bondAbi, eventName: "Bonded", args: { buyer: USER.address }, fromBlock: 0n });
-  assert(ev.length === 1, "Bonded(buyer = browser wallet)");
-  return `\`cast send setEnabled(true)\` by the owner; /bond shows Open; paid ${formatUnits(ethIn, 18)} ETH → ${fmt(got, 18, 2)} COMD (= quote(ethIn)); Bonded event`;
-}
-
 // ============================================================================================ main
 
 async function main() {
@@ -662,25 +651,21 @@ async function main() {
   const minted = await ui("/mint: free mint 1 Counsel", "mint", mint);
   const paired = minted && (await ui("/pair: CLI code → register ERC-8004 → sign WorkerAuthorization → seated", "pair", pairSeat));
   const launching = paired && (await check("launch.open paid in COMD (background) for the contributor claim", startLaunch));
-  const bought = await ui("/swap: buy COMD with ETH (5% tax in ETH)", "swap", swap);
+  const bought = await check("wallet receives COMD by transfer from the token holder (Pons mode)", receiveComd);
+  await ui("/swap: the Trade $COMD page links to Pons; Vault nav Trade · Flywheel", "trade", tradePage);
   const approved = bought && (await ui("/launch: approve 1,000 COMD for Permit2", "launch-approve", approveComd));
   if (approved) {
     await ui("/launch: retain a Report → check → pay in COMD → admitted → job completed", "retain-report", retainReport);
     await ui("/launch: request a ruling (evidence chain) → sealed + attestation", "ruling", ruling);
     await ui("/launch: retainer created", "retainer", retainer);
   } else for (const s of ["/launch: retain a Report → check → pay in COMD → admitted → job completed", "/launch: request a ruling (evidence chain) → sealed + attestation", "/launch: retainer created"]) record(s, false, "skipped: no COMD approval");
-  await ui("/flywheel: keeper buyback-and-burn shown (both engines)", "flywheel", flywheelPage);
-  if (bought) await ui("/stake: stake 100 COMD → sCOMD, unstake all", "stake", stake);
-  else record("/stake: stake 100 COMD → sCOMD, unstake all", false, "skipped: no COMD");
-  await ui("/incorporations: create a coin, buy with ETH, sell", "incorporations", incorporate);
+  await ui("/flywheel: ETH in from Pons shown; buyback or the after-graduation note", "flywheel", flywheelPage);
+  await ui("/stake, /bond, /trust/* redirect to /flywheel", "redirects", redirects);
+  await ui("/incorporations: create a coin, buy and sell in COMD (ETH legs gated on the swapper)", "incorporations", incorporate);
   if (paired) await ui("/agents/[id]: claim COMD counsel rewards after an epoch is posted", "agent-claim", claimSeatRewards);
   else record("/agents/[id]: claim COMD counsel rewards after an epoch is posted", false, "skipped: no paired seat");
   if (launching) await ui("/launches/[id]: contributor claim after the lock", "launch-claim", contributorClaim);
   else record("/launches/[id]: contributor claim after the lock", false, "skipped: launch not started");
-  // ---- below moves chain time forward by days (no Permit2 payments after this point)
-  const trimmed = await check("inventory trim (owner + time + a sell) fills the Bond reserve", hookTrim);
-  if (trimmed) await ui("/bond: owner enables with cast, buy COMD with ETH", "bond", bond);
-  else record("/bond: owner enables with cast, buy COMD with ETH", false, "skipped: empty reserve");
 }
 
 let failed = 1;

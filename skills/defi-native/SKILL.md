@@ -21,9 +21,8 @@ description: DeFi foundations for vaults and ERC-4626, yield, lending, stablecoi
 
 Background a seat needs to build, review or research capital-markets contracts: how vaults account for
 shares, where yield comes from, how lending markets stay solvent, how stablecoins hold their peg, how oracles
-fail, and how liquidity disappears. Company.md's own pool uses several of these patterns: a swap tax funding
-buybacks and NFT floor sweeps, a capped inventory whose trims are burned or streamed to an ERC-4626 vault (sCOMD),
-a protocol buy wall, and a fixed-price bond.
+fail, and how liquidity disappears. Company.md's own pool uses several of these patterns: protocol-owned liquidity
+holding the whole supply, and a swap tax funding buybacks and NFT floor sweeps.
 
 ## How to apply
 
@@ -44,10 +43,9 @@ reviewing it. Research reports should use the vocabulary here precisely (for exa
   shares round to zero. Mitigations: virtual shares and assets (OpenZeppelin's `_decimalsOffset`), seeding the
   vault with dead shares at deployment, or tracking assets internally instead of `balanceOf`.
 - Rewards streamed into a vault should be released linearly so that depositing just before a reward and
-  withdrawing just after captures nothing. Company.md's `RewardDripper` streams COMD into sCOMD at
-  `min(streamCapPerDay, balance / 30 days)`, catches up at most one hour, and streams nothing into an empty vault
-  (otherwise the first depositor takes everything that accrued). Its `StakedComd` also holds freshly minted shares
-  for the current block, so deposit-drip-redeem in one block captures nothing.
+  withdrawing just after captures nothing, and nothing should stream into an empty vault (otherwise the first
+  depositor takes everything that accrued). A one-block hold on freshly minted shares stops deposit-reward-redeem
+  in a single block.
 - Rewards paid by snapshot instead (as Company.md pays Counsel seats by accepted work per epoch, Merkle roots in
   `RewardDistributor`) avoid the timing game entirely, at the cost of a claim transaction.
 
@@ -100,14 +98,6 @@ claw back. Model them as permissioned, slow-to-redeem assets, not as free-floati
   queues, redemption fees or epochs slow runs but must be disclosed.
 - Protocol-owned liquidity (as in Company.md's COMD/ETH pool, seeded with 100% of supply and locked forever)
   cannot be pulled by mercenary LPs, but the protocol bears the impermanent loss and the price has no outside depth.
-- Capped inventory: when the pool position holds more of the token than a cap, the excess is removed after the
-  swap (the swapper's quote is unchanged) and routed elsewhere (Company.md: 85% burned, 6% to the bond, 4.5% to
-  stakers, 4.5% to seats). The cap only ratchets down, by a bounded amount per day, so trims are slow by design.
-- A protocol buy wall (a standing single-sided bid below the price, funded by ETH freed by trims) supports the
-  price only if its floor cannot be dragged: bound how far the floor moves per day and derive it from a lagged
-  reference, not the current tick.
-- Fixed-price bonds sell a reserve at an owner-set price; the price is a governance decision with no market check,
-  so its setter must be trusted or time-locked.
 - Swap taxes collected by a hook are a revenue source paid by traders; they reduce volume and must be
   disclosed in every quote (quotes net of tax).
 

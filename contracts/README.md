@@ -2,10 +2,9 @@
 
 > ## ⚠ UNAUDITED — EXPERIMENTAL
 > None of these contracts has been audited by an outside firm (see `SECURITY_REVIEW.md` for the internal reviews).
-> A bug in the hook, the buy wall, the Flywheel, the vault, the distributors, the factory or the launchpad can lose
-> every asset they hold. Owner and keeper keys hold real powers (listed below). Deploy to testnet (46630) first;
-> deploy to mainnet (4663) only after an outside audit. Not affiliated with Robinhood. The pool mechanics are inspired
-> by IMD's POOL4 (imd.fun).
+> A bug in the Flywheel, the swapper, the distributors, the factory or the launchpad can lose every asset they
+> hold. Owner and keeper keys hold real powers (listed below). Deploy to testnet (46630) first; deploy to mainnet
+> (4663) only after an outside audit. Not affiliated with Robinhood or Pons.
 
 Solidity 0.8.26, OpenZeppelin 5.4, Uniswap v4-core, Foundry. License MIT (vendored ERC-8004 registries: CC0;
 v4-core `PoolManager`: BUSL-1.1 — only deployed by us in tests and on testnet when no `POOL_MANAGER` is given).
@@ -13,74 +12,56 @@ v4-core `PoolManager`: BUSL-1.1 — only deployed by us in tests and on testnet 
 ## How value moves
 
 ```
-                     official COMD/ETH v4 pool (ComdTaxHook, 100% of supply seeded single-sided)
-  every buy/sell ──► 1) 5% ETH tax ─────────────► Flywheel: 50% buyback-and-burn (untaxed route) / 50% Counsel floor sweep
-                     2) inventory cap: COMD above the cap is trimmed after the swap (quote unchanged)
-                          trimmed COMD ─► 85% burn / 6% Bond / 4.5% RewardDripper → sCOMD / 4.5% RewardDistributor (seats)
-                          trimmed ETH  ─► BuyWall: standing ETH bid below the price; COMD it buys → same 85/6/4.5/4.5 split
+  $COMD launched on Pons (1B supply, ETH pair, 5% tax set in Pons; Pons runs the curve and locks the v4 liquidity)
+  Pons pays the creator wallet in ETH (tax + fee share) ─► forwarded to the Flywheel (`receive()`)
+       Flywheel: 50% buyback (ETH→COMD via the swapper, COMD → 0x…dEaD) / 50% Counsel NFT floor sweep
   job payments (x402 + Permit2, COMD) ─► RevenueRouter: 80% RewardDistributor (Counsel, COMD) / 20% firm treasury
-  Bond: sells its COMD reserve for ETH at the owner price (`priceEth`) once enabled → firm treasury
+  Incorporations (company coins on a COMD curve): 1% → RewardDistributor, 0.5% → 0x…dEaD, 0.5% → launcher
 ```
+
+## Pons mode
+
+- **COMD comes from Pons.** The token is minted by Pons at launch (`COMD_TOKEN` env on mainnet); this repo never
+  deploys a production token. It is treated as a plain ERC-20: decimals are read on-chain and no `burn()` is assumed.
+  Every "burn" is a transfer to `0x000000000000000000000000000000000000dEaD`, counted in `totalBurned`
+  (Flywheel) / `totalBurned` (Incorporations). Test chains deploy `MockComd` (1B, 18 dec, no `burn()`).
+- **The Flywheel receives ETH.** `receive()` and `notifyTax()` accept ETH from anyone (set the Flywheel as Pons's
+  payout recipient or forward from the creator wallet). Each wei is split into the buyback / sweep buckets by `bps()`.
+- **Swapper configured after graduation.** Buybacks and Incorporations' ETH legs go through a pluggable
+  `IBuybackSwapper`. `UniswapV4PoolSwapper` is deployed unconfigured; once Pons has graduated $COMD into its v4
+  position, `ADMIN` calls `setPoolKey(fee, tickSpacing, ponsHook)`. Until then `Flywheel.buyback` reverts
+  (`PoolNotSet()` from the swapper; `SwapperNotSet()` if no swapper is set at all) and ETH simply accumulates; COMD
+  trades on Incorporations work from day one, ETH trades revert `SwapperNotSet()` / `PoolNotSet()`.
+  If Pons's hook rejects swaps from an arbitrary unlock caller or needs special hookData, plug in another
+  `IBuybackSwapper` (e.g. over Pons's / Uniswap's router) with `setSwapper` on the Flywheel and Incorporations.
+  The swapper is tested against a local hookless v4 pool only; Pons's hook is not reproduced in tests.
 
 ## Contracts
 
 | Contract | File | What it does |
 |---|---|---|
-| `ComdToken` | `src/ComdToken.sol` | $COMD "Company.md": ERC-20 + Burnable + Permit, 1,000,000,000 minted once to the POL wallet. No mint, owner or transfer tax. |
-| `ComdTaxHook` | `src/ComdTaxHook.sol` | v4 hook of the official pool (ETH/COMD, LP fee 0, tick spacing 200, flags `0x18CC`). Atomic `initializeAndSeed`; 5% ETH tax on all 4 swap kinds → Flywheel; inventory cap + post-swap trims + 85/6/4.5/4.5 split; cap ratchet; block-lagged reference tick; ERC-6909 claim fallback + `flush()`. Holds the main position, which no function can remove. |
-| `BuyWall` | `src/BuyWall.sol` | The protocol's standing ETH bid on the same pool (the only LP besides the hook). Keeper `rebalance()`: close, split filled COMD via the hook, re-post at the bounded floor, capped tip. |
-| `ComdRouter` | `src/ComdRouter.sol` | ETH↔COMD exact-input swaps (`minOut`, deadline), amounts net of tax; attests its caller in hookData (Flywheel exemption). Non-view quoters. |
-| `Flywheel` | `src/Flywheel.sol` | Tax buckets buyback / sweep (default 50/50). Keeper `buyback(minOut)` (burns), keeper `sweep(...)` (Counsel NFTs via allowlisted adapters, ≤ `maxSweepPrice`), owner `awardSwept`. |
-| `StakedComd` | `src/StakedComd.sol` | sCOMD: ERC-4626 over COMD, decimals offset 6, no lock, same-block hold only on freshly minted shares (M-02), pause, sweep non-COMD only. |
-| `RewardDripper` | `src/RewardDripper.sol` | Streams staker COMD into sCOMD: `rate = min(streamCapPerDay (8.64M/day), balance/30d)`, 1 h catch-up, nothing streams into an empty vault (L-01). |
-| `Bond` | `src/Bond.sol` | Sells its COMD (6% of trims) for ETH at `priceEth` (wei per 1e18 COMD) via `buyWithEth(minOut)` once `enabled`; ETH goes straight to the firm treasury. |
+| $COMD (external) | Pons | 1,000,000,000 supply, 18 dec, minted by Pons; `COMD_TOKEN` env. `src/mocks/MockComd.sol` stands in on test chains (plain ERC-20, no `burn()`). |
+| `Flywheel` | `src/Flywheel.sol` | `receive()`/`notifyTax()` from anyone → buckets buyback / sweep (default 50/50). Keeper `buyback(minOut)` via `IBuybackSwapper` → COMD to `0x…dEaD`; keeper `sweep(...)` (Counsel NFTs via allowlisted adapters, ≤ `maxSweepPrice`); owner `awardSwept`, `setSwapper`, `setComd` (once). |
+| `IBuybackSwapper` / `UniswapV4PoolSwapper` | `src/interfaces/`, `src/swap/` | Pluggable ETH↔COMD venue. The v4 implementation swaps through `IPoolManager.unlock` on an owner-set PoolKey (currency0 ETH, currency1 COMD, `setPoolKey(fee, tickSpacing, hooks)` = Pons's pool after graduation). Non-view quoters. Holds nothing. |
 | `RevenueRouter` | `src/RevenueRouter.sol` | payTo of job payments (COMD): `distribute()` (anyone) 80% RewardDistributor / 20% treasury. |
-| `RewardDistributor` | `src/RewardDistributor.sol` | Counsel rewards: one Merkle root per (epoch, asset) — COMD (trims + 80% of job revenue); ETH (`address(0)`) also supported; claims pay the current seat owner; a root never pays more than its total. |
+| `RewardDistributor` | `src/RewardDistributor.sol` | Counsel rewards: one Merkle root per (epoch, asset) — COMD (80% of job revenue + 1% Incorporations fee); ETH (`address(0)`) also supported; claims pay the current seat owner; a root never pays more than its total. |
 | `CounselNFT` | `src/CounselNFT.sol` | "Company.md Counsel" (COUNSEL), 2,000 seats. |
 | ERC-8004 registries | `lib/erc-8004-contracts` (CC0) | Behind ERC1967 proxies via `ERC8004Bootstrap`. |
-| `Incorporations` | `src/Incorporations.sol` | Company coins on a COMD curve; fees 1% → sCOMD stakers (dripper), 0.5% burn, 0.5% launcher; ETH legs through ComdRouter (taxed). |
+| `Incorporations` | `src/Incorporations.sol` | Company coins on a COMD curve; fees 1% → RewardDistributor (Counsel), 0.5% → `0x…dEaD`, 0.5% launcher; ETH legs through the swapper (`SwapperNotSet()` until set). |
 | `ProjectFactory` & launch contracts | `src/launch/` | Swarm launches; pairing allowlist ETH, COMD. |
 | `IMarketplaceAdapter`, `MockMarketplace`, `SeaportAdapter` | | Floor-sweep adapters (mock = test chains; Seaport = untested skeleton needing marketplace calldata). |
 | `OracleAttestationVerifier` | `src/oracle/` | EIP-712 "Company.md Oracle". |
-
-## Official pool mechanics
-
-1. **Opening.** POL calls `ComdTaxHook.initializeAndSeed(initialMarketCapWei, comdAmount)` once: the hook initializes
-   its own pool at `floor(openingTick, 200)` and deposits the COMD in `[minUsableTick, openTick]` in the same
-   transaction. External `initialize` with this hook always reverts. The cap starts at the seeded inventory.
-2. **Tax first.** 5% (max 5%) of the ETH a buyer pays / of the gross ETH a seller receives, on all four swap kinds;
-   beforeSwap-charged kinds must fill completely. Forwarded to the Flywheel, or ERC-6909 claims + `flush()` when the
-   PoolManager does not hold the ETH yet. Exempt only: the Flywheel's buyback through the official ComdRouter.
-3. **Then the cap.** After every swap, if the main position holds more COMD than `currentCap()`, the excess fraction of
-   its liquidity is removed (price and swapper's delta untouched). The cap never rises by itself; it decays at most
-   `capDecayPerDay` (100,000 COMD/day) toward max(`capFloor` 100,000 COMD, inventory after the previous swap). Because
-   the seed is single-sided at the opening price, inventory can never exceed the seed: trims start once the cap has
-   decayed below the inventory that sells bring back (net selling after the room opened by buys has closed).
-4. **Splits.** 85% burned / 6% Bond / 4.5% RewardDripper / 4.5% RewardDistributor; burn absorbs rounding. Trimmed ETH
-   → BuyWall (claims until a BuyWall is set).
-5. **BuyWall.** ETH-only position above the tick at `ceil(floor)`, width 4,000 ticks. Floor target = hook `refTick`
-   (moves ≤ 200 ticks per parent-chain block toward the closing tick of earlier blocks) + 200 ticks; the floor moves
-   ≤ 400 ticks/day in both directions (toward the price ≤ one day's allowance per update — H-01). `rebalance()` when
-   new ETH ≥ 0.1 ETH, fill ≥ 10,000 COMD, or parked ETH can be posted; tip min(1% of ETH handled, 0.002 ETH).
-6. LP fee is 0: the tax is the only swap cost; there are no LP fees to collect.
 
 ## Owner / keeper powers
 
 | Contract | Holder | Powers | Cannot | Renounce |
 |---|---|---|---|---|
-| `ComdTaxHook` | Ownable2Step | `setTaxBps` (0–500); `setParams` (cap floor 1,000–100M COMD, decay ≤ 1M COMD/day, burn ≥ 50% & each other leg ≤ 25% & sum 100%, ref step 1–2,000 ticks); `setDestinations` (bond / dripper / distributor — redirects the 15% non-burn split); `setRouter`, `setBuyWall` (once) | remove liquidity, change the Flywheel, take tax/trims | yes |
-| `BuyWall` | Ownable2Step | `setParams` (floor decay 1–2,000 ticks/day, gap ≤ 5,000, width 200–50,000, threshold 0.001–10 ETH, min fill 1–100M COMD, tip ≤ 1% & ≤ 0.002 ETH) | withdraw the wall or its ETH | yes |
-| `BuyWall` | anyone (keeper) | `rebalance()` for the capped tip | choose prices | — |
-| `Flywheel` | Ownable2Step / keeper | owner: bucket bps (sum 10,000), `maxSweepPrice`, adapters, keeper, `awardSwept`, hook/router once; keeper (or owner): `buyback(minOut)` slippage, `sweep` listing choice within caps | withdraw bucket ETH | yes |
-| `StakedComd` | Ownable2Step | pause/unpause (freezes withdrawals); sweep non-COMD tokens | move staked COMD; renounce while paused | yes |
-| `RewardDripper` | Ownable2Step | stream params within bounds; re-point the vault | renounce without a vault | yes |
-| `Bond` | Ownable2Step | enable/disable, `setPrice` (> 0 — no lower bound: the owner could price the reserve near zero and buy it, review L-05), treasury | withdraw the reserve directly | yes |
+| `Flywheel` | Ownable2Step / keeper | owner: bucket bps (sum 10,000), `maxSweepPrice`, adapters, keeper, `awardSwept`, `setSwapper` (any time — a malicious swapper can take the buyback bucket, so keep ADMIN behind a multisig), `setComd` once; keeper (or owner): `buyback(minOut)` slippage, `sweep` listing choice within caps | withdraw bucket ETH | yes |
+| `UniswapV4PoolSwapper` | Ownable2Step | `setPoolKey(fee, tickSpacing, hooks)` (re-pointable) | hold funds (holds nothing between calls) | yes |
 | `RevenueRouter` | Ownable2Step | `setBps(rewardsBps)` 5,000–10,000; `setTreasury` | send COMD revenue elsewhere | yes |
 | `RewardDistributor` | admin / SETTLER | roots within the unallocated balance; expire after 365 d | over-pay a root | yes |
-| others | — | as before (CounselNFT, ProjectFactory, Incorporations `virtualComd`, ERC-8004 upgrades) | | |
-
-Not ported from IMD/V1 on purpose: `closeMarket` (escape hatch) and `fundInventory` — the seeded liquidity is locked
-forever, so no key can pull it (and no defect can be remedied by moving it).
+| `Incorporations` | Ownable2Step | `setVirtualComd` within bounds (new coins only); `setSwapper` (same caveat as the Flywheel: ETH legs trust the venue) | touch coin backing | yes |
+| others | — | as before (CounselNFT, ProjectFactory, ERC-8004 upgrades) | | |
 
 ## Build and test
 
@@ -103,41 +84,42 @@ FOUNDRY_SOLC=$SOLC_PATH FOUNDRY_OFFLINE=true forge test      # offline, with a l
 cd contracts
 export RPC_URL=https://rpc.testnet.chain.robinhood.com      # mainnet: https://rpc.mainnet.chain.robinhood.com
 export DEPLOYER_PRIVATE_KEY=0x...
-export ADMIN=0x... POL=0x... TREASURY=0x... SETTLER=0x... KEEPER=0x... REGISTRAR=0x...
-# test chains: POOL_MANAGER optional (a v4 PoolManager is deployed if unset); mainnet default 0x8366…40951
-# optional: BOND_PRICE_WEI (wei per 1e18 COMD, default 1e10), MAX_SWEEP_PRICE, SEAPORT, COUNSEL_BASE_URI
+export COMD_TOKEN=0x...                                      # the Pons $COMD address (required on mainnet)
+export ADMIN=0x... TREASURY=0x... SETTLER=0x... KEEPER=0x... REGISTRAR=0x...
+# test chains: COMD_TOKEN optional (MockComd is deployed if unset); POOL_MANAGER optional (a v4 PoolManager is
+# deployed if unset); mainnet PoolManager default 0x8366…40951
+# optional: MAX_SWEEP_PRICE, SEAPORT, COUNSEL_BASE_URI
 forge script script/Deploy.s.sol:Deploy --rpc-url $RPC_URL --broadcast --slow
 (cd ../packages/abi && npm run gen)
 ```
 
-`deployments/<chainId>.json` keys: `chainId, deployedAtBlock, admin, pol, treasury, weth, permit2, poolManager,
-deployedPoolManager, stakedComd, rewardDripper, bond, buyWall, create2Deployer, comdToken,
-counselNFT, identityRegistry, reputationRegistry, rewardDistributor, revenueRouter, flywheel, comdTaxHook, comdRouter,
-projectFactory, contributorDistributor, launchGuardHook, mockMarketplace, seaportAdapter, incorporations`.
+`deployments/<chainId>.json` keys: `chainId, deployedAtBlock, comdToken` (external), `counselNFT, identityRegistry,
+reputationRegistry, rewardDistributor, revenueRouter, flywheel, swapper, incorporations, projectFactory,
+contributorDistributor, launchGuardHook, create2Deployer, mockMarketplace` (test chains), `seaportAdapter` (if
+`SEAPORT`), `admin, treasury, keeper, settler, registrar, poolManager, weth, permit2`.
 
 Then:
-1. `ADMIN` calls `acceptOwnership()` on `ComdTaxHook` and `Flywheel` (the deployer did their one-time wiring first).
-2. POL opens the market with 100% of the supply (approve + atomic `initializeAndSeed`):
-   ```bash
-   export POL_PRIVATE_KEY=0x... HOOK=<comdTaxHook> INITIAL_MARKET_CAP_WEI=10000000000000000000
-   forge script script/SeedPool.s.sol:SeedPool --rpc-url $RPC_URL --broadcast
-   ```
-3. API env: `PAYTO_ADDRESS=revenueRouter`, `COMD_TOKEN`, `COMD_ROUTER`, `COMD_TAX_HOOK`, `FLYWHEEL`.
-4. Keepers: `BuyWall.rebalance()` when `canRebalance()`, `ComdTaxHook.flush()` when claims are pending,
-   `RewardDripper.drip()` at least hourly, `Flywheel.buyback(minOut)` / `sweep(...)`, `RevenueRouter.distribute()`.
+1. `ADMIN` calls `acceptOwnership()` on `Flywheel` (the deployer did its one-time wiring first). `Incorporations`,
+   `UniswapV4PoolSwapper`, `RevenueRouter`, `CounselNFT` are owned by `ADMIN` directly.
+2. Point Pons's ETH payouts at the `flywheel` address (or forward them from the creator wallet).
+3. After the Pons graduation: `ADMIN` calls `UniswapV4PoolSwapper.setPoolKey(fee, tickSpacing, ponsHook)` with the
+   graduated pool's parameters (currency0 = ETH, currency1 = COMD). Verify with `quoteETHForComd` (eth_call) before
+   the first keeper buyback.
+4. API env: `PAYTO_ADDRESS=revenueRouter`, `COMD_TOKEN`, `FLYWHEEL`, `SWAPPER`.
+5. Keepers: `Flywheel.buyback(minOut)` when the swapper is configured and the bucket is above the threshold,
+   `Flywheel.sweep(...)`, `RevenueRouter.distribute()`.
 
 ### Deploy from CI (GitHub Actions, env only)
 
-Both scripts read everything from the environment (no prompts, no input files) and print machine-readable JSON to
+The script reads everything from the environment (no prompts, no input files) and prints machine-readable JSON to
 stdout between markers, so a workflow can capture it without reading files:
 
 | Script | Required env | Optional env | Stdout markers |
 |---|---|---|---|
-| `Deploy.s.sol:Deploy` | `RPC_URL`, `DEPLOYER_PRIVATE_KEY` (+ `POOL_MANAGER` on chains other than 4663/46630/31337) | `ADMIN` (default deployer), `POL` (alias `POL_WALLET`, default ADMIN), `TREASURY`, `SETTLER`, `KEEPER`, `REGISTRAR` (default ADMIN), `BOND_PRICE_WEI` (1e10), `MAX_SWEEP_PRICE` (0.5 ether), `SEAPORT`, `COUNSEL_BASE_URI`, `WRITE_DEPLOYMENTS` (true; creates `deployments/` if missing) | `DEPLOYMENTS_JSON_BEGIN` / `DEPLOYMENTS_JSON_END` |
-| `SeedPool.s.sol:SeedPool` | `RPC_URL`, `POL_PRIVATE_KEY`, `HOOK` (= `comdTaxHook`) | `INITIAL_MARKET_CAP_WEI` (10 ether), `SEED_COMD` (whole POL balance) | `SEED_JSON_BEGIN` / `SEED_JSON_END` |
+| `Deploy.s.sol:Deploy` | `RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `COMD_TOKEN` (the Pons token; required on 4663 and any chain other than 46630/31337 — the script reverts with a clear message if unset) (+ `POOL_MANAGER` on chains other than 4663/46630/31337) | `ADMIN` (default deployer), `TREASURY`, `SETTLER`, `KEEPER`, `REGISTRAR` (default ADMIN), `MAX_SWEEP_PRICE` (0.5 ether), `SEAPORT`, `COUNSEL_BASE_URI`, `WRITE_DEPLOYMENTS` (true; creates `deployments/` if missing) | `DEPLOYMENTS_JSON_BEGIN` / `DEPLOYMENTS_JSON_END` |
 
-For production, set every role explicitly (`ADMIN`, `POL`, `TREASURY`, `KEEPER`, `SETTLER`, `REGISTRAR`) as
-repository secrets/variables; leaving them unset makes the deployer hold the role.
+For production, set every role explicitly (`ADMIN`, `TREASURY`, `KEEPER`, `SETTLER`, `REGISTRAR`) as repository
+secrets/variables; leaving them unset makes the deployer hold the role.
 
 ```yaml
 # .github/workflows/deploy.yml (sketch)
@@ -149,8 +131,8 @@ repository secrets/variables; leaving them unset makes the deployer hold the rol
   env:
     RPC_URL: ${{ secrets.RPC_URL }}
     DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+    COMD_TOKEN: ${{ vars.COMD_TOKEN }}
     ADMIN: ${{ vars.ADMIN }}
-    POL: ${{ vars.POL }}
     TREASURY: ${{ vars.TREASURY }}
     KEEPER: ${{ vars.KEEPER }}
     SETTLER: ${{ vars.SETTLER }}
@@ -158,37 +140,31 @@ repository secrets/variables; leaving them unset makes the deployer hold the rol
   run: |
     forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" --broadcast --slow | tee deploy.log
     sed -n '/DEPLOYMENTS_JSON_BEGIN/,/DEPLOYMENTS_JSON_END/p' deploy.log | sed '1d;$d' | sed 's/^ *//' > deployment.json
-    echo "HOOK=$(jq -r .comdTaxHook deployment.json)" >> "$GITHUB_ENV"
-- name: Seed pool (after ADMIN accepted ownership of ComdTaxHook and Flywheel)
-  working-directory: contracts
-  env:
-    RPC_URL: ${{ secrets.RPC_URL }}
-    POL_PRIVATE_KEY: ${{ secrets.POL_PRIVATE_KEY }}
-    INITIAL_MARKET_CAP_WEI: ${{ vars.INITIAL_MARKET_CAP_WEI }}
-  run: forge script script/SeedPool.s.sol:SeedPool --rpc-url "$RPC_URL" --broadcast
+    echo "FLYWHEEL=$(jq -r .flywheel deployment.json)" >> "$GITHUB_ENV"
+    echo "SWAPPER=$(jq -r .swapper deployment.json)" >> "$GITHUB_ENV"
 ```
 
-Seeding does not depend on the ownership acceptance (the hook's `initializeAndSeed` is POL-only), so both steps can
-run in one workflow; `ADMIN` still has to call `acceptOwnership()` on both contracts.
+`ADMIN` still has to call `acceptOwnership()` on the Flywheel, and `setPoolKey(...)` on the swapper after the Pons
+graduation.
 
 ### External address checklist (mainnet)
 
 - [ ] `eth_chainId` = `0x1237` (4663).
 - [ ] v4 PoolManager `0x8366a39CC670B4001A1121B8F6A443A643e40951`: verified Uniswap v4 source.
+- [ ] `COMD_TOKEN` = the $COMD address Pons minted (check `decimals()` = 18, `totalSupply()` = 1e27).
 - [ ] Permit2 `0x000000000022D473030F116dDEE9F6B43aC78BA3` (x402 settlement, off-chain). WETH / UniversalRouter not used.
-- [ ] Hook address low bits `0x18CC`; LaunchGuardHook `0x2000`.
-- [ ] `ADMIN` multisig (+ timelock); POL / SETTLER / KEEPER / REGISTRAR separate wallets.
+- [ ] LaunchGuardHook address low bits `0x2000`.
+- [ ] After graduation: Pons pool `fee`, `tickSpacing`, hook address for `setPoolKey`; `quoteETHForComd` returns a sane amount.
+- [ ] `ADMIN` multisig (+ timelock); SETTLER / KEEPER / REGISTRAR separate wallets.
 
 ## Known limitations
 
-- **Unaudited.** See `SECURITY_REVIEW.md` §V3.
-- Liquidity locked forever (no escape hatch). Trims only begin after the cap decays below re-filled inventory; with
-  100% of supply seeded and a 100,000 COMD/day decay this takes time after large buys (by design, proportional to IMD).
-- Single venue: the tax and trims apply in the official pool only; other COMD pools (with their own liquidity) are
-  possible and untaxed.
-- Keeper trust (buyback slippage, sweep choice); owner can redirect the 15% non-burn split (`setDestinations`) and
-  set the Bond price (L-05). Put `ADMIN` behind a multisig + timelock.
-- Buy wall residual (I-02): a reference held pumped for ≥ 2 blocks can pull the floor toward it by one day's
-  allowance per day.
-- Partial fills of beforeSwap-taxed swaps revert. `SeaportAdapter` untested against Seaport.
-- `block.number` on Robinhood Chain is the parent-chain block number (reference lag and sCOMD hold use it).
+- **Unaudited.** See `SECURITY_REVIEW.md` (V6 note at the top).
+- The token, the tax and the pool belong to Pons: we cannot change the tax, the liquidity or the hook. The
+  Flywheel only ever sees the ETH that is actually forwarded to it.
+- `UniswapV4PoolSwapper` is tested against a hookless local v4 pool only. Pons's hook may tax inside the swap
+  (fine: amounts are measured on delivery) or refuse arbitrary unlock callers / require hookData (then another
+  `IBuybackSwapper` has to be plugged in). Buybacks through it are keeper-paced, exact-input, with `minOut`.
+- Keeper trust (buyback slippage, sweep choice); owner trust (`setSwapper` on Flywheel / Incorporations can route the
+  buyback bucket or an ETH trade's COMD leg to any venue). Put `ADMIN` behind a multisig + timelock.
+- `SeaportAdapter` untested against Seaport.

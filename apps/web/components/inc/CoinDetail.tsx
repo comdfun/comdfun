@@ -2,8 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { erc20Abi, formatUnits, parseUnits, type Abi, type Address } from "viem";
-import { contract } from "@/lib/contracts";
-import { MOCK } from "@/lib/config";
+import { abiOf, contract } from "@/lib/contracts";
+import { useRead } from "@/lib/useChain";
+import { MOCK, PONS_URL } from "@/lib/config";
 import { MOCK_CHAIN } from "@/lib/mock-chain";
 import { coinInfo, loadTrades, mockCoins, mockPrice, parseMeta, type TradeRow } from "@/lib/incorporations";
 import { explorerUrl } from "@/lib/chains";
@@ -46,15 +47,21 @@ function Chart({ points, marker, label }: { points: [number, number][]; marker?:
 
 export function CoinDetail({ address }: { address: Address }) {
   const inc = contract("Incorporations");
-  const router = contract("ComdRouter");
   const token = contract("ComdToken");
+  // ETH legs route through the pluggable swapper (Pons's graduated pool); until Incorporations.swapper() is set,
+  // trading is COMD-only
+  const swapperRead = useRead<Address>("Incorporations", "swapper", [], undefined, { watch: true });
+  const swapperAddr = swapperRead.value && !/^0x0{40}$/i.test(swapperRead.value) ? swapperRead.value : undefined;
+  const ethEnabled = inc.address ? !!swapperAddr : MOCK && MOCK_CHAIN.swap.swapperConfigured;
+  const swapper = { address: swapperAddr, abi: abiOf("Swapper") };
   const client = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const mock = !inc.address && MOCK ? mockCoins().find((c) => c.address.toLowerCase() === address.toLowerCase()) : undefined;
   const [info, setInfo] = useState<{ name: string; symbol: string; totalSupply?: bigint; image?: string; description?: string; creator?: string } | null>(mock ? { name: mock.name, symbol: mock.symbol, creator: mock.creator } : null);
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [via, setVia] = useState<"eth" | "comd">("eth");
+  const [viaPick, setVia] = useState<"eth" | "comd">("comd");
+  const via = ethEnabled ? viaPick : "comd";
   const [amt, setAmt] = useState("");
   const [out, setOut] = useState<bigint | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -106,11 +113,11 @@ export function CoinDetail({ address }: { address: Address }) {
         if (!inc.address || !client) return;
         if (side === "buy") {
           let company = amountIn;
-          if (via === "eth") company = (await client.simulateContract({ address: router.address!, abi: router.abi as Abi, functionName: "quoteETHForComd", args: [amountIn] } as never)).result as bigint;
+          if (via === "eth") company = (await client.simulateContract({ address: swapper.address!, abi: swapper.abi as Abi, functionName: "quoteETHForComd", args: [amountIn] } as never)).result as bigint;
           setOut((await client.readContract({ address: inc.address, abi: inc.abi as Abi, functionName: "quoteBuy", args: [address, company] })) as bigint);
         } else {
           const company = (await client.readContract({ address: inc.address, abi: inc.abi as Abi, functionName: "quoteSell", args: [address, amountIn] })) as bigint;
-          setOut(via === "eth" ? ((await client.simulateContract({ address: router.address!, abi: router.abi as Abi, functionName: "quoteComdForETH", args: [company] } as never)).result as bigint) : company);
+          setOut(via === "eth" ? ((await client.simulateContract({ address: swapper.address!, abi: swapper.abi as Abi, functionName: "quoteComdForETH", args: [company] } as never)).result as bigint) : company);
         }
       } catch (e) { setErr((e as Error).message.split("\n")[0]); }
     }, 350);
@@ -154,8 +161,8 @@ export function CoinDetail({ address }: { address: Address }) {
         <dl className="kv">
           <dt>Coin</dt><dd><a className="mono ext break" href={explorerUrl("token", address)} target="_blank" rel="noreferrer">{address}</a></dd>
           <dt>Launcher</dt><dd>{info?.creator ? <a className="mono ext" href={explorerUrl("address", info.creator)} target="_blank" rel="noreferrer">{short(info.creator)}</a> : "—"}</dd>
-          <dt>Fees</dt><dd>1% to Counsel rewards · 0.5% of the ETH side to the launcher · 0.5% of the $COMD side burned</dd>
-          <dt>Backing</dt><dd>One $COMD reserve shared by every coin. Paying with ETH routes through the official COMD/ETH pool, so every buy is a $COMD buy.</dd>
+          <dt>Fees</dt><dd>1% to Counsel rewards · 0.5% to the launcher · 0.5% of the $COMD side burned (sent to the dead address)</dd>
+          <dt>Backing</dt><dd>One $COMD reserve shared by every coin. Paying with ETH routes through the $COMD pool on Uniswap (after graduation on Pons), so every buy is a $COMD buy.</dd>
           <dt>Graduation</dt><dd className="muted">Phase 2: at a $COMD threshold, liquidity migrates to a v4 COMD pool.</dd>
         </dl>
         {!mock && trades.length > 0 && (
@@ -185,9 +192,10 @@ export function CoinDetail({ address }: { address: Address }) {
             <button type="button" aria-pressed={side === "sell"} onClick={() => setSide("sell")}>Sell</button>
           </div>
           <div className="seg" role="group" aria-label={side === "buy" ? "Pay with" : "Receive"}>
-            <button type="button" aria-pressed={via === "eth"} onClick={() => setVia("eth")}>{side === "buy" ? "Pay ETH" : "Get ETH"}</button>
             <button type="button" aria-pressed={via === "comd"} onClick={() => setVia("comd")}>{side === "buy" ? "Pay COMD" : "Get COMD"}</button>
+            <button type="button" aria-pressed={via === "eth"} disabled={!ethEnabled} title={ethEnabled ? undefined : "ETH trading opens once the $COMD pool is configured after graduation on Pons"} onClick={() => setVia("eth")}>{side === "buy" ? "Pay ETH" : "Get ETH"}</button>
           </div>
+          {!ethEnabled && <span className="small muted">COMD only for now: ETH trading opens after $COMD graduates on Pons and the pool is configured. <a href={PONS_URL} target="_blank" rel="noreferrer">Get $COMD on Pons</a></span>}
           <div className="field">
             <label htmlFor="inc-amt">You pay</label>
             <div className="amount"><input id="inc-amt" inputMode="decimal" placeholder="0.0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="unit">{payUnit}</span></div>

@@ -4,153 +4,76 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
-import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
-import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 
 import {Base} from "../utils/Base.sol";
 import {MerkleHelper} from "../utils/MerkleHelper.sol";
-import {ComdToken} from "../../src/ComdToken.sol";
+import {MockComd} from "../../src/mocks/MockComd.sol";
 import {CounselNFT} from "../../src/CounselNFT.sol";
 import {RewardDistributor} from "../../src/RewardDistributor.sol";
 import {ContributorDistributor} from "../../src/launch/ContributorDistributor.sol";
-import {ComdTaxHook} from "../../src/ComdTaxHook.sol";
-import {ComdRouter} from "../../src/ComdRouter.sol";
 import {Flywheel} from "../../src/Flywheel.sol";
+import {Incorporations} from "../../src/Incorporations.sol";
 import {MockMarketplace} from "../../src/mocks/MockMarketplace.sol";
-import {MockERC20} from "../mocks/Mocks.sol";
-import {BuyWall} from "../../src/BuyWall.sol";
-import {StakedComd} from "../../src/StakedComd.sol";
-import {RewardDripper} from "../../src/RewardDripper.sol";
-import {Incorporations, IComdRouterSwaps, IRewardDripperLike} from "../../src/Incorporations.sol";
+import {MockERC20, MockSwapper} from "../mocks/Mocks.sol";
+
+/// @notice Invariant campaigns (V6 / Pons mode): Flywheel bucket conservation, distributors never over-pay,
+///         Incorporations reserve solvency.
 
 // =====================================================================================================
-// 1. Tax + trim conservation: taxIn == Σ buckets + spent; hook charged == Flywheel taxIn + pending claims;
-//    every swap's tax is exactly 5% (exact-in buy / exact-in sell measured per call)
+// 1. Flywheel conservation: taxIn == Σ buckets + buyback spent + sweep spent; ETH balance == buckets; every COMD
+//    bought back sits at the dead address; swept ids == count; sweep price cap
 // =====================================================================================================
 
-contract TaxHandler is Test {
-    ComdTaxHook public hook;
-    ComdRouter public router;
+contract FlywheelHandler is Test {
     Flywheel public flywheel;
-    ComdToken public comd;
-    PoolSwapTest public raw;
+    MockSwapper public swapper;
     MockMarketplace public market;
     IERC721 public counsel;
     address public keeper;
     address public seller;
-    address[3] public traders;
+    address public payer = makeAddr("pons");
     uint256 public nextListing = 1;
     uint256 public maxListing;
-    uint256 public badTaxCalls; // swaps whose tax was not exactly 5%
     mapping(bytes32 => uint256) public ok; // successful calls per action (coverage check)
 
-    constructor(ComdTaxHook h, ComdRouter r, Flywheel f, ComdToken c, PoolSwapTest raw_) {
-        hook = h;
-        router = r;
+    constructor(Flywheel f, MockSwapper s, MockMarketplace m, IERC721 c, address keeper_, address seller_, uint256 n) {
         flywheel = f;
-        comd = c;
-        raw = raw_;
-        traders = [makeAddr("t1"), makeAddr("t2"), makeAddr("t3")];
-        for (uint256 i; i < 3; ++i) {
-            vm.startPrank(traders[i]);
-            comd.approve(address(router), type(uint256).max);
-            comd.approve(address(raw), type(uint256).max);
-            vm.stopPrank();
-        }
-    }
-
-    BuyWall public wall;
-
-    receive() external payable {} // keeper tips from BuyWall.rebalance
-
-    function setWall(BuyWall w) external {
-        wall = w;
-    }
-
-    function initSweep(MockMarketplace m, IERC721 counsel_, address keeper_, address seller_, uint256 listings) external {
+        swapper = s;
         market = m;
-        counsel = counsel_;
+        counsel = c;
         keeper = keeper_;
         seller = seller_;
-        maxListing = listings;
+        maxListing = n;
     }
 
-    function buy(uint256 t, uint256 eth) external {
-        address who = traders[t % 3];
-        eth = bound(eth, 1e9, 3 ether);
-        vm.deal(who, who.balance + eth);
-        uint256 t0 = hook.totalTaxed();
-        vm.prank(who);
-        try router.swapExactETHForComd{value: eth}(0, who, block.timestamp) { ++ok["buy"];
-            if (hook.totalTaxed() - t0 != eth * 500 / 10_000) ++badTaxCalls;
-        } catch {}
+    /// Pons payout (or anyone) sends ETH; half of the time through the alias.
+    function tax(uint256 eth, bool alias_) external {
+        eth = bound(eth, 0, 5 ether);
+        vm.deal(payer, payer.balance + eth);
+        vm.prank(payer);
+        if (alias_) {
+            flywheel.notifyTax{value: eth}();
+        } else {
+            (bool s,) = address(flywheel).call{value: eth}("");
+            require(s);
+        }
+        ++ok["tax"];
     }
 
-    function sell(uint256 t, uint256 pct) external {
-        address who = traders[t % 3];
-        uint256 bal = comd.balanceOf(who);
-        if (bal < 1e18) return;
-        uint256 amt = bal * bound(pct, 1, 100) / 100;
-        uint256 t0 = hook.totalTaxed();
-        uint256 e0 = who.balance;
-        vm.prank(who);
-        try router.swapExactComdForETH(amt, 0, who, block.timestamp) { ++ok["sell"];
-            uint256 net = who.balance - e0;
-            uint256 tax = hook.totalTaxed() - t0;
-            if (tax != (net + tax) * 500 / 10_000) ++badTaxCalls;
-        } catch {}
+    /// Venue conditions change: rate, partial fills, a hook tax on the ETH leg.
+    function venue(uint256 rate, uint16 refund, uint16 hookTax) external {
+        swapper.setRate(bound(rate, 1e6, 1e9) * 1e18);
+        swapper.setRefundBps(uint16(bound(refund, 0, 5_000)));
+        swapper.setEthTaxBps(uint16(bound(hookTax, 0, 1_000)));
     }
 
-    function buyExactOut(uint256 t, uint256 amt) external {
-        address who = traders[t % 3];
-        amt = bound(amt, 1e18, 20_000_000e18);
-        vm.deal(who, who.balance + 10 ether);
-        PoolKey memory key = hook.poolKey();
-        vm.prank(who);
-        try raw.swap{value: 10 ether}(
-            key,
-            SwapParams({zeroForOne: true, amountSpecified: int256(amt), sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1}),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
-            ""
-        ) {
-            ++ok["buyExactOut"];
-        } catch {}
-    }
-
-    function sellExactOut(uint256 t, uint256 eth) external {
-        address who = traders[t % 3];
-        if (comd.balanceOf(who) < 1e18) return;
-        eth = bound(eth, 1e9, 0.5 ether);
-        PoolKey memory key = hook.poolKey();
-        vm.prank(who);
-        try raw.swap(
-            key,
-            SwapParams({zeroForOne: false, amountSpecified: int256(eth), sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE - 1}),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
-            ""
-        ) {
-            ++ok["sellExactOut"];
-        } catch {}
-    }
-
-    function buyback() external {
+    function buyback(uint256 minOut) external {
+        (uint256 b,) = flywheel.bucketBalances();
+        minOut = bound(minOut, 0, swapper.quoteETHForComd(b) * 2);
         vm.prank(keeper);
-        try flywheel.buyback(0) { ++ok["buyback"];} catch {}
-    }
-
-    function rebalanceWall() external {
-        try wall.rebalance() {
-            ++ok["wall"];
+        try flywheel.buyback(minOut) {
+            ++ok["buyback"];
         } catch {}
-    }
-
-    /// Time passes: the cap decays (fast decay set in setUp), so later sells trim.
-    function wait(uint256 dt) external {
-        vm.warp(block.timestamp + bound(dt, 1 hours, 60 days));
-        vm.roll(block.number + bound(dt, 1, 300));
     }
 
     function sweep(uint256 price) external {
@@ -162,13 +85,18 @@ contract TaxHandler is Test {
         (, uint256 bucket) = flywheel.bucketBalances();
         uint256 maxPrice = bucket < 0.5 ether ? bucket : 0.5 ether;
         vm.prank(keeper);
-        try flywheel.sweep(address(market), "", id, maxPrice) { ++ok["sweep"];
+        try flywheel.sweep(address(market), "", id, maxPrice) {
+            ++ok["sweep"];
             ++nextListing;
         } catch {}
     }
 
-    function flush() external {
-        try hook.flush() { ++ok["flush"];} catch {}
+    function award(uint256 i) external {
+        uint256[] memory ids = flywheel.sweptTokenIds();
+        if (ids.length == 0) return;
+        vm.prank(flywheel.owner());
+        flywheel.awardSwept(ids[i % ids.length], makeAddr("counsel-of-the-year"));
+        ++ok["award"];
     }
 
     function setBps(uint16 b) external {
@@ -178,76 +106,46 @@ contract TaxHandler is Test {
     }
 }
 
-contract TaxConservationInvariant is Base {
-    function _selectors() internal view returns (FuzzSelector memory fs) {
-        bytes4[] memory sel = new bytes4[](10);
-        sel[0] = TaxHandler.buy.selector;
-        sel[1] = TaxHandler.sell.selector;
-        sel[2] = TaxHandler.buyExactOut.selector;
-        sel[3] = TaxHandler.sellExactOut.selector;
-        sel[4] = TaxHandler.buyback.selector;
-        sel[5] = TaxHandler.rebalanceWall.selector;
-        sel[6] = TaxHandler.sweep.selector;
-        sel[7] = TaxHandler.flush.selector;
-        sel[8] = TaxHandler.setBps.selector;
-        sel[9] = TaxHandler.wait.selector;
-        fs = FuzzSelector({addr: address(handler), selectors: sel});
-    }
-
-    TaxHandler handler;
+contract FlywheelConservationInvariant is Base {
+    FlywheelHandler handler;
     address seller = makeAddr("seller");
 
     function setUp() public {
         setUpSystem();
-        initAndSeed(); // first buy inside the run will create claims (PoolManager starts with no ETH)
-        vm.startPrank(admin);
+        vm.prank(admin);
         counsel.reserveMint(seller, 20);
-        vm.stopPrank();
-        handler = new TaxHandler(hook, router, flywheel, comd, swapRouter);
-        handler.initSweep(marketplace, IERC721(address(counsel)), keeper, seller, 20);
-        handler.setWall(wall);
-        _fastDecay();
-        targetSelector(_selectors());
+        handler = new FlywheelHandler(flywheel, swapper, marketplace, IERC721(address(counsel)), keeper, seller, 20);
         vm.prank(seller);
         counsel.setApprovalForAll(address(marketplace), true);
         targetContract(address(handler));
     }
 
-    /// forge-config: default.invariant.runs = 48
+    /// forge-config: default.invariant.runs = 64
     /// forge-config: default.invariant.depth = 40
-    /// forge-config: local.invariant.runs = 48
+    /// forge-config: local.invariant.runs = 64
     /// forge-config: local.invariant.depth = 40
-    function invariant_taxAndTrimConservation() public view {
+    function invariant_flywheelConservation() public view {
         _assertTaxConservation();
-        _assertSplitConservation();
-        assertEq(comd.balanceOf(address(wall)), 0, "wall holds no COMD at rest");
-        assertEq(handler.badTaxCalls(), 0, "a swap was not taxed exactly 5%");
-        assertEq(comd.balanceOf(address(flywheel)), 0, "flywheel holds no COMD (all buybacks burned)");
-        assertEq(flywheel.sweptTokenIds().length, flywheel.totalSwept());
+        assertEq(flywheel.sweptTokenIds().length + handler.ok("award"), flywheel.totalSwept());
         assertLe(flywheel.sweepSpent(), flywheel.totalSwept() * flywheel.maxSweepPrice(), "sweep price cap");
+        assertEq(comd.totalSupply(), SUPPLY, "external token: nothing minted or burned");
     }
 
     /// Handler sanity: every action the campaign uses succeeds on its own (the campaign wraps them in try/catch).
     function test_handlerActionsAllSucceed() public {
-        handler.buy(0, 2 ether);
-        handler.buy(1, 1 ether);
-        handler.flush();
-        handler.sell(0, 50);
-        handler.buyExactOut(1, 1_000_000e18);
-        handler.sellExactOut(0, 0.01 ether);
-        handler.buyback();
+        handler.tax(2 ether, false);
+        handler.tax(1 ether, true);
+        handler.venue(1e8, 1_000, 100);
+        handler.buyback(0);
         handler.sweep(0.01 ether);
-        for (uint256 w; w < 6; ++w) handler.wait(60 days); // the cap decays below the room the buys opened
-        handler.sell(1, 100); // trims after the decay
-        vm.deal(address(wall), address(wall).balance + 0.2 ether);
-        handler.rebalanceWall();
-        bytes32[8] memory tags =
-            [bytes32("buy"), "sell", "buyExactOut", "sellExactOut", "buyback", "wall", "sweep", "flush"];
-        for (uint256 k; k < 8; ++k) {
+        handler.award(0);
+        handler.setBps(7_000);
+        handler.tax(1 ether, false);
+        bytes32[4] memory tags = [bytes32("tax"), "buyback", "sweep", "award"];
+        for (uint256 k; k < 4; ++k) {
             assertGt(handler.ok(tags[k]), 0, string(abi.encodePacked("action failed: ", tags[k])));
         }
-        assertGt(hook.stats().trimmedComd, 0, "a trim happened");
-        invariant_taxAndTrimConservation();
+        invariant_flywheelConservation();
     }
 }
 
@@ -386,7 +284,7 @@ contract DistributorHandler is Test, MerkleHelper {
 }
 
 contract DistributorsInvariant is Test {
-    ComdToken comd;
+    MockComd comd;
     CounselNFT counsel;
     RewardDistributor dist;
     DistributorHandler handler;
@@ -394,7 +292,7 @@ contract DistributorsInvariant is Test {
     address settler = makeAddr("settler");
 
     function setUp() public {
-        comd = new ComdToken(address(this));
+        comd = new MockComd();
         counsel = new CounselNFT(admin, admin, "u/");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         bytes32 role = dist.SETTLER_ROLE();
@@ -447,7 +345,7 @@ contract DistributorsInvariant is Test {
 /// Same guarantees with a second, non-COMD ERC-20 as the asset (the distributor is asset-agnostic).
 contract DistributorsInvariantOtherToken is Test {
     MockERC20 tkn;
-    ComdToken comd;
+    MockComd comd;
     CounselNFT counsel;
     RewardDistributor dist;
     DistributorHandler handler;
@@ -456,7 +354,7 @@ contract DistributorsInvariantOtherToken is Test {
 
     function setUp() public {
         tkn = new MockERC20("Other", "OTH");
-        comd = new ComdToken(address(this));
+        comd = new MockComd();
         counsel = new CounselNFT(admin, admin, "u/");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         bytes32 role = dist.SETTLER_ROLE();
@@ -553,18 +451,13 @@ contract IncHandler is Test {
 }
 
 contract IncorporationsSolvencyInvariant is Base {
-    Incorporations inc;
     IncHandler handler;
 
     function setUp() public {
-        setUpSystem();
-        initSeedAndTrade();
-        inc = new Incorporations(
-            ERC20Burnable(address(comd)), IComdRouterSwaps(address(router)), IRewardDripperLike(address(dripper)), admin
-        );
+        setUpSystem(); // Incorporations with the fixed-rate MockSwapper for the ETH legs
         handler = new IncHandler(inc, IERC20(address(comd)));
-        deal(address(comd), handler.traders(0), 10_000_000e18);
-        deal(address(comd), handler.traders(1), 10_000_000e18);
+        comd.transfer(handler.traders(0), 10_000_000e18);
+        comd.transfer(handler.traders(1), 10_000_000e18);
         targetContract(address(handler));
     }
 
@@ -589,143 +482,8 @@ contract IncorporationsSolvencyInvariant is Base {
         assertEq(sumReserve, inc.totalBacking(), "per-coin reserves != totalBacking");
         assertLe(sumSells, inc.totalBacking(), "possible sells > backing");
         assertGe(comd.balanceOf(address(inc)), inc.totalBacking(), "balance < backing");
+        assertEq(comd.balanceOf(DEAD), inc.totalBurned(), "dead address == burned");
+        assertEq(comd.balanceOf(address(distributor)), inc.totalToRewards(), "1% fee lands in Counsel rewards");
+        assertEq(comd.totalSupply(), SUPPLY, "external token: nothing minted or burned");
     }
 }
-
-// =====================================================================================================
-// 4. StakedComd (sCOMD) — share price never decreases (deposits/withdrawals round for the vault; rewards only add)
-// =====================================================================================================
-
-contract VaultHandler is Test {
-    StakedComd public vault;
-    RewardDripper public dripper;
-    IERC20 public comd;
-    address[3] public actors;
-    uint256 public decreases;
-    uint256 public maxDrop;
-
-    constructor(StakedComd v, RewardDripper d, IERC20 c) {
-        vault = v;
-        dripper = d;
-        comd = c;
-        actors = [makeAddr("a1"), makeAddr("a2"), makeAddr("a3")];
-        for (uint256 i; i < 3; ++i) {
-            vm.prank(actors[i]);
-            comd.approve(address(vault), type(uint256).max);
-        }
-        comd.approve(address(dripper), type(uint256).max);
-    }
-
-    function _price() internal view returns (uint256) {
-        return vault.convertToAssets(1e24);
-    }
-
-    modifier checkPrice() {
-        uint256 p0 = _price();
-        _;
-        uint256 p1 = _price();
-        if (p1 < p0) {
-            ++decreases;
-            if (p0 - p1 > maxDrop) maxDrop = p0 - p1;
-        }
-    }
-
-    function deposit(uint256 who, uint256 amt) external checkPrice {
-        address a = actors[who % 3];
-        if (comd.balanceOf(a) == 0) return;
-        amt = bound(amt, 1, comd.balanceOf(a));
-        if (vault.previewDeposit(amt) == 0) return;
-        vm.prank(a);
-        vault.deposit(amt, actors[(who / 3) % 3]);
-    }
-
-    function mint(uint256 who, uint256 shares) external checkPrice {
-        address a = actors[who % 3];
-        shares = bound(shares, 1, 1e30);
-        if (vault.previewMint(shares) > comd.balanceOf(a)) return;
-        vm.prank(a);
-        vault.mint(shares, a);
-    }
-
-    function redeem(uint256 who, uint256 shares) external checkPrice {
-        address a = actors[who % 3];
-        uint256 bal = vault.balanceOf(a);
-        if (bal == 0 || vault.lastDepositBlock(a) == block.number) return;
-        shares = bound(shares, 1, bal);
-        vm.prank(a);
-        vault.redeem(shares, a, a);
-    }
-
-    function withdraw(uint256 who, uint256 assets) external checkPrice {
-        address a = actors[who % 3];
-        uint256 max = vault.maxWithdraw(a);
-        if (max == 0 || vault.lastDepositBlock(a) == block.number) return;
-        assets = bound(assets, 1, max);
-        vm.prank(a);
-        vault.withdraw(assets, a, a);
-    }
-
-    function transfer(uint256 who, uint256 shares) external checkPrice {
-        address a = actors[who % 3];
-        uint256 bal = vault.balanceOf(a);
-        if (bal == 0 || vault.lastDepositBlock(a) == block.number) return;
-        vm.prank(a);
-        vault.transfer(actors[(who % 3 + 1) % 3], bound(shares, 1, bal));
-    }
-
-    function notify(uint256 amt) external checkPrice {
-        uint256 bal = comd.balanceOf(address(this));
-        if (bal == 0) return;
-        amt = bound(amt, 1, bal < 10_000_000e18 ? bal : 10_000_000e18);
-        dripper.notifyReward(amt);
-    }
-
-    function drip() external checkPrice {
-        dripper.drip();
-    }
-
-    function donate(uint256 amt) external checkPrice {
-        uint256 bal = comd.balanceOf(address(this));
-        if (bal == 0) return;
-        comd.transfer(address(vault), bound(amt, 1, bal < 10_000e18 ? bal : 10_000e18));
-    }
-
-    function wait(uint256 dt) external checkPrice {
-        vm.warp(block.timestamp + bound(dt, 1, 3 hours));
-        vm.roll(block.number + 1);
-    }
-}
-
-contract VaultSharePriceInvariant is Test {
-    ComdToken comd;
-    StakedComd vault;
-    RewardDripper dripper;
-    VaultHandler handler;
-
-    function setUp() public {
-        comd = new ComdToken(address(this));
-        vault = new StakedComd(IERC20(address(comd)), address(this));
-        dripper = new RewardDripper(IERC20(address(comd)), address(vault), address(this));
-        handler = new VaultHandler(vault, dripper, IERC20(address(comd)));
-        for (uint256 i; i < 3; ++i) comd.transfer(handler.actors(i), 1_000_000e18);
-        comd.transfer(address(handler), 5_000_000e18);
-        targetContract(address(handler));
-    }
-
-    /// forge-config: default.invariant.runs = 64
-    /// forge-config: default.invariant.depth = 60
-    /// forge-config: local.invariant.runs = 64
-    /// forge-config: local.invariant.depth = 60
-    function invariant_sharePriceNeverDecreases() public view {
-        assertEq(handler.decreases(), 0, "share price decreased");
-    }
-
-    /// forge-config: default.invariant.runs = 64
-    /// forge-config: default.invariant.depth = 60
-    /// forge-config: local.invariant.runs = 64
-    /// forge-config: local.invariant.depth = 60
-    function invariant_vaultSolvent() public view {
-        assertGe(comd.balanceOf(address(vault)), vault.convertToAssets(vault.totalSupply()), "insolvent");
-    }
-}
-

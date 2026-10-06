@@ -1,7 +1,7 @@
 /** Wires config, storage, chain, services and the modules into one control plane. */
 import { createServer, type Server } from "node:http";
 import { privateKeyToAccount } from "viem/accounts";
-import type { Address } from "viem";
+import { erc20Abi, type Abi, type Address } from "viem";
 import type { Config } from "./config.ts";
 import { createStore, iso, type Store, type KvLike } from "./store.ts";
 import { loadBlobStore, type BlobStore } from "./storage.ts";
@@ -54,6 +54,8 @@ export class App {
   readonly writer: ChainWriter | null;
   readonly settler: Settler;
   readonly paymentsEnabled: boolean;
+  /** decimals of the payment asset (COMD_TOKEN), read on chain at startup; 18 when unreadable */
+  comdDecimals = 18;
   readonly skills: SkillCatalog;
   readonly now: () => number;
   readonly fetch: typeof fetch;
@@ -142,6 +144,16 @@ export class App {
       paymentsEnabled = (cfg.storage.PAYMENTS_MODE ?? (cfg.storage.NODE_ENV === "production" ? "off" : "mock")) === "mock";
     }
     const app = new App({ cfg, store, blobs, services, chain, extraChains, writer, settler, paymentsEnabled, now: deps.now ?? Date.now, fetch: deps.fetch ?? fetch });
+    // $COMD is Pons's token: read its decimals rather than assume them (18 expected; fallback 18 when unreadable)
+    if (chain.configured && !/^0x0{40}$/i.test(cfg.comd)) {
+      try {
+        const d = Number(await chain.readContract<number | bigint>(cfg.comd, erc20Abi as Abi, "decimals"));
+        if (Number.isInteger(d) && d >= 0 && d <= 36) app.comdDecimals = d;
+        else console.warn(`[app] COMD_TOKEN ${cfg.comd} decimals() = ${d}; using 18`);
+      } catch (e) {
+        console.warn(`[app] COMD_TOKEN ${cfg.comd} decimals() unreadable (${(e as Error).message.split("\n")[0].slice(0, 120)}); using 18`);
+      }
+    }
     const kc = cfg.keeper;
     const port = deps.keeperPort !== undefined ? deps.keeperPort : kc.key && cfg.rpcUrl ? new ViemKeeperPort(cfg.rpcUrl, cfg.chainId, kc.key) : null;
     app.keeper = new Keeper(kc, port, { now: app.now, reason: !kc.key ? "KEEPER_PRIVATE_KEY not set" : !cfg.rpcUrl ? "RPC_URL not set" : null });

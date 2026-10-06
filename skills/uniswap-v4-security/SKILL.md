@@ -21,8 +21,7 @@ description: Security-first Uniswap v4 hook development: the attack surface of c
 
 Hooks run inside every swap and liquidity change of their pools, with the PoolManager's tokens in play. A
 hook bug can drain users, LPs or the hook itself, or brick the pool. This reference lists the failure modes
-the firm checks on every `univ4_hook` launch and on its own pool (ComdTaxHook and BuyWall), with the guard for
-each.
+the firm checks on every `univ4_hook` launch and on its own pool (ComdTaxHook), with the guard for each.
 
 ## How to apply
 
@@ -62,27 +61,17 @@ applicable, guarded (cite the line) or vulnerable.
 ## Liquidity and price manipulation
 
 - Logic that reads the pool's current price (slot0) during a swap can be manipulated within the same
-  transaction. Guard: use a block-lagged reference or a TWAP; bound actions per block. ComdTaxHook keeps a
-  reference tick that moves at most a fixed number of ticks per block toward earlier blocks' closing ticks, and
-  the BuyWall derives its floor from it.
-- Post-swap liquidity changes (inventory trims): removing liquidity in `afterSwap` must not alter the swapper's
-  delta or the price the swap already reached. Guard: compute the excess from the position's state after the
-  swap, remove only that fraction, settle the removed tokens to the hook, and test that quotes are identical with
-  and without a trim.
-- Protocol bids (buy walls): a standing bid can be filled by a seller who first pushes the price down, or its floor
-  dragged by a pumped reference. Guard: bound floor movement per day in both directions (the BuyWall moves at most
-  one day's allowance per update, review H-01), post only above a gap from the reference, and route what the wall
-  buys through the same split as trims.
+  transaction. Guard: use a block-lagged reference or a TWAP; bound actions per block.
+- Post-swap liquidity changes: removing or adding liquidity in `afterSwap` must not alter the swapper's delta or
+  the price the swap already reached. Guard: test that quotes are identical with and without the hook action.
 - Initialization windows: a pool initialized in one transaction and seeded in another can be swapped against
   at a bad price in between. Guard: initialize and add the first liquidity atomically, or revert swaps until
   seeded (ComdTaxHook's `initializeAndSeed` does both in one transaction, POL wallet only).
-- Just-in-time liquidity and sandwiching around hook or keeper actions (taxes, trims, buybacks, rebalances).
-  Guard: make keeper actions permissionless only when profitable manipulation is bounded; cap keeper tips (the
-  BuyWall tips at most 1% of the ETH handled and at most 0.002 ETH); give keeper swaps a simulated `minOut` (the
-  Flywheel's `buyback(minOut)` is keeper-only with a slippage bound).
+- Just-in-time liquidity and sandwiching around hook or keeper actions (taxes, buybacks, rebalances).
+  Guard: make keeper actions permissionless only when profitable manipulation is bounded; cap keeper tips; give
+  keeper swaps a simulated `minOut` (the Flywheel's `buyback(minOut)` is keeper-only with a slippage bound).
 - Third-party liquidity in a protocol pool can capture fees or trims meant for the protocol. Guard: refuse it in
-  `beforeAddLiquidity` except from the hook itself and its allowlisted helper (ComdTaxHook admits only the
-  BuyWall).
+  `beforeAddLiquidity` (ComdTaxHook admits no liquidity but its own seed).
 - Tax or fee exemptions keyed on `hookData` can be claimed by anyone who sets it. Guard: honour an exemption
   only from a known router that attests its caller (ComdTaxHook exempts only the Flywheel via ComdRouter).
 - Donations (`donate`) change fee growth: hooks that read fee growth must tolerate it.
@@ -97,7 +86,7 @@ applicable, guarded (cite the line) or vulnerable.
 ## Admin powers and upgrades
 
 - Owner-settable parameters (caps, fees, splits) need bounds enforced on chain, events, and ideally a delay.
-  ComdTaxHook bounds its tax (≤ 5%), cap floor and decay, and the trim split (burn ≥ 50%, other legs ≤ 25% each).
+  ComdTaxHook bounds its tax at 5% and has no other parameter.
 - Locked liquidity has no escape hatch: if the position can never be withdrawn, no bug can be remedied by moving
   it. Disclose this; it is the price of a rug-proof pool.
 - Upgradeable hooks can change behaviour behind fixed permissions: avoid, or disclose with a timelock.

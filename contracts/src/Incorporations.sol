@@ -2,49 +2,41 @@
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {LaunchToken} from "./launch/LaunchToken.sol";
+import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 
-interface IRewardDripperLike {
-    function notifyReward(uint256 amount) external;
-}
-
-interface IComdRouterSwaps {
-    function swapExactETHForComd(uint256 minOut, address to, uint256 deadline) external payable returns (uint256);
-    function swapExactComdForETH(uint256 amountIn, uint256 minOut, address to, uint256 deadline)
-        external
-        returns (uint256);
-}
-
-/// @title Incorporations — company coins on a COMD bonding curve (Community Coins equivalent) — Company.md
+/// @title Incorporations — company coins on a $COMD bonding curve (Community Coins equivalent) — Company.md
 /// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
 /// @notice Anyone creates a coin for gas: 1,000,000,000 supply, all of it in a virtual constant-product
 ///         curve priced in COMD: x = virtualComd + comdReserve, y = coinReserve, x·y constant.
 ///         Every coin's real COMD sits in this one contract — the shared COMD backing reserve (`totalBacking`),
 ///         with per-coin accounting so one coin's sellers can never take another's backing.
-/// @notice Fees per trade: 1% of the COMD side to sCOMD stakers (RewardDripper.notifyReward), 0.5% of the COMD side
+/// @notice COMD is the external Pons token (may have no `burn()`): burns are transfers to the dead address.
+///         Fees per trade: 1% of the COMD side to Counsel rewards (RewardDistributor, COMD), 0.5% of the COMD side
 ///         burned, and 0.5% to the launcher — in ETH for ETH trades (of the ETH side), in COMD for COMD trades.
 ///         Launcher ETH accrues here and is pulled with `claimLauncherEth`.
-/// @notice ETH trades route through ComdRouter on the official pool: every ETH buy is a COMD buy and pays the
-///         pool's 5% ETH tax on that leg. The intermediate ETH↔COMD leg has no own minimum; the trader's
-///         `minOut` on the final asset bounds the whole route.
+/// @notice ETH trades route ETH↔COMD through the pluggable `IBuybackSwapper` (owner `setSwapper`, configured after
+///         the Pons graduation); until then `buyWithETH`/`sellForETH` revert `SwapperNotSet()` and COMD trades work.
+///         The intermediate leg has no own minimum; the trader's `minOut` on the final asset bounds the whole route.
 /// @notice Graduation (migrating a coin to a v4 COMD pool at a threshold) is NOT implemented (phase 2).
-/// @notice Owner powers (renounceable): set `virtualComd` for coins created afterwards, within bounds.
+/// @notice Owner powers (Ownable2Step, renounceable): set `virtualComd` for coins created afterwards, within bounds;
+///         set the swapper.
 contract Incorporations is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant COIN_SUPPLY = 1_000_000_000e18;
     uint256 public constant BPS = 10_000;
-    uint256 public constant STAKERS_BPS = 100;
+    uint256 public constant REWARDS_BPS = 100;
     uint256 public constant LAUNCHER_BPS = 50;
     uint256 public constant BURN_BPS = 50;
     uint256 public constant MIN_VIRTUAL = 1_000e18;
     uint256 public constant MAX_VIRTUAL = 10_000_000e18;
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     struct Coin {
         address creator;
@@ -55,9 +47,9 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         string metadataURI;
     }
 
-    ERC20Burnable public immutable comd;
-    IComdRouterSwaps public immutable router;
-    IRewardDripperLike public immutable dripper;
+    IERC20 public immutable comd;
+    address public immutable rewardDistributor;
+    IBuybackSwapper public swapper;
 
     uint256 public virtualComd = 100_000e18;
     address[] public coins;
@@ -65,7 +57,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     mapping(address => uint256) public launcherEthOwed;
     uint256 public totalBacking;
     uint256 public totalBurned;
-    uint256 public totalToStakers;
+    uint256 public totalToRewards;
 
     event CoinCreated(address indexed coin, address indexed creator, string name, string symbol, string metadataURI);
     event Trade(
@@ -76,25 +68,26 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         uint256 coinAmount,
         uint256 ethAmount
     );
-    event Fees(address indexed coin, uint256 toStakers, uint256 burned, uint256 launcherComd, uint256 launcherEth);
+    event Fees(address indexed coin, uint256 toRewards, uint256 burned, uint256 launcherComd, uint256 launcherEth);
     event LauncherEthClaimed(address indexed launcher, uint256 amount);
     event VirtualComdSet(uint256 virtualComd);
+    event SwapperSet(address swapper);
 
     error UnknownCoin();
     error ZeroAmount();
+    error ZeroAddress();
     error Slippage(uint256 out, uint256 minOut);
     error OutOfBounds();
     error TransferFailed();
     error EmptyName();
+    error SwapperNotSet();
 
-    constructor(ERC20Burnable comd_, IComdRouterSwaps router_, IRewardDripperLike dripper_, address owner_)
-        Ownable(owner_)
-    {
+    /// @param swapper_ may be address(0): ETH paths revert `SwapperNotSet()` until the owner sets one
+    constructor(IERC20 comd_, address rewardDistributor_, IBuybackSwapper swapper_, address owner_) Ownable(owner_) {
+        if (address(comd_) == address(0) || rewardDistributor_ == address(0)) revert ZeroAddress();
         comd = comd_;
-        router = router_;
-        dripper = dripper_;
-        IERC20(address(comd_)).forceApprove(address(router_), type(uint256).max);
-        IERC20(address(comd_)).forceApprove(address(dripper_), type(uint256).max);
+        rewardDistributor = rewardDistributor_;
+        _setSwapper(address(swapper_));
     }
 
     receive() external payable {}
@@ -129,7 +122,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     function buyWithComd(address coin, uint256 comdIn, uint256 minOut) external nonReentrant returns (uint256 out) {
         Coin storage c = _coin(coin);
         if (comdIn == 0) revert ZeroAmount();
-        IERC20(address(comd)).safeTransferFrom(msg.sender, address(this), comdIn);
+        comd.safeTransferFrom(msg.sender, address(this), comdIn);
         uint256 net = comdIn - _takeFees(coin, c.creator, comdIn, true);
         out = _buy(c, net);
         if (out < minOut) revert Slippage(out, minOut);
@@ -148,7 +141,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         uint256 gross = _sell(c, amountIn);
         out = gross - _takeFees(coin, c.creator, gross, true);
         if (out < minComdOut) revert Slippage(out, minComdOut);
-        IERC20(address(comd)).safeTransfer(msg.sender, out);
+        comd.safeTransfer(msg.sender, out);
         emit Trade(coin, msg.sender, false, out, amountIn, 0);
     }
 
@@ -158,15 +151,20 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
 
     function buyWithETH(address coin, uint256 minOut) external payable nonReentrant returns (uint256 out) {
         Coin storage c = _coin(coin);
+        if (address(swapper) == address(0)) revert SwapperNotSet();
         if (msg.value == 0) revert ZeroAmount();
         uint256 launcherEth = (msg.value * LAUNCHER_BPS) / BPS;
         launcherEthOwed[c.creator] += launcherEth;
         uint256 sent = msg.value - launcherEth;
         uint256 bal0 = address(this).balance;
-        uint256 comdIn = router.swapExactETHForComd{value: sent}(0, address(this), block.timestamp);
-        // ETH the router refunded (partial fill when the pool runs out of liquidity) goes back to the trader
-        // instead of being stranded here (security review L-03)
+        uint256 comd0 = comd.balanceOf(address(this));
+        swapper.swapExactETHForComd{value: sent}(0, address(this), block.timestamp);
+        // COMD actually received (measured, not trusted from the venue)
+        uint256 comdIn = comd.balanceOf(address(this)) - comd0;
+        if (comdIn == 0) revert ZeroAmount();
+        // ETH the venue refunded (partial fill) goes back to the trader instead of being stranded here (review L-03)
         uint256 unused = address(this).balance + sent - bal0;
+        if (unused > sent) revert TransferFailed();
         uint256 net = comdIn - _takeFees(coin, c.creator, comdIn, false);
         out = _buy(c, net);
         if (out < minOut) revert Slippage(out, minOut);
@@ -185,11 +183,14 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         returns (uint256 ethOut)
     {
         Coin storage c = _coin(coin);
+        if (address(swapper) == address(0)) revert SwapperNotSet();
         if (amountIn == 0) revert ZeroAmount();
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
         uint256 gross = _sell(c, amountIn);
         uint256 net = gross - _takeFees(coin, c.creator, gross, false);
-        uint256 ethGross = router.swapExactComdForETH(net, 0, address(this), block.timestamp);
+        uint256 bal0 = address(this).balance;
+        swapper.swapExactComdForETH(net, 0, address(this), block.timestamp);
+        uint256 ethGross = address(this).balance - bal0;
         uint256 launcherEth = (ethGross * LAUNCHER_BPS) / BPS;
         launcherEthOwed[c.creator] += launcherEth;
         ethOut = ethGross - launcherEth;
@@ -250,6 +251,19 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         emit VirtualComdSet(v);
     }
 
+    /// @notice Point ETH trades at the ETH↔COMD venue (after the Pons graduation). 0 disables ETH trades.
+    function setSwapper(address s) external onlyOwner {
+        _setSwapper(s);
+    }
+
+    function _setSwapper(address s) internal {
+        address old = address(swapper);
+        if (old != address(0)) comd.forceApprove(old, 0);
+        swapper = IBuybackSwapper(s);
+        if (s != address(0)) comd.forceApprove(s, type(uint256).max);
+        emit SwapperSet(s);
+    }
+
     // =====================================================================================
     //                                       internals
     // =====================================================================================
@@ -287,7 +301,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     }
 
     function _feeTotal(uint256 amount, bool comdTrade) internal pure returns (uint256) {
-        uint256 f = (amount * STAKERS_BPS) / BPS + (amount * BURN_BPS) / BPS;
+        uint256 f = (amount * REWARDS_BPS) / BPS + (amount * BURN_BPS) / BPS;
         if (comdTrade) f += (amount * LAUNCHER_BPS) / BPS;
         return f;
     }
@@ -297,15 +311,15 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         internal
         returns (uint256 total)
     {
-        uint256 toStakers = (amount * STAKERS_BPS) / BPS;
+        uint256 toRewards = (amount * REWARDS_BPS) / BPS;
         uint256 burned = (amount * BURN_BPS) / BPS;
         uint256 toLauncher = comdTrade ? (amount * LAUNCHER_BPS) / BPS : 0;
-        if (toStakers > 0) dripper.notifyReward(toStakers);
-        if (burned > 0) comd.burn(burned);
-        if (toLauncher > 0) IERC20(address(comd)).safeTransfer(creator, toLauncher);
-        totalToStakers += toStakers;
+        if (toRewards > 0) comd.safeTransfer(rewardDistributor, toRewards);
+        if (burned > 0) comd.safeTransfer(DEAD, burned);
+        if (toLauncher > 0) comd.safeTransfer(creator, toLauncher);
+        totalToRewards += toRewards;
         totalBurned += burned;
-        total = toStakers + burned + toLauncher;
-        emit Fees(coin, toStakers, burned, toLauncher, 0);
+        total = toRewards + burned + toLauncher;
+        emit Fees(coin, toRewards, burned, toLauncher, 0);
     }
 }

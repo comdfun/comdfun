@@ -1,6 +1,6 @@
 // Contract resolver over @company/abi (packages/abi: generated ABIs + per-chain address book). The minimal fragments
-// in abi-fallback.ts are only used if the package is absent (COMPANY_ABI=fallback) or lacks an export (WETH and Permit2 use the
-// ERC-20 fragment). Addresses: NEXT_PUBLIC_<NAME> env > @company/abi addresses[chainId] (zero = not deployed) > fallback.
+// in abi-fallback.ts are only used if the package is absent or lacks an export (WETH and Permit2 use the ERC-20 fragment;
+// "Swapper" resolves to the UniswapV4PoolSwapper ABI). Addresses: NEXT_PUBLIC_<NAME> env > @company/abi addresses[chainId] (zero = not deployed) > fallback.
 import * as Pkg from "@company/abi";
 import * as Fallback from "./abi-fallback";
 import type { Abi, Address } from "viem";
@@ -14,12 +14,12 @@ function lowerFirst(s: string) {
 }
 
 /** Key in @company/abi's address book / ABI export prefix for each contract name. */
-const PKG_KEY: Partial<Record<Name | "ERC20", string>> = { WETH: "weth", Permit2: "permit2", CounselNFT: "counselNFT", ComdToken: "comdToken", ComdRouter: "comdRouter", ComdTaxHook: "comdTaxHook" };
+const PKG_KEY: Partial<Record<Name | "ERC20", string>> = { WETH: "weth", Permit2: "permit2", CounselNFT: "counselNFT", ComdToken: "comdToken", Swapper: "swapper" };
 export const keyOf = (name: string) => PKG_KEY[name as Name] ?? lowerFirst(name);
 
 export function abiOf(name: Name | "ERC20"): Abi {
   // @company/abi exports `companyRouterAbi`, `counselNFTAbi`, … (viem-ready, `as const`)
-  const candidates = [`${keyOf(name)}Abi`, `${lowerFirst(name)}Abi`, `${name}Abi`, name, `${name}ABI`];
+  const candidates = [`${keyOf(name)}Abi`, `${lowerFirst(name)}Abi`, `${name}Abi`, name, `${name}ABI`, ...(name === "Swapper" ? ["uniswapV4PoolSwapperAbi"] : [])];
   for (const c of candidates) {
     const v = pkg[c];
     if (Array.isArray(v)) return v as Abi;
@@ -35,13 +35,8 @@ export function abiOf(name: Name | "ERC20"): Abi {
 const ENV: Partial<Record<Name, string | undefined>> = {
   CounselNFT: process.env.NEXT_PUBLIC_COUNSEL_NFT,
   ComdToken: process.env.NEXT_PUBLIC_COMD_TOKEN,
-  ComdRouter: process.env.NEXT_PUBLIC_COMD_ROUTER,
-  ComdTaxHook: process.env.NEXT_PUBLIC_COMD_TAX_HOOK,
   Flywheel: process.env.NEXT_PUBLIC_FLYWHEEL,
-  BuyWall: process.env.NEXT_PUBLIC_BUY_WALL,
-  StakedComd: process.env.NEXT_PUBLIC_STAKED_COMD,
-  RewardDripper: process.env.NEXT_PUBLIC_REWARD_DRIPPER,
-  Bond: process.env.NEXT_PUBLIC_BOND,
+  Swapper: process.env.NEXT_PUBLIC_SWAPPER,
   Permit2: process.env.NEXT_PUBLIC_PERMIT2,
   Incorporations: process.env.NEXT_PUBLIC_INCORPORATIONS,
   IdentityRegistry: process.env.NEXT_PUBLIC_IDENTITY_REGISTRY,
@@ -70,13 +65,8 @@ export function contract(name: Name) {
 
 export const ADDRESS_BOOK: Name[] = [
   "ComdToken",
-  "ComdTaxHook",
-  "ComdRouter",
   "Flywheel",
-  "BuyWall",
-  "StakedComd",
-  "RewardDripper",
-  "Bond",
+  "Swapper",
   "CounselNFT",
   "IdentityRegistry",
   "RevenueRouter",

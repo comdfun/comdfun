@@ -6,7 +6,7 @@ export const flywheelAbi = [
       {
         "name": "comd_",
         "type": "address",
-        "internalType": "contract ERC20Burnable"
+        "internalType": "contract IERC20"
       },
       {
         "name": "counsel_",
@@ -39,6 +39,19 @@ export const flywheelAbi = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "DEAD",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -176,7 +189,7 @@ export const flywheelAbi = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract ERC20Burnable"
+        "internalType": "contract IERC20"
       }
     ],
     "stateMutability": "view"
@@ -190,19 +203,6 @@ export const flywheelAbi = [
         "name": "",
         "type": "address",
         "internalType": "contract IERC721"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "hook",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -309,19 +309,6 @@ export const flywheelAbi = [
   },
   {
     "type": "function",
-    "name": "router",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IComdRouterLike"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "setAdapter",
     "inputs": [
       {
@@ -358,10 +345,10 @@ export const flywheelAbi = [
   },
   {
     "type": "function",
-    "name": "setHook",
+    "name": "setComd",
     "inputs": [
       {
-        "name": "h",
+        "name": "c",
         "type": "address",
         "internalType": "address"
       }
@@ -397,16 +384,29 @@ export const flywheelAbi = [
   },
   {
     "type": "function",
-    "name": "setRouter",
+    "name": "setSwapper",
     "inputs": [
       {
-        "name": "r",
+        "name": "s",
         "type": "address",
         "internalType": "address"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "swapper",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IBuybackSwapper"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -618,10 +618,10 @@ export const flywheelAbi = [
   },
   {
     "type": "event",
-    "name": "HookSet",
+    "name": "ComdSet",
     "inputs": [
       {
-        "name": "hook",
+        "name": "comd",
         "type": "address",
         "indexed": false,
         "internalType": "address"
@@ -695,10 +695,10 @@ export const flywheelAbi = [
   },
   {
     "type": "event",
-    "name": "RouterSet",
+    "name": "SwapperSet",
     "inputs": [
       {
-        "name": "router",
+        "name": "swapper",
         "type": "address",
         "indexed": false,
         "internalType": "address"
@@ -779,6 +779,11 @@ export const flywheelAbi = [
   },
   {
     "type": "error",
+    "name": "ComdNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "Empty",
     "inputs": []
   },
@@ -794,17 +799,17 @@ export const flywheelAbi = [
   },
   {
     "type": "error",
-    "name": "NotHook",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "NotKeeper",
     "inputs": []
   },
   {
     "type": "error",
     "name": "NotSwept",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NothingReceived",
     "inputs": []
   },
   {
@@ -841,12 +846,23 @@ export const flywheelAbi = [
   },
   {
     "type": "error",
-    "name": "TransferFailed",
+    "name": "SafeERC20FailedOperation",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SwapperNotSet",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "UnexpectedEth",
+    "name": "TransferFailed",
     "inputs": []
   },
   {

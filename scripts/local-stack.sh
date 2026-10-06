@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Full local demo of Company.md: anvil (chain id 46630) → contracts (Deploy.s.sol) → 100% of COMD seeded into the
-# COMD/ETH pool (SeedPool.s.sol) → Chambers (apps/api) → website.
+# Chambers (apps/api) → website. Pons mode: no own pool; MockComd stands in for the Pons token.
 #
 #   scripts/local-stack.sh                    # everything; Ctrl+C stops it all
 #   scripts/local-stack.sh --contracts-only   # anvil + deploy, print addresses, stop anvil
@@ -129,19 +129,8 @@ COUNSEL="$(node -p "require('$STACK_DIR/deployments.json').counselNFT")"
 MC3_CODE="$(node -e "const s=require('fs').readFileSync('$ROOT/node_modules/viem/_esm/constants/contracts.js','utf8');process.stdout.write(/multicall3Bytecode\s*=\s*'(0x[0-9a-f]+)'/.exec(s)[1])")"
 MC3_TMP="$("$CAST" send --private-key "$DEPLOYER_KEY" --rpc-url "$RPC" --json --create "$MC3_CODE" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).contractAddress))")"
 "$CAST" rpc anvil_setCode 0xcA11bde05977b3631167028862bE2a173976CA11 "$("$CAST" code "$MC3_TMP" --rpc-url "$RPC")" --rpc-url "$RPC" >/dev/null
-# Open the market the way mainnet does: the POL wallet (the dev account here) seeds 100% of COMD into the COMD/ETH
-# pool in one transaction (ComdTaxHook.initializeAndSeed). Swaps, the 5% tax, trims and the Flywheel work from here on.
-HOOK_ADDR="$(node -p "require('$STACK_DIR/deployments.json').comdTaxHook")"
-SEED_BC="$ROOT/contracts/broadcast/SeedPool.s.sol/$CHAIN_ID"
-rm -rf "$STACK_DIR/.seed-backup"; [ -d "$SEED_BC" ] && cp -R "$SEED_BC" "$STACK_DIR/.seed-backup"
-if (cd "$ROOT/contracts" && env FOUNDRY_PROFILE="$DEPLOY_PROFILE" POL_PRIVATE_KEY="$DEPLOYER_KEY" HOOK="$HOOK_ADDR" \
-      "$FORGE" script script/SeedPool.s.sol:SeedPool --rpc-url "$RPC" --broadcast --slow) > "$STACK_DIR/seed.log" 2>&1; then
-  log "COMD/ETH pool seeded with 100% of supply (log $STACK_DIR/seed.log)"
-else
-  log "warning: seeding the COMD/ETH pool failed (see $STACK_DIR/seed.log); swaps stay closed"
-fi
-# keep any real testnet SeedPool broadcast intact
-rm -rf "$SEED_BC"; [ -d "$STACK_DIR/.seed-backup" ] && mkdir -p "$(dirname "$SEED_BC")" && mv "$STACK_DIR/.seed-backup" "$SEED_BC"
+# Pons mode: $COMD is Pons's token on real chains; here Deploy.s.sol deployed a MockComd stand-in and the deployer
+# holds all 1B. The Flywheel's swapper stays unconfigured until a pool exists, exactly as before the Pons graduation.
 log "deployed; Counsel phase 2 (public, free). Addresses: $STACK_DIR/deployments.json"
 cat "$STACK_DIR/deployments.json"; echo
 
@@ -162,8 +151,8 @@ SITES_DOMAIN=sites.localhost
 STORAGE_DRIVER=local
 STORAGE_DIR=$STACK_DIR/storage
 ATTESTER_PRIVATE_KEY=$ATTESTER_KEY
-# the deployer is also the KEEPER here (Deploy.s.sol defaults KEEPER to ADMIN): Flywheel buyback, BuyWall rebalance,
-# RewardDripper drip, hook flush, RevenueRouter.distribute
+# the deployer is also the KEEPER here (Deploy.s.sol defaults KEEPER to ADMIN): hook flush, Flywheel buyback,
+# RevenueRouter.distribute
 KEEPER_PRIVATE_KEY=$DEPLOYER_KEY
 KEEPER_DISTRIBUTE_MIN_COMD=1
 CONTACT_EMAIL=team@comd.fun

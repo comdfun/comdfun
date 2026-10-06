@@ -3,6 +3,26 @@
 > **This is not an audit.** Internal, adversarial reviews done in a limited time box. **Before significant TVL sits
 > in these contracts on Robinhood Chain mainnet (4663), have them reviewed by an external audit firm.**
 
+# V6 (2026-10-06): Pons mode — own pool removed, pluggable swapper, ETH receive
+
+- **Removed** (with their tests, invariants and findings C-01, H-01, M-02, L-01, I-01, L-05): `ComdToken`,
+  `ComdTaxHook`, `ComdRouter`, `BuyWall`, `StakedComd`, `RewardDripper`, `Bond`, `SeedPool`, the POL wallet. $COMD,
+  its 5% tax, the bonding curve and the locked v4 liquidity are Pons's; nothing here can touch them.
+- **COMD is an untrusted-but-plain external ERC-20** (`COMD_TOKEN`): no `burn()` assumed — burns are
+  `safeTransfer` to `0x…dEaD`, counted in `totalBurned`; decimals read on-chain; every amount received from a venue is
+  measured by balance delta, never trusted from the return value (`Flywheel.buyback`, `Incorporations.buyWithETH/sellForETH`).
+- **New surface 1 — `Flywheel.receive()`/`notifyTax()` from anyone.** Only effect: ETH is added to the buckets by `bps()`
+  (no reentrancy, no external call). Refunds that arrive during our own buyback/sweep are flagged (`_inOp`) and credited
+  back to the bucket, never counted as tax — conservation `taxIn == buckets + spent` is an invariant (`FlywheelConservationInvariant`).
+- **New surface 2 — `IBuybackSwapper` (`setSwapper`, owner).** A malicious or buggy venue can take the buyback bucket /
+  an ETH trade's COMD leg (owner risk, documented; multisig + timelock). `buyback` and `sweep` are `nonReentrant` and
+  tested against re-entering adapters and swappers; `UniswapV4PoolSwapper` holds nothing between calls, only accepts
+  ETH from the PoolManager, and `unlockCallback` is PoolManager-only. Tested only against a hookless local v4 pool —
+  Pons's hook is not reproduced; if it blocks arbitrary unlock callers another adapter must be plugged in.
+- Incorporations: 1% fee is now a plain transfer to `RewardDistributor` (no `notifyReward`); ETH paths revert
+  `SwapperNotSet()` until configured; solvency invariant extended with dead-address / rewards bookkeeping.
+- Suite: 93 tests / 17 suites green (unit, fuzz, 4 invariant campaigns, deploy, integration on the deploy script).
+
 # V4 (2026-10-06): COMD revenue, ETH Bond, USDG removed
 
 Scope of the change (everything else is V3, unchanged):

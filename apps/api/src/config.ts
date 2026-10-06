@@ -6,9 +6,11 @@
  * deployment file DEPLOYMENTS_FILE (contracts/deployments/<chainId>.json written by Deploy.s.sol), then (3) the
  * `@company/abi` address book for CHAIN_ID when it is marked deployed.
  *
- * Company.md V4: payments in $COMD (18 decimals, PRICE_COMD default 100 COMD), payTo = RevenueRouter (80% Counsel
- * rewards / 20% firm treasury); the 5% ETH tax of ComdTaxHook feeds the Flywheel (buyback-and-burn / floor sweep);
- * the hook also trims inventory above its cap (85% burn / 6% Bond / 4.5% stakers / 4.5% seats) and funds the BuyWall.
+ * Company.md (Pons mode): $COMD is minted and traded on Pons (COMD_TOKEN is that external ERC-20; its decimals are
+ * read on chain at startup, 18 expected). Jobs are paid in COMD (PRICE_COMD default 100 COMD), payTo = RevenueRouter
+ * (80% Counsel rewards / 20% firm treasury). Pons pays the creator wallet's ETH (5% tax share) into the Flywheel
+ * (buyback-and-burn through a pluggable swapper / Counsel floor sweep). Counsel rewards are COMD only (80% of job
+ * revenue + the 1% Incorporations fee land in the RewardDistributor).
  * Public defaults (production): https://comd.fun, https://api.comd.fun, sites.comd.fun, team@comd.fun.
  */
 import { readFileSync } from "node:fs";
@@ -46,13 +48,12 @@ export interface Config {
   contributorDistributor: Address | null;
   revenueRouter: Address | null;
   flywheel: Address | null;
-  comdRouter: Address | null;
-  comdTaxHook: Address | null;
-  buyWall: Address | null;
-  stakedComd: Address | null;
-  rewardDripper: Address | null;
-  bond: Address | null;
-  /** the keeper loop (Flywheel buyback/distribute, RevenueRouter.distribute); enabled by KEEPER_PRIVATE_KEY */
+  /** the Flywheel's IBuybackSwapper (UniswapV4PoolSwapper), configured by its owner after the Pons graduation */
+  swapper: Address | null;
+  incorporations: Address | null;
+  /** Pons trade page for $COMD (PONS_URL), shown by GET /flywheel and the website */
+  ponsUrl: string | null;
+  /** the keeper loop (Flywheel.buyback when the swapper is configured, RevenueRouter.distribute); KEEPER_PRIVATE_KEY */
   keeper: KeeperConfig;
   /** marketplace listing source for GET /flywheel/sweep-candidates (null = the route returns []) */
   sweepListingsUrl: string | null;
@@ -110,7 +111,7 @@ function int(v: string | undefined, d: number): number {
   return Number.isFinite(n) ? n : d;
 }
 
-type BookKey = "counselNFT" | "comdToken" | "identityRegistry" | "reputationRegistry" | "projectFactory" | "rewardDistributor" | "contributorDistributor" | "revenueRouter" | "flywheel" | "comdRouter" | "comdTaxHook" | "buyWall" | "stakedComd" | "rewardDripper" | "bond" | "permit2";
+type BookKey = "counselNFT" | "comdToken" | "identityRegistry" | "reputationRegistry" | "projectFactory" | "rewardDistributor" | "contributorDistributor" | "revenueRouter" | "flywheel" | "swapper" | "incorporations" | "permit2";
 
 function deploymentBook(env: Record<string, string | undefined>, chainId: number): { file: Partial<Record<BookKey, string>>; abi: Partial<AddressBook> } {
   let file: Partial<Record<BookKey, string>> = {};
@@ -147,9 +148,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const publicApiUrl = (env.PUBLIC_API_URL || (production ? BRAND.api : `http://localhost:${port}`)).replace(/\/$/, "");
   const revenueRouter = pick("REVENUE_ROUTER", "revenueRouter");
   const flywheel = pick("FLYWHEEL", "flywheel");
-  const comdTaxHook = pick("COMD_TAX_HOOK", "comdTaxHook");
-  const buyWall = pick("BUY_WALL", "buyWall");
-  const rewardDripper = pick("REWARD_DRIPPER", "rewardDripper");
   // payTo defaults to the RevenueRouter (SPEC §6: x402 payTo = RevenueRouter)
   const payTo = addr(env.PAYTO_ADDRESS) ?? revenueRouter ?? (ZERO as Address);
   const enabled = env.ENABLED_ACTIONS ? (env.ENABLED_ACTIONS.split(",").map((s) => s.trim()).filter((a) => (ACTIONS as readonly string[]).includes(a)) as Action[]) : [...ACTIONS];
@@ -181,13 +179,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     contributorDistributor: pick("CONTRIBUTOR_DISTRIBUTOR", "contributorDistributor"),
     revenueRouter,
     flywheel,
-    comdRouter: pick("COMD_ROUTER", "comdRouter"),
-    comdTaxHook,
-    buyWall,
-    stakedComd: pick("STAKED_COMD", "stakedComd"),
-    rewardDripper,
-    bond: pick("BOND", "bond"),
-    keeper: keeperConfig(env, { revenueRouter, flywheel, taxHook: comdTaxHook, buyWall, rewardDripper }),
+    swapper: pick("SWAPPER", "swapper"),
+    incorporations: pick("INCORPORATIONS", "incorporations"),
+    ponsUrl: (env.PONS_URL || env.NEXT_PUBLIC_PONS_URL || "").replace(/\/$/, "") || null,
+    keeper: keeperConfig(env, { revenueRouter, flywheel }),
     sweepListingsUrl: env.SWEEP_LISTINGS_URL || null,
     treasury: addr(env.TREASURY_ADDRESS) ?? payTo,
     addressSource,

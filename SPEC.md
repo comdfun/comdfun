@@ -1,8 +1,8 @@
-# COMPANY.MD ($COMD) — Build Spec v4
+# COMPANY.MD ($COMD) — Build Spec v5
 
-Source of truth for every package in this repo. Status: V4 (final for launch), 2026-10-06; supersedes v1–v3.
+Source of truth for every package in this repo. Status: V5 (final for launch), 2026-10-06; supersedes v1–v4.
 Contracts UNAUDITED. Binding names (routes, env, signatures, signing domains) are in [INTERFACES.md](INTERFACES.md),
-whose "V4" block wins over anything older.
+whose "V5" block wins over anything older.
 
 Company.md is inspired by IMD (imd.fun) and offers the same features on **Robinhood Chain**, themed as a **law firm**,
 paid in **$COMD**, styled as a **colourful pixel arcade on black**. 2,000 NFTs ("Counsel") are seats; each seat is
@@ -12,8 +12,8 @@ deploys. Everything is public and recorded on-chain.
 
 - Web `https://comd.fun` · API `https://api.comd.fun` (WS `wss://api.comd.fun/agent`) · hosted sites
   `https://<label>.sites.comd.fun` · contact `team@comd.fun` · X `https://x.com/comdfun`.
-- Worker CLI `comd` (config `~/.comd/`), released to GitHub `comd-fun/worker`; swarm output in the GitHub org
-  `comd-filings`.
+- Worker CLI `comd` (config `~/.comd/`), released to GitHub `comdfun/worker`; swarm output in the GitHub org
+  `comdfun`.
 - The product name is always written **Company.md**; the token is **$COMD**; the collection is "Company.md
   Counsel" (`COUNSEL`), items "Counsel #0042".
 
@@ -60,14 +60,14 @@ Gas token is ETH. Testnet first, mainnet after audit. `scripts/check-mainnet-add
 | deployer | Registrar | service `deployer` |
 | review / adversarial review | Cross-examination | skill `adversarial-review` |
 | audit panel (4 specialists + judge) | The Bench (4 justices + chief justice) | `audit-specialist`, `audit-judge` |
-| POOL4 (swap / stake / bond / docs) | The Vault (Swap / Stake / Bond / Flywheel) | `/swap`, `/stake`, `/bond`, `/flywheel` |
-| CappedBurnHook | ComdTaxHook (tax + capped inventory) + BuyWall | |
-| sIMD | sCOMD (staked COMD) | |
+| POOL4 swap | Swap | `/swap` |
+| CappedBurnHook (burn mechanics) | ComdTaxHook (5% ETH tax) → the Flywheel | `/flywheel` |
 | Community Coins | Incorporations (company coins, "Coins" in the nav) | `/incorporations` |
 | steps in 24h | billable steps in 24h | |
 | worker CLI `imd` | `comd` CLI | |
 
-Navigation: Docket · Retain · $COMD · Vault (Swap, Stake, Bond, Flywheel) · Coins · Mint · Docs, plus "Pair a machine".
+Navigation: Docket · Retain · $COMD · Vault (Swap, Flywheel) · Coins · Mint · Docs, plus "Pair a machine".
+`/stake` and `/bond` redirect to `/flywheel`.
 Voice: precise, dry, legal. "Filed.", "Sustained.", "Overruled.", "On the record." No hype, no emoji.
 
 ---------------------------------------------------------------------------------------------------------------
@@ -107,8 +107,8 @@ Voice: precise, dry, legal. "Filed.", "Sustained.", "Overruled.", "On the record
   Admiralty), Headwear, Skin (6 tones + Chrome robot + Gold robot rare), Eyes (… Laser rare), Attire, Neckwear,
   Held (Gavel, Quill, Briefcase, Scales, Law book, Pen, None), Backdrop, Chambers (20 groups of 100: "Chambers I"..
   "Chambers XX"). 10 hand-tuned 1/1 "Founding Partners". Seeded, reproducible, no two identical.
-- Counsel seats are paid in COMD: 80% of job revenue and 4.5% of pool trims, split per epoch by accepted work
-  (§7.6). Counsel bought by the Flywheel's floor sweeps are held in the Flywheel ("the firm's vault").
+- Counsel seats are paid in COMD: 80% of job revenue and the 1% Incorporations fee, split per epoch by accepted
+  work (§7.4). Counsel bought by the Flywheel's floor sweeps are held in the Flywheel ("the firm's vault").
 
 ## 5. Agent identity (ERC-8004) — same as IMD
 - Deploy the CC0 IdentityRegistry + ReputationRegistry (erc-8004-contracts, vendored at contracts/lib) on 4663.
@@ -137,45 +137,27 @@ Voice: precise, dry, legal. "Filed.", "Sustained.", "Overruled.", "On the record
   `setBps(rewardsBps)` owner-settable within 5,000–10,000. (IMD sends to a wallet; ours is on-chain and
   transparent.)
 
-## 7. $COMD token, the official pool and the vault
-
-The pool mechanics are inspired by IMD's POOL4 (capped burn hook, buy wall, staking, bond), combined with a swap tax
-on the same pool.
+## 7. $COMD token, our pool and the Flywheel
 
 ### 7.1 Token
 - `ComdToken` ("Company.md" / `COMD`): ERC-20 + ERC20Burnable + ERC20Permit, 18 decimals, fixed supply
   **1,000,000,000** minted once to the POL wallet; no mint function, no owner, **no transfer tax**.
 - **100% of supply goes into liquidity**: one single-sided position (COMD only, from the minimum usable tick up to
-  the opening tick) in the official COMD/ETH Uniswap v4 pool, held by the hook and **locked forever** (no function
-  removes it; no `closeMarket` / `fundInventory`). No team, treasury or reward allocation exists.
+  the opening tick) in our own COMD/ETH Uniswap v4 pool, held by the hook and **locked forever** (no function
+  removes it). No team, treasury or reward allocation exists.
 
-### 7.2 ComdTaxHook (the official COMD/ETH pool)
-- Pool key: ETH (currency0) / COMD, LP fee 0, tick spacing 200, hook flags `0x18CC`. The tax is the only swap cost.
+### 7.2 ComdTaxHook (our pool, tax only)
+- Pool key: ETH (currency0) / COMD, LP fee 0, tick spacing 200. The tax is the only swap cost.
 - Opening: the POL wallet calls `initializeAndSeed(initialMarketCapWei, comdAmount)` once — initialize and seed in
-  **one transaction**; any other initialize with this hook reverts (security review C-01). Only the hook and the
-  BuyWall may hold liquidity in this pool.
+  **one transaction**; only the POL wallet can initialize, swaps revert until seeded (security review C-01), and
+  third-party liquidity is refused.
 - **Tax: 5% on every buy and sell, in ETH** (buy: 5% of the ETH paid; sell: 5% of the gross ETH out), forwarded
   to the Flywheel at once (or held as PoolManager claims and forwarded by the permissionless `flush()`). `taxBps`
   owner-settable, hard cap 500. Only the Flywheel's own buybacks through `ComdRouter` are exempt.
-- **Inventory cap and trims** (after the tax, after every swap): if the main position holds more COMD than
-  `currentCap()`, the excess fraction of its liquidity is removed (the swapper's quote and the price are
-  untouched). The cap starts at the seeded inventory, never rises by itself and decays at most `capDecayPerDay`
-  (100,000 COMD/day) toward max(`capFloor` 100,000 COMD, the inventory after the previous swap). Trimmed COMD is
-  split **85% burned / 6% Bond / 4.5% stakers (RewardDripper → sCOMD) / 4.5% Counsel seats (RewardDistributor)**;
-  trimmed ETH goes to the BuyWall. Bounds: burn ≥ 50%, other legs ≤ 25% each.
-- A block-lagged reference tick (`refTick`, moves ≤ `refStepTicks` per block toward earlier closing ticks) feeds
-  the BuyWall floor.
 - `ComdRouter`: `swapExactETHForComd`, `swapExactComdForETH` (minOut + deadline), `quoteETHForComd`,
   `quoteComdForETH` (quotes net of tax). The site's Swap page uses it.
 
-### 7.3 BuyWall
-The protocol's standing ETH bid in the same pool: an ETH-only position (width 4,000 ticks) above the floor; floor
-target = `refTick` + 200 ticks; the floor moves at most 400 ticks per day in either direction (security review
-H-01). Anyone (the api keeper) calls `rebalance()` when `canRebalance()` (new ETH ≥ 0.1 ETH, fill ≥ 10,000 COMD, or
-parked ETH can be posted): it closes the wall, sends the COMD it bought through the same 85/6/4.5/4.5 split and
-re-posts; tip min(1% of the ETH handled, 0.002 ETH).
-
-### 7.4 Flywheel (receives the 5% ETH tax)
+### 7.3 Flywheel (receives the 5% ETH tax)
 Two buckets in bps of the tax, owner-settable summing to 10,000; default **50% buyback-and-burn / 50% Counsel floor
 sweeps** (2.5% / 2.5% of volume).
 - **Buyback-and-burn:** keeper `buyback(minOut)` swaps the bucket ETH → COMD through ComdRouter (untaxed) and burns
@@ -189,22 +171,12 @@ sweeps** (2.5% / 2.5% of volume).
   `totalSwept`, `sweptTokenIds`, `sweepSpent`, `bucketBalances` (buyback, sweep), `bps`; events `TaxIn`,
   `Buyback`, `Swept`, `SweptAwarded`.
 
-### 7.5 Stake (sCOMD) and Bond
-- `StakedComd` (sCOMD): ERC-4626 over COMD, decimals offset 6, no lock; shares minted in the current block are held
-  for that block (security review M-02); owner pause. `RewardDripper` streams the stakers' COMD (4.5% of trims and
-  the 1% Incorporations fee) into the vault at `min(streamCapPerDay` 8.64M COMD, `balance / 30 days)`, catching up
-  at most one hour; nothing streams into an empty vault (L-01). Stake page: stake/unstake, balance, rate, APR,
-  7-day rewards, stream cap, total staked.
-- `Bond`: sells its COMD reserve (the 6% of trims) **for ETH** at the owner-set `priceEth` (wei per 1 COMD;
-  default 1e10 = the 10 ETH opening market cap price) via `buyWithEth(minOut)` once `enabled` (starts disabled);
-  proceeds go straight to the firm treasury. Bond page: reserve, price, status, buy.
-
-### 7.6 Counsel rewards (RewardDistributor)
-Weekly epochs from `REWARD_GENESIS`, paid in **COMD**: 80% of job revenue (RevenueRouter) and 4.5% of pool trims.
-The unallocated balance at epoch close is split among seats by accepted work in the epoch and posted as a Merkle
-root (`postRoot(epoch, asset, root, total)`; leaf = keccak256(bytes.concat(keccak256(abi.encode(epoch, tokenId,
-amount))))). Claims pay the current `ownerOf(tokenId)`. Epochs with work but no funds wait and post when funds
-arrive. (The distributor also supports ETH roots, asset `address(0)`, unused by default.)
+### 7.4 Counsel rewards (RewardDistributor)
+Weekly epochs from `REWARD_GENESIS`, paid in **COMD**: 80% of job revenue (RevenueRouter) and the 1% Incorporations
+fee. The unallocated balance at epoch close is split among seats by accepted work in the epoch and posted as a
+Merkle root (`postRoot(epoch, asset, root, total)`; leaf = keccak256(bytes.concat(keccak256(abi.encode(epoch,
+tokenId, amount))))). Claims pay the current `ownerOf(tokenId)`. Epochs with work but no funds wait and post when
+funds arrive. (The distributor also supports ETH roots, asset `address(0)`, unused by default.)
 
 ## 8. Launches (swarm launches) — same policy model as IMD
 - Launch kinds: `custom_token`, `evm_project`, `univ4_hook`, `evm_contracts` (contracts only, no token).
@@ -228,7 +200,7 @@ arrive. (The distributor also supports ETH roots, asset `address(0)`, unused by 
 - Anyone launches a company coin for gas: 1B supply on a virtual constant-product curve **priced in COMD**, one
   shared COMD backing reserve. Users trade with ETH on the surface (`buyWithETH` / `sellForETH` route through
   ComdRouter, so that leg pays the 5% pool tax) or directly in COMD (`buyWithComd` / `sellForComd`).
-- Fees per trade: 1% of the COMD side → sCOMD stakers (via `RewardDripper.notifyReward`), 0.5% of the COMD side
+- Fees per trade: 1% of the COMD side → Counsel rewards (RewardDistributor), 0.5% of the COMD side
   burned, 0.5% to the launcher (of the ETH side for ETH trades, pulled with `claimLauncherEth`; in COMD for COMD trades). Events
   carry `comdAmount`.
 - Graduation to a v4 pool: not in V2 (documented deviation).
@@ -239,7 +211,7 @@ arrive. (The distributor also supports ETH roots, asset `address(0)`, unused by 
   `eth-robinhood-chain` (`origin: comd`). Runnable vs reference split as in IMD docs. `GET /skills` live catalog,
   `/reads/:namespace/:name`. Seats read pinned inputs from `.company/reads/` (a protocol path).
 - Job body, templates (single, impl_tests, impl_tests_review, multi_contract, fuzz, research), shapes (chain,
-  fan_out_join, dag ≤6 steps), steps fields, inputs/outputs, references, github (filings in `comd-filings`),
+  fan_out_join, dag ≤6 steps), steps fields, inputs/outputs, references, github (filings in `comdfun`),
   sites (`ipfs` field kept for API parity but hosted on OUR storage, label → `https://<label>.sites.comd.fun`),
   onchain kinds, economics, research panels (panelSize/panelQuorum/minCitations/rubric), fuzz (runs 1e3–1e7).
 - `job.continue` (parentJobId, only original payer, 403 payer_not_owner).
@@ -267,7 +239,7 @@ including `/version`, `/health`, `/services`, `/skills`, `/reads`, `/jobs*`, `/w
 `/launch/policies`, `/feedback/batches`, `/reviews|work-records|review-documents/:hash.json`, `/jobs/:id/records`,
 `/jobs/:id/assessments`, `/requests/*`, `/pair*`, `/enrollments*`, `/agents/*`, `/bundles*`, `/artifacts*`,
 `/sites/publish`, `/enrollments/revoke`, `/fuzz/result`, WS `/agent`. Additions: `GET /flywheel`,
-`GET /flywheel/sweep-candidates` (tax buckets, trim split, buy wall). ENS routes replaced by `/names` (our subdomain resolver) — `/ens*` return 404
+`GET /flywheel/sweep-candidates` (tax buckets, burns, sweeps). ENS routes replaced by `/names` (our subdomain resolver) — `/ens*` return 404
 feature_off. Payment asset COMD on `eip155:4663` (testnet `eip155:46630`), prices in COMD atomic units.
 
 ## 12. Deployment: Railway on comd.fun
@@ -275,7 +247,7 @@ feature_off. Payment asset COMD on `eip155:4663` (testnet `eip155:46630`), price
   (`infra/docker/api.Dockerfile`: Chambers HTTP + WS, scheduler, attester, settler, keeper, and the Clerk / Records
   Office / Registrar in-process with git + Foundry) on `api.comd.fun` and the wildcard `*.sites.comd.fun`. Plus
   Railway Postgres and a volume at `/data` (or an S3-compatible bucket). `api` runs exactly one replica.
-- Worker CLI tarball (`comd-worker.tgz` + `SHA256SUMS`) released by GitHub Actions to `comd-fun/worker`.
+- Worker CLI tarball (`comd-worker.tgz` + `SHA256SUMS`) released by GitHub Actions to `comdfun/worker`.
 - Contracts can be deployed from GitHub Actions (`.github/workflows/deploy-contracts.yml`: Deploy.s.sol, then
   SeedPool.s.sol, deployments JSON as an artifact, Railway env in the job summary) or from a laptop
   (`scripts/deploy-contracts.sh`).
@@ -286,6 +258,7 @@ feature_off. Payment asset COMD on `eip155:4663` (testnet `eip155:46630`), price
 - Payments: the v1 stablecoin payment path is removed entirely (no mock stablecoin, no stablecoin env); jobs are
   paid in COMD.
 - Token: fixed 1B supply, 100% in locked liquidity (no team / treasury / reserve allocations).
-- Pool: the v1 burn hook became ComdTaxHook (tax + capped inventory) plus a separate BuyWall; `closeMarket` and
-  `fundInventory` are not ported (the liquidity is locked forever).
-- Bond sells for ETH (not a stablecoin). The Flywheel has no rewards bucket; seats are paid in COMD.
+- Pool: the v1 burn hook became ComdTaxHook (tax only); no capped inventory or trims, no buy wall, no staking
+  (sCOMD) and no bond (removed by the owner in V5). `closeMarket` and `fundInventory` are not ported (the liquidity
+  is locked forever).
+- The Flywheel has no rewards bucket; seats are paid in COMD.

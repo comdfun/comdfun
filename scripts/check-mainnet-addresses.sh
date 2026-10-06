@@ -48,6 +48,16 @@ ext="$("$CAST" call "$POOL_MANAGER" 'extsload(bytes32)(bytes32)' 0x0000000000000
 [ -n "$ext" ] && ok "PoolManager extsload(0) works" || bad "PoolManager extsload(bytes32) call failed (not a v4 PoolManager?)"
 
 check_code "UniversalRouter (not used by the contracts)" "$UNIVERSAL_ROUTER" 0
+# Pons mode: the $COMD token is launched on Pons; its address must exist and be an 18-decimal ERC-20
+if [ -n "${COMD_TOKEN:-}" ]; then
+  check_code "COMD token (from Pons)" "$COMD_TOKEN" 1
+  dec="$("$CAST" call "$COMD_TOKEN" 'decimals()(uint8)' --rpc-url "$RPC_URL" 2>/dev/null || true)"
+  [ "$dec" = "18" ] && ok "COMD decimals() = 18" || bad "COMD decimals() = '$dec' (expected 18; the apps assume 18)"
+  sup="$("$CAST" call "$COMD_TOKEN" 'totalSupply()(uint256)' --rpc-url "$RPC_URL" 2>/dev/null | awk '{print $1}' || true)"
+  [ -n "$sup" ] && ok "COMD totalSupply() = $sup" || bad "COMD totalSupply() call failed"
+else
+  warn "COMD_TOKEN unset: pass the Pons token address to check it"
+fi
 check_code "WETH" "$WETH_ADDRESS" 0
 # optional: the Seaport the Flywheel sweeps Counsel listings from (Deploy.s.sol SEAPORT)
 if [ -n "${SEAPORT:-}" ]; then check_code "Seaport" "$SEAPORT" 1; else warn "SEAPORT unset: no SeaportAdapter (floor sweeps need an allowlisted adapter)"; fi
@@ -55,7 +65,7 @@ if [ -n "${SEAPORT:-}" ]; then check_code "Seaport" "$SEAPORT" 1; else warn "SEA
 echo
 echo "Manual (cannot be checked from RPC):"
 echo "  - PoolManager verified source on https://robinhoodchain.blockscout.com is Uniswap's v4-core"
-echo "  - ADMIN is a multisig; POL_WALLET, SETTLER, KEEPER, REGISTRAR are separate hot wallets"
+echo "  - ADMIN is a multisig or hardware wallet; SETTLER, KEEPER, REGISTRAR are separate hot wallets"
 echo "  - SEAPORT, if set, is the marketplace's verified Seaport deployment"
 if [ "$fail" = 0 ]; then echo "ALL REQUIRED CHECKS PASSED"; else echo "SOME CHECKS FAILED — do not deploy"; fi
 exit "$fail"

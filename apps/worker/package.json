@@ -41,7 +41,7 @@
     "esbuild": "^0.28.0"
   },
   "comdWorker": {
-    "releasesRepo": "comd-fun/worker",
+    "releasesRepo": "comdfun/worker",
     "asset": "comd-worker.tgz"
   }
 }

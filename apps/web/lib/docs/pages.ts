@@ -36,7 +36,7 @@ The counsel are not ours. Each one is a **Counsel NFT**, a seat at the bar held 
 
 ## The token
 
-**$COMD** pays for all of it. All one billion are in liquidity; a 5% tax in ETH on every buy and sell feeds the **flywheel**: buyback and burn, and Counsel NFT floor sweeps. The same pool keeps a cap on the COMD it holds and trims the excess, mostly to burn, with shares for the bond, sCOMD stakers and Counsel. 80% of every job payment goes to the counsel who did accepted work. See [$COMD & the flywheel](/docs/comd).
+**$COMD** pays for all of it. It launched on Pons: one billion supply, liquidity locked by Pons at graduation. A 5% tax in ETH on every buy and sell feeds the **flywheel**: buyback and burn, and Counsel NFT floor sweeps. 80% of every job payment goes to the counsel who did accepted work. See [$COMD & the flywheel](/docs/comd).
 
 > Unaudited: The contracts have not been audited. Nothing on this site is legal or financial advice; counsel are software.
 `,
@@ -65,7 +65,7 @@ comd start --runtime claude --concurrency 2
 \`\`\`
 
 3. Open the link it prints (or [Pair a machine](/pair)), connect the wallet that holds the seat, register the ERC-8004 agent if asked, and sign.
-4. Leave it running, ideally as a service. Accepted work earns COMD from job payments and pool trims. See [Run an agent](/docs/run-an-agent).
+4. Leave it running, ideally as a service. Accepted work earns COMD from job payments and Incorporations fees. See [Run an agent](/docs/run-an-agent).
 `,
   },
   {
@@ -103,7 +103,7 @@ Before a seat can connect it registers once as an ERC-8004 agent: \`IdentityRegi
 ## What a seat earns
 
 - **80% of every job payment**, in $COMD, through the RevenueRouter.
-- **4.5% of every COMD the pool trims** (and of what the buy wall buys).
+- **The 1% fee on every Incorporations trade.**
 
 Both are paid in $COMD, split each epoch by accepted work and claimed by whoever holds the seat. Seats also share in incorporations: a slice of each launched token goes to seats connected in the window. See [Rewards & claims](/docs/rewards).
 `,
@@ -130,8 +130,8 @@ The worker ships only through GitHub Releases, never the npm registry. Verify th
 \`\`\`sh
 comd_dir="$(mktemp -d)"
 (cd "$comd_dir" \\
-  && curl -fsSLO https://github.com/comd-fun/worker/releases/latest/download/comd-worker.tgz \\
-          -O https://github.com/comd-fun/worker/releases/latest/download/SHA256SUMS \\
+  && curl -fsSLO https://github.com/comdfun/worker/releases/latest/download/comd-worker.tgz \\
+          -O https://github.com/comdfun/worker/releases/latest/download/SHA256SUMS \\
   && sha256sum -c SHA256SUMS)          # macOS: shasum -a 256 -c SHA256SUMS
 npm install --global "$comd_dir/comd-worker.tgz"
 comd help
@@ -262,74 +262,54 @@ Each launch page shows its lifecycle, admission checks, addresses, transactions,
 
 ## Incorporations (company coins)
 
-[Incorporations](/incorporations) are company coins on a bonding curve **priced in $COMD**. Anyone can create one for gas. You can trade with $COMD directly, or with ETH: the ETH routes through the official COMD/ETH pool (paying its 5% tax), so every coin buy is a $COMD buy.
+[Incorporations](/incorporations) are company coins on a bonding curve **priced in $COMD**. Anyone can create one for gas. You can trade with $COMD directly, or with ETH once the swapper is configured after $COMD graduates on Pons: the ETH routes through the $COMD pool, so every coin buy is a $COMD buy.
 
-Each coin trade: 1% to sCOMD stakers (through the RewardDripper), 0.5% to the launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.
+Each coin trade: 1% to Counsel rewards, 0.5% to the launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.
 `,
   },
   {
     slug: "comd",
     title: "$COMD & the flywheel",
     group: "$COMD",
-    summary: "1B supply all in liquidity, a 5% ETH tax, buybacks, floor sweeps, and the capped pool.",
+    summary: "Launched on Pons, 1B supply, a 5% ETH tax, buybacks and Counsel floor sweeps.",
     md: `
-**$COMD** is an ERC-20 ("Company.md" / \`COMD\`, 18 decimals, burnable, ERC-2612 permit). **1,000,000,000** were minted once. There is no mint function.
+**$COMD** is the firm's token, launched on **Pons**, the Robinhood Chain launchpad. Pons minted the **1,000,000,000** supply once into its bonding curve (ETH pair), set the **5% tax**, and on graduation locks the liquidity in a full-range Uniswap v4 position with its own hook. There is no mint function and no team allocation.
 
-## 100% in liquidity
+## Trading
 
-Every token went into a single-sided position in the official COMD/ETH Uniswap v4 pool, owned by the protocol. No team allocation, no treasury allocation, no investors. The pool can only be initialised by the protocol wallet, third-party liquidity in it is blocked, and no function can remove the main position.
+Buy and sell on [Pons](/swap) while the curve runs, and on Uniswap after graduation. The 5% tax is taken in ETH on every buy and sell and paid by Pons to the firm's **Flywheel**. Wallet transfers and Permit2 payments are never taxed. Decimals are read from the token (18).
 
-Two engines run on this one pool: the **tax wheel** and the **capped pool**.
+## The flywheel
 
-## Engine I: the 5% tax
-
-The pool's hook, **ComdTaxHook**, takes **5% of every buy and sell, in ETH**: 5% of the ETH in on a buy, 5% of the ETH out on a sell. Wallet transfers, Permit2 payments and bonds are never taxed. The tax is capped at 5% in the contract and the LP fee is 0, so the tax is the only swap cost. Quotes from ComdRouter are already net of it.
-
-The tax goes to the **Flywheel**, which keeps two buckets:
+The Flywheel keeps two buckets, split by \`bps()\` (default 50 / 50, owner-settable):
 
 | Bucket | Share of tax | Share of volume | What happens |
 |---|---|---|---|
-| Buyback & burn | 50% | 2.5% | \`buyback(minOut)\` swaps the ETH for $COMD through ComdRouter and burns it |
+| Buyback & burn | 50% | 2.5% | \`buyback(minOut)\` swaps the bucket's ETH for $COMD through the swapper and sends it to the dead address \`0x…dEaD\` |
 | Floor sweep | 50% | 2.5% | \`sweep(adapter, data, tokenId, maxPrice)\` buys a Counsel NFT off the floor into the firm's vault |
 
-Swept Counsel are held by the Flywheel. The owner can award them (\`awardSwept\`) to counsel with standout accepted work. Sweeps are capped by \`maxSweepPrice\` and only go through allowlisted marketplace adapters. The split is owner-settable.
+Burns are transfers to the dead address, counted in \`totalBurned()\`. Buybacks go through a pluggable **swapper** (\`UniswapV4PoolSwapper\`) that the owner points at Pons's pool after graduation (\`setPoolKey\`); until then \`buyback\` reverts and the bucket accumulates ETH. The flywheel page says "Buybacks start after graduation, once the pool is configured" while that is the case.
 
-## Engine II: the capped pool
-
-Inspired by IMD (imd.fun), the same hook keeps an **inventory cap** on the COMD the pool holds.
-
-- **Trims.** When a sell pushes the pool's COMD above the cap, the hook removes the excess liquidity right after the swap. Your quote does not change.
-- **The split.** Every trimmed COMD is split **85% burned / 6% bond reserve / 4.5% sCOMD stakers / 4.5% Counsel seats**.
-- **The cap ratchet.** The cap starts at the seeded inventory and never rises by itself. It decays by up to 100,000 COMD a day toward the larger of a 100,000 COMD floor and the pool's inventory after the last swap, so COMD that buyers take out of the pool cannot be sold back into it untrimmed. Bounds are fixed in the contract.
-- **The buy wall.** The ETH a trim frees is posted by the **BuyWall** as liquidity just below the price: a standing bid. COMD it buys takes the same 85 / 6 / 4.5 / 4.5 split. The floor moves at most \`refStepTicks\` a day, and a keeper calls \`rebalance()\` for a tip of at most 1% (capped at 0.002 ETH).
-
-## Staking and the bond
-
-- **sCOMD** ([Stake](/stake)): deposit COMD into **StakedComd** (ERC-4626). The **RewardDripper** streams the stakers' 4.5% of trims, plus the 1% Incorporations fee, into the vault over a window and under a daily cap, so each sCOMD redeems for more COMD. No lockup.
-- **The bond** ([Bond](/bond)): the 6% bond reserve is sold for **ETH** at a fixed owner-set \`priceEth\` (wei per COMD) once enabled: \`quote(ethIn)\`, then \`buyWithEth(minOut)\`. Proceeds go to the firm treasury.
+Swept Counsel are held by the Flywheel. The owner can award them (\`awardSwept\`) to counsel with standout accepted work. Sweeps are capped by \`maxSweepPrice\` and only go through allowlisted marketplace adapters.
 
 ## The job-payment loop
 
-Jobs are paid in $COMD to the **RevenueRouter**: **80% to Counsel rewards, 20% to the firm**. Trading burns supply and buys the Counsel floor; work pays counsel in COMD.
+Jobs are paid in $COMD to the **RevenueRouter**: **80% to Counsel rewards, 20% to the firm** for compute and gas. Incorporations add their **1% trading fee** to Counsel rewards. Trading burns supply and buys the Counsel floor; work pays counsel in COMD.
 
 ## Live numbers
 
-[The flywheel page](/flywheel) shows both engines (tax in, buybacks, $COMD burned, NFTs swept; inventory against the cap, trims and their split, the buy wall), staking and the bond, and recent events, read from \`GET /flywheel\` or straight from the contracts.
+[The flywheel page](/flywheel) shows the totals (ETH in from Pons, ETH spent on buybacks, $COMD burned, NFTs swept), bucket balances, the swapper's state, the job-payment split and recent events, read from \`GET /flywheel\` or straight from the contracts.
 
 ## Contracts
 
 | Contract | Key | Role |
 |---|---|---|
-| ComdToken | \`comdToken\` | The token |
-| ComdTaxHook | \`comdTaxHook\` | The v4 hook: 5% ETH tax, inventory cap, trims and their split |
-| ComdRouter | \`comdRouter\` | Swaps and quotes: \`swapExactETHForComd\`, \`swapExactComdForETH\`, \`quoteETHForComd\`, \`quoteComdForETH\` |
-| Flywheel | \`flywheel\` | Tax buckets, buybacks, sweeps |
-| BuyWall | \`buyWall\` | Posts trim ETH as a bid under the price |
-| StakedComd | \`stakedComd\` | sCOMD, the staking vault |
-| RewardDripper | \`rewardDripper\` | Streams staker rewards |
-| Bond | \`bond\` | Sells the bond reserve for ETH |
+| $COMD | \`comdToken\` | The token, minted by Pons (external address) |
+| Flywheel | \`flywheel\` | Receives the tax; buckets, buybacks, sweeps |
+| UniswapV4PoolSwapper | \`swapper\` | The buyback route into Pons's graduated pool |
 | RevenueRouter | \`revenueRouter\` | Job payments: 80% Counsel / 20% firm |
 | RewardDistributor | \`rewardDistributor\` | Counsel rewards by epoch, in COMD |
+| Incorporations | \`incorporations\` | Company coins priced in COMD; 1% fee to Counsel rewards |
 
 Addresses are on [Contracts & addresses](/docs/contracts).
 `,
@@ -338,14 +318,14 @@ Addresses are on [Contracts & addresses](/docs/contracts).
     slug: "rewards",
     title: "Rewards & claims",
     group: "$COMD",
-    summary: "How Counsel and stakers are paid, and how to claim.",
+    summary: "How Counsel are paid by accepted work, and how to claim.",
     md: `
 ## Seat rewards
 
 Counsel are paid **by accepted work**, per epoch, **in $COMD**, from two sources:
 
 - **80% of every job payment**, through the RevenueRouter (the other 20% goes to the firm for compute and gas)
-- **4.5% of every COMD the pool trims**, and of what the buy wall buys
+- **the 1% fee on every Incorporations trade**
 
 There is no ETH reward: the 5% ETH tax goes only to buybacks and floor sweeps. At the end of an epoch Chambers counts each seat's accepted work, builds the Merkle tree and posts the root to the **RewardDistributor**. The leaf is \`(epoch, tokenId, amount)\`; whoever holds the seat when claiming receives it.
 
@@ -359,10 +339,6 @@ claimToken(asset, epoch, tokenId, amount, proof)              // any other asset
 \`\`\`
 
 Proofs are public at \`GET /wallets/:address/earnings\` (\`rewards[]\`). Unclaimed epochs eventually expire and return to the pool.
-
-## Staker rewards
-
-Stakers hold **sCOMD** ([Stake](/stake)). Their 4.5% of trims and the 1% Incorporations fee are streamed into the vault by the RewardDripper, so there is nothing to claim: each sCOMD redeems for more COMD over time. The stream is capped per day and spread over a window, and shares cannot be redeemed in the block they were minted.
 
 ## Launch rewards
 
@@ -400,12 +376,8 @@ The owner is a multisig. It can:
 
 | Contract | Can | Cannot |
 |---|---|---|
-| ComdToken | nothing after deploy | mint, pause, blacklist, tax transfers |
-| ComdTaxHook | set the tax (hard cap 5%), tune the cap and trim split within fixed bounds | exceed 5%, burn less than the contract minimum, take the main position |
-| Flywheel | set the bucket split, keeper, \`maxSweepPrice\`, allowed marketplace adapters; award swept NFTs | withdraw the buckets elsewhere |
-| BuyWall | tune wall parameters within fixed bounds | move the floor faster than its daily step |
-| StakedComd / RewardDripper | pause deposits, set stream parameters within bounds | take staked COMD |
-| Bond | set the price, open or close it, set the treasury | sell more than the reserve |
+| $COMD (Pons) | nothing: the token and its tax are Pons's; liquidity is locked by Pons | mint, pause, tax transfers |
+| Flywheel | set the bucket split, keeper, swapper, \`maxSweepPrice\`, allowed marketplace adapters; award swept NFTs; set the token once | withdraw the buckets elsewhere |
 | RevenueRouter | change the Counsel / firm split (Counsel at least 50%) | redirect payments elsewhere |
 | RewardDistributor | let the settler post epoch roots; expire stale epochs | change a posted root |
 | CounselNFT | set phase, price, per-wallet limit, allowlist root, base URI (freezable) | exceed 2,000 |
@@ -439,19 +411,15 @@ AI agents (Claude Code or Codex) running on the machines of people who hold Coun
 
 ## Why is there a 5% tax?
 
-It funds the flywheel: 2.5% buyback and burn, 2.5% Counsel floor sweeps. It is taken in ETH, only on trades in the official pool, never on transfers, payments or bonds.
+It funds the flywheel: 2.5% buyback and burn (sent to the dead address), 2.5% Counsel floor sweeps. It is set in Pons and taken in ETH on every buy and sell, never on transfers or payments.
 
-## What is the capped pool?
+## How do Counsel holders earn?
 
-The pool holds at most a cap of COMD. When sells push it past the cap the excess is trimmed: 85% burned, 6% to the bond reserve, 4.5% to sCOMD stakers, 4.5% to Counsel. The ETH freed becomes a buy wall below the price. The design is inspired by IMD (imd.fun).
-
-## How do I earn as a holder?
-
-[Stake](/stake) COMD for sCOMD; the stakers' share of trims and the Incorporations fee raise what each sCOMD redeems for.
+Run the seat: accepted work earns $COMD from 80% of every job payment and the 1% Incorporations fee, each epoch. See [Rewards & claims](/docs/rewards).
 
 ## Who holds the supply?
 
-The pool. 100% of $COMD went into liquidity; nobody received an allocation.
+Pons minted all of it into the bonding curve and locks the liquidity at graduation; nobody received an allocation.
 
 ## Is the mint really free?
 

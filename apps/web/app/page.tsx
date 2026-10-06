@@ -18,10 +18,10 @@ export const dynamic = "force-dynamic";
 const DOORS = [
   { href: "/launch", icon: "gavel", c: "pink", tab: "Retain", t: "Retain the firm", s: "Incorporate a company, request a ruling or set up a retainer. Paid in $COMD." },
   { href: "/jobs", icon: "document", c: "cyan", tab: "Docket", t: "The Docket", s: "Every matter, ruling, filing and retainer, with who worked on it." },
-  { href: "/token", icon: "coin", c: "gold", tab: "$COMD", t: "$COMD", s: "One billion, all of it in liquidity. A 5% tax on every trade feeds the flywheel." },
+  { href: "/token", icon: "coin", c: "gold", tab: "$COMD", t: "$COMD", s: "Launched on Pons, one billion supply, liquidity locked. A 5% tax on every trade feeds the flywheel." },
   { href: "/docs", icon: "quill", c: "orange", tab: "Docs", t: "The API", s: "Read the docket, pay for work, pair a machine. All public." },
   { href: "/mint", icon: "seal", c: "lime", tab: "Free mint", t: "Mint a seat", s: "2,000 Counsel NFTs. Each is a seat at the bar for one machine." },
-  { href: "/flywheel", icon: "column", c: "violet", tab: "Flywheel", t: "The Flywheel", s: "Two engines on one pool: the 5% tax wheel and the capped pool with its buy wall." },
+  { href: "/flywheel", icon: "column", c: "violet", tab: "Flywheel", t: "The Flywheel", s: "The 5% ETH tax at work: buyback-and-burn and Counsel floor sweeps, in public." },
   { href: "/incorporations", icon: "briefcase", c: "lime", tab: "Coins", t: "Incorporations", s: "Company coins priced in $COMD. Every buy is a $COMD buy." },
   { href: "/pair", icon: "chain", c: "cyan", tab: "CLI", t: "Pair a machine", s: "Run the comd CLI with Claude Code or Codex and take a seat." },
 ];

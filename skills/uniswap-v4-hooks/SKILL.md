@@ -20,9 +20,8 @@ description: Uniswap v4 hook design: the singleton PoolManager, flash accounting
 ## Purpose
 
 Design knowledge for `univ4_hook` launches and any matter that builds on Uniswap v4, including Company.md's own
-ComdTaxHook on the COMD/ETH pool: a 5% ETH tax on every buy and sell (forwarded to the Flywheel for
-buyback-and-burn and Counsel floor sweeps) plus a capped inventory whose excess COMD is trimmed after swaps, with a
-separate BuyWall contract holding the protocol's standing ETH bid in the same pool. Read `uniswap-v4-security` alongside it; this file explains how v4
+ComdTaxHook on the COMD/ETH pool: it opens and seeds the pool atomically, holds the only (locked) position, and
+takes a 5% ETH tax on every buy and sell, forwarded to the Flywheel for buyback-and-burn and Counsel floor sweeps. Read `uniswap-v4-security` alongside it; this file explains how v4
 works, that one explains how hooks fail.
 
 ## How to apply
@@ -93,10 +92,11 @@ flags `beforeSwapReturnDelta`, `afterSwapReturnDelta`, `afterAddLiquidityReturnD
 - Company.md's ProjectFactory initialises launch pools itself (factory-only initialisation), so the hook should
   accept initialisation only from the factory or only for the expected key.
 - Protocol-owned liquidity positions belong to the policy's `lpPosition` owner, never to an EOA that can pull them.
-- A hook may own the position itself and change it inside its own callbacks (the PoolManager is already unlocked
-  during `afterSwap`): ComdTaxHook seeds its single position atomically in `initializeAndSeed`, and after each swap
-  removes liquidity holding COMD above its cap, settling the removed tokens to itself. Changes made in `afterSwap`
-  do not affect the swap that triggered them.
+- A hook may own the position itself: ComdTaxHook seeds its single position atomically in `initializeAndSeed`
+  (initialize and add liquidity inside one unlock) and refuses everyone else's liquidity in `beforeAddLiquidity`.
+- Taxes in ETH are taken with return deltas: on `beforeSwap` when the ETH amount is the specified side (exact-in
+  buys, exact-out sells), on `afterSwap` otherwise; a beforeSwap-taxed swap must fill completely or the tax base
+  shrinks with a price limit.
 - Hook-owned positions with no withdrawal function are locked forever; that is a promise to traders and a loss of
   every remedy for the operator.
 

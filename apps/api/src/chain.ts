@@ -363,6 +363,7 @@ export class MockChain implements ChainReader {
   logsByAddress = new Map<string, ChainEvent[]>();
   async readContract<T>(address: Address, _abi: Abi, functionName: string) {
     const k = `${address.toLowerCase()}:${functionName}`;
+    if (!this.views.has(k) && functionName === "decimals") return 18 as T; // any ERC-20 in the mock chain is 18-dec unless a test says otherwise
     if (!this.views.has(k)) throw new Error(`mock: no view ${functionName} on ${address}`);
     return this.views.get(k) as T;
   }

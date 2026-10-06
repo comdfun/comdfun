@@ -10,9 +10,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /// @title RewardDistributor — Counsel seat rewards by epoch
 /// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
-/// @notice Receives Counsel rewards in COMD: 4.5% of every ComdTaxHook trim / wall fill and 80% of job payments via
-///         RevenueRouter. Any ERC-20 can be distributed; asset address(0) means native ETH (anyone may send ETH
-///         here, e.g. grants).
+/// @notice Receives Counsel rewards in COMD (the external Pons token, plain ERC-20 transfers): 80% of job payments
+///         via RevenueRouter and the 1% Incorporations fee. Any ERC-20 can be distributed; asset address(0) means
+///         native ETH (anyone may send ETH here, e.g. grants).
 ///         The settler posts one Merkle root per (epoch, asset) with the root's total, which must be covered
 ///         by the asset's unallocated balance. Claims always pay the CURRENT owner of the Counsel token id
 ///         (CounselNFT.ownerOf), so unclaimed rewards travel with the NFT. Anyone may submit a claim.

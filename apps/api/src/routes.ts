@@ -874,7 +874,7 @@ export async function health(app: App) {
     identity: { chainId: app.cfg.chainId, chain: CHAINS[app.cfg.chainId]?.name ?? null, collection: app.cfg.counselNft?.toLowerCase() ?? null, registry: app.cfg.identityRegistry?.toLowerCase() ?? null, reputation: app.cfg.reputationRegistry?.toLowerCase() ?? null },
     taskNetwork: true,
     payments: {
-      enabled: app.paymentsEnabled, mode: app.settler.mode, network: `eip155:${app.cfg.chainId}`, asset: app.cfg.comd.toLowerCase(), symbol: "COMD", amount: app.cfg.priceComd, decimals: 18,
+      enabled: app.paymentsEnabled, mode: app.settler.mode, network: `eip155:${app.cfg.chainId}`, asset: app.cfg.comd.toLowerCase(), symbol: "COMD", amount: app.cfg.priceComd, decimals: app.comdDecimals,
       actions: app.cfg.enabledActions, gasWallet: gas, orders: counts,
       attempts: { pending: counts.payment_pending, pendingReasons: {}, confirmed: counts.paid, failed: counts.payment_failed, failedReasons },
       admissions: orders.filter((o) => o.status === "admitted").length, lastQuoteAt: app.kv.get("lastQuoteAt") ?? null, lastPaidAt: app.kv.get("lastPaidAt") ?? null,
@@ -903,7 +903,7 @@ export async function health(app: App) {
     services: { verifier: st.verifier.mode, publisher: st.publisher.mode, deployer: st.deployer.mode, attester: st.attester.mode },
     art: artStatus().source,
     skills: { source: app.skills.source, dir: app.skills.dir, count: app.skills.all().length },
-    contracts: { chainId: app.cfg.chainId, counselNft: app.cfg.counselNft, identityRegistry: app.cfg.identityRegistry, reputationRegistry: app.cfg.reputationRegistry, rewardDistributor: app.cfg.rewardDistributor, contributorDistributor: app.cfg.contributorDistributor, projectFactory: app.cfg.projectFactory, revenueRouter: app.cfg.revenueRouter, comd: app.cfg.comd, flywheel: app.cfg.flywheel, comdTaxHook: app.cfg.comdTaxHook, comdRouter: app.cfg.comdRouter, buyWall: app.cfg.buyWall, stakedComd: app.cfg.stakedComd, rewardDripper: app.cfg.rewardDripper, bond: app.cfg.bond, permit2: app.cfg.permit2, payTo: app.cfg.payTo, sources: app.cfg.addressSource },
+    contracts: { chainId: app.cfg.chainId, counselNft: app.cfg.counselNft, identityRegistry: app.cfg.identityRegistry, reputationRegistry: app.cfg.reputationRegistry, rewardDistributor: app.cfg.rewardDistributor, contributorDistributor: app.cfg.contributorDistributor, projectFactory: app.cfg.projectFactory, revenueRouter: app.cfg.revenueRouter, comd: app.cfg.comd, flywheel: app.cfg.flywheel, swapper: app.cfg.swapper, incorporations: app.cfg.incorporations, permit2: app.cfg.permit2, payTo: app.cfg.payTo, sources: app.cfg.addressSource },
     computedAt: iso(now),
   };
 }

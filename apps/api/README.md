@@ -2,8 +2,8 @@
 
 One Node process: the HTTP API, the `wss://…/agent` relay for seats, the scheduler, the attester and the settler,
 calling `@company/services` in-process (the Clerk, the Records Office, the Registrar, site hosting). Routes and shapes
-follow IMD's API (see INTERFACES.md, V2 section first), paid in **$COMD** (18 decimals, 100 COMD per action by
-default) on **Robinhood Chain mainnet 4663 by default** (testnet 46630 with `CHAIN_ID=46630`). Web https://comd.fun,
+follow IMD's API (see INTERFACES.md, newest block first), paid in **$COMD** (the token Pons mints for the launch;
+decimals read on chain, 100 COMD per action by default) on **Robinhood Chain mainnet 4663 by default** (testnet 46630 with `CHAIN_ID=46630`). Web https://comd.fun,
 API https://api.comd.fun, sites `https://<label>.sites.comd.fun`, contact team@comd.fun (in `/version`, `/health` and
 the pairing page). Contracts are UNAUDITED. Not affiliated with Robinhood.
 
@@ -25,9 +25,9 @@ Every variable is in [`.env.example`](./.env.example). The essentials:
 | What | Env |
 |---|---|
 | chain | `CHAIN_ID` (default **4663**), `RPC_URL`, extra chains `RPC_URL_<id>`, `LAUNCH_CHAINS` |
-| contracts | each from its env var (`COUNSEL_NFT`, `IDENTITY_REGISTRY`, `REPUTATION_REGISTRY`, `REWARD_DISTRIBUTOR`, `CONTRIBUTOR_DISTRIBUTOR`, `PROJECT_FACTORY`, `REVENUE_ROUTER`, `COMD_TOKEN`, `FLYWHEEL`, `COMD_ROUTER`, `COMD_TAX_HOOK`, `BUY_WALL`, `STAKED_COMD`, `REWARD_DRIPPER`, `BOND`, `PERMIT2_ADDRESS`), else `DEPLOYMENTS_FILE` (= `contracts/deployments/<chainId>.json`), else the `@company/abi` address book when that chain is marked deployed |
-| payments | asset `COMD_TOKEN`; payTo = `PAYTO_ADDRESS` or the **RevenueRouter** (80% Counsel rewards / 20% firm treasury); `PRICE_COMD` (default 100 COMD); `ENABLED_ACTIONS` |
-| brand | `PUBLIC_WEB_URL`, `PUBLIC_API_URL`, `SITES_DOMAIN` (production defaults comd.fun), `CONTACT_EMAIL` (team@comd.fun), `GITHUB_ORG` (comd-filings) |
+| contracts | each from its env var (`COUNSEL_NFT`, `IDENTITY_REGISTRY`, `REPUTATION_REGISTRY`, `REWARD_DISTRIBUTOR`, `CONTRIBUTOR_DISTRIBUTOR`, `PROJECT_FACTORY`, `REVENUE_ROUTER`, `COMD_TOKEN` (the Pons $COMD, external), `FLYWHEEL`, `SWAPPER`, `INCORPORATIONS`, `PERMIT2_ADDRESS`), else `DEPLOYMENTS_FILE` (= `contracts/deployments/<chainId>.json`), else the `@company/abi` address book when that chain is marked deployed |
+| payments | asset `COMD_TOKEN` (decimals read at startup, 18 expected); payTo = `PAYTO_ADDRESS` or the **RevenueRouter** (80% Counsel rewards / 20% firm treasury); `PRICE_COMD` (default 100 COMD); `ENABLED_ACTIONS` |
+| brand | `PUBLIC_WEB_URL`, `PUBLIC_API_URL`, `SITES_DOMAIN` (production defaults comd.fun), `CONTACT_EMAIL` (team@comd.fun), `GITHUB_ORG` (comdfun), `PONS_URL` (Pons trade page, in `GET /flywheel`) |
 | keys | `SETTLER_PRIVATE_KEY`, `ATTESTER_PRIVATE_KEY`, `DEPLOYER_PRIVATE_KEY` (see roles) |
 | storage | `STORAGE_DRIVER=local` + `STORAGE_DIR` (Railway volume) or `s3` + `S3_*` (Railway Bucket / R2) |
 | database | `DATABASE_URL` (Postgres); unset = in-memory |
@@ -44,7 +44,7 @@ under plain `node dist/main.js` a small resolve hook (`src/ts-resolve.ts`, regis
 | `SETTLER_PRIVATE_KEY` | `RewardDistributor.SETTLER_ROLE`; ETH for gas; **must not own or operate an agent** (ERC-8004 refuses self-feedback) | the x402 Permit2 spender (named in `accepts[0].extra.spender`), settles `permitWitnessTransferFrom` into payTo; `ReputationRegistry.giveFeedback` per accepted node (one batch per finished job); `RewardDistributor.postRoot(epoch, asset, root, total)`. Its transactions are simulated first and serialised (one nonce stream). |
 | `ATTESTER_PRIVATE_KEY` | nothing on chain; consumers trust its address | signs `OracleAttestation`, domain `{name "Company.md Oracle", version "1", chainId}` with **no verifyingContract**, struct fields exactly as `contracts/src/oracle/OracleAttestationVerifier.sol` |
 | `DEPLOYER_PRIVATE_KEY` | `ProjectFactory.REGISTRAR_ROLE`; ETH for gas (keep separate from the settler) | the Registrar: `forge script --broadcast` launches through `ProjectFactory.launch`, gas ceiling from the launch policy |
-| `KEEPER_PRIVATE_KEY` | `Flywheel.keeper()` (owner: `setKeeper`) for buybacks; ETH for gas (BuyWall tips pay some back) | the keeper loop (`src/keeper.ts`), see [Keeper](#keeper) |
+| `KEEPER_PRIVATE_KEY` | `Flywheel.keeper()` (owner: `setKeeper`) for buybacks; ETH for gas | the keeper loop (`src/keeper.ts`), see [Keeper](#keeper) |
 | `ADMIN_TOKEN` | — | Bearer for `POST /launches/:id/assurances` and `POST /admin/settle` |
 
 ## How the services load
@@ -90,7 +90,7 @@ deterministic `MockServices`, reported in `/health`):
 
 Seat rewards are **COMD only**. Epochs (7 days from `REWARD_GENESIS`). When an epoch ends, accepted work per seat is
 counted; the pool is the COMD the RewardDistributor holds **unallocated** — 80% of job revenue (sent by
-`RevenueRouter.distribute()`) plus 4.5% of every inventory trim (sent by `ComdTaxHook`) — optionally capped per epoch by
+`RevenueRouter.distribute()`) plus the 1% Incorporations fee — optionally capped per epoch by
 `REWARD_EPOCH_COMD_POOL` (alias `REWARD_EPOCH_POOL`), split pro rata to accepted work and posted with
 `postRoot(epoch, COMD, root, total)`. Leaf `keccak256(bytes.concat(keccak256(abi.encode(epoch, tokenId, amount))))`.
 An epoch with work but no funds yet waits (`waiting_funds`) and posts as soon as funds arrive. Claims pay the current
@@ -103,66 +103,56 @@ Enabled when `KEEPER_PRIVATE_KEY` (and `RPC_URL`) are set. Each tick (`KEEPER_IN
 
 | Task | When | Who may call |
 |---|---|---|
-| `ComdTaxHook.flush()` | tax or trim proceeds are held as claims (`pendingTax` / `claimEth` / `claimComd` > 0); spacing `KEEPER_FLUSH_EVERY_SECONDS` (600) | anyone |
-| `BuyWall.rebalance()` | `canRebalance()`; with `KEEPER_REQUIRE_PROFIT=true` (default) only while the simulated tip ≥ gas × gas price; spacing `KEEPER_REBALANCE_EVERY_SECONDS` (300) | anyone (capped tip) |
-| `RewardDripper.drip()` | `pending() > 0`, at least hourly (`KEEPER_DRIP_EVERY_SECONDS`, 1800, capped at 3600) | anyone |
-| `Flywheel.buyback(minOut)` | buyback bucket ≥ `KEEPER_BUYBACK_MIN_WEI` (0.05 ETH); minOut = simulated `buyback(0)` − `KEEPER_BUYBACK_SLIPPAGE_BPS` (300); spacing `KEEPER_BUYBACK_EVERY_SECONDS` (900). Bought COMD is burned | `Flywheel.keeper()` or owner |
+| `Flywheel.buyback(minOut)` | the Flywheel has a swapper (`swapper()` != 0; the owner points the `UniswapV4PoolSwapper` at the Pons pool with `setPoolKey` after graduation, else the task skips with `swapper_not_set` and ETH accumulates) and the buyback bucket ≥ `KEEPER_BUYBACK_MIN_WEI` (0.05 ETH); minOut = simulated `buyback(0)` − `KEEPER_BUYBACK_SLIPPAGE_BPS` (300); spacing `KEEPER_BUYBACK_EVERY_SECONDS` (900). Bought COMD goes to `0x…dEaD` | `Flywheel.keeper()` or owner |
 | `RevenueRouter.distribute()` | it holds ≥ `KEEPER_DISTRIBUTE_MIN_COMD` (1,000 COMD); spacing `KEEPER_DISTRIBUTE_EVERY_SECONDS` (3600). 80% → RewardDistributor, 20% → treasury | anyone |
 
 Every call is simulated first (a revert is recorded as `simulate_reverted`, never sent); the tick is serialised and
 never throws; below `KEEPER_MIN_ETH_WEI` (0.001 ETH) every task pauses (`low_gas`). Status per task (`runs`,
 `lastSkip`, `lastTx`, `lastResult`, `lastError`) in `GET /services` (kind `keeper`), `/health` (`keeper`) and
-`/flywheel` (`keeper`). Floor sweeps stay manual (`/flywheel/sweep-candidates`).
+`/flywheel` (`keeper`). Floor sweeps stay manual (`/flywheel/sweep-candidates`). There is nothing to flush: Pons pays
+the tax share as plain ETH.
 
 ## Flywheel ($COMD)
 
-`ComdTaxHook` takes 5% of every buy and sell on the official COMD/ETH pool, in ETH, for the `Flywheel` (two buckets,
-default 50% buyback-and-burn / 50% Counsel floor sweep). The same hook caps the pool's COMD inventory: COMD above the
-decaying cap is trimmed after a swap and split 85% burn / 6% Bond / 4.5% stakers (RewardDripper → sCOMD) / 4.5% Counsel
-seats (RewardDistributor); trimmed ETH funds the BuyWall, the protocol's standing bid below the price. The Bond sells
-its reserve for ETH at `priceEth` once enabled. Job revenue (COMD) goes through the RevenueRouter: 80% Counsel rewards /
-20% firm treasury.
+$COMD is launched and traded on **Pons** (Robinhood Chain launchpad): Pons mints the 1B supply, runs the bonding curve,
+sets the 5% tax and, on graduation, locks liquidity in a Uniswap v4 pool with its own hook. Pons pays the creator wallet
+in ETH; that ETH lands in the `Flywheel` (`receive()`), is counted as `totalTaxIn` and split into two buckets (default
+50% buyback-and-burn / 50% Counsel floor sweep). `buyback(minOut)` swaps through a pluggable `IBuybackSwapper` — the
+shipped `UniswapV4PoolSwapper`, which the owner points at the Pons pool (`setPoolKey(fee, tickSpacing, ponsHook)`)
+after graduation — and sends the COMD to the dead address (the token may have no `burn()`). Job revenue (COMD) goes
+through the RevenueRouter: 80% Counsel rewards / 20% firm treasury.
 
 **`GET /flywheel`** (for the website; cached `FLYWHEEL_CACHE_SECONDS`, 15). Amounts are decimal strings: ETH in wei,
-COMD in atomic units (18 decimals); ticks are numbers. A section is `null` when its contract is not configured; a
-failing read lands in `errors` (never a 500).
+COMD in atomic units. A section is `null` when its contract is not configured; a failing read lands in `errors`
+(never a 500).
 
 ```jsonc
 {
   "chainId": 4663,
   "configured": true,
-  "contracts": { "flywheel", "comdTaxHook", "buyWall", "stakedComd", "rewardDripper", "bond", "comdRouter", "revenueRouter", "rewardDistributor", "comd", "counselNft" },
-  "tax": { "taxBps": 500, "totalTaxed": "<wei>", "pending": "<wei held as claims>", "toFlywheel": "<wei>" },
+  "contracts": { "flywheel", "swapper", "revenueRouter", "rewardDistributor", "incorporations", "comd", "counselNft" },
+  "pons": { "url": "https://pons.fun/…" },                        // PONS_URL
+  "swapper": { "address": "0x…", "configured": false, "onFlywheel": true },   // configured = UniswapV4PoolSwapper.configured()
+  "tax": { "totalTaxIn": "<wei>", "toFlywheel": "<wei>", "source": "pons" },
   "flywheel": {
     "bps": { "buyback": 5000, "sweep": 5000 },
     "buckets": { "buyback": "<wei>", "sweep": "<wei>" },
-    "totals": { "taxIn": "<wei>", "boughtBack": "<wei>", "burned": "<COMD>", "swept": 1, "sweepSpent": "<wei>" },
-    "sweptTokenIds": [7], "maxSweepPrice": "<wei>", "keeper": "0x…", "owner": "0x…"
+    "totals": { "taxIn": "<wei>", "boughtBack": "<wei>", "burned": "<COMD sent to 0x…dEaD>", "swept": 1, "sweepSpent": "<wei>" },
+    "sweptTokenIds": [7], "maxSweepPrice": "<wei>", "keeper": "0x…", "owner": "0x…", "swapper": "0x…"
   },
-  "hook": {
-    "taxBps": 500, "totalTaxed": "<wei>", "pendingTax": "<wei>",
-    "stats": { "trimmedComd", "trimmedEth", "split", "burned", "toBond", "toStakers", "toSeats" },
-    "cap": "<COMD>", "currentCap": "<COMD, after decay now>", "inventory": "<COMD>", "lastInventory": "<COMD>",
-    "params": { "capFloor": "<COMD>", "capDecayPerDay": "<COMD>", "burnBps": 8500, "bondBps": 600, "stakersBps": 450, "seatsBps": 450, "refStepTicks": 200 },
-    "claims": { "eth": "<wei>", "comd": "<COMD>" }
-  },
-  "buyWall": { "postedEth": "<wei>", "floorTick": 184000, "previewFloorTick": 184000, "totalBought": "<COMD>", "totalTips": "<wei>", "parkedEth": "<wei>", "wallLower": 184000, "wallUpper": 188000, "wallLiquidity": "…", "canRebalance": false },
-  "staking": { "totalAssets": "<COMD in sCOMD>", "totalShares": "<sCOMD>", "ratePerSecond": "<COMD/s>", "streamCapPerDay": "<COMD>", "pending": "<COMD>", "totalDripped": "<COMD>" },
-  "bond": { "enabled": true, "priceEth": "<wei per 1 COMD>", "reserve": "<COMD>", "sold": "<COMD>", "proceeds": "<wei>" },
   "revenueRouter": { "totalToRewards": "<COMD>", "totalToTreasury": "<COMD>", "bps": { "rewards": 8000, "treasury": 2000 } },
   "bps": "…", "buckets": "…", "totals": "…", "sweptTokenIds": "…", "maxSweepPrice": "…",   // flat aliases of flywheel.*
   "events": [ { "type": "Buyback", "source": "flywheel", "blockNumber": 123, "txHash": "0x…", "ethIn": "…", "comdBurned": "…" } ],
   "errors": {},
-  "keeper": { "enabled": true, "address": "0x…", "lastTickAt": "…", "tasks": { "flush": { "runs", "lastRunAt", "lastTx", "lastSkip", "lastResult" }, "rebalance": {}, "drip": {}, "buyback": {}, "distribute": {} } },
-  "units": { "eth": "wei", "comd": "atomic (18 decimals)", "ticks": "…" },
+  "keeper": { "enabled": true, "address": "0x…", "lastTickAt": "…", "tasks": { "buyback": { "runs", "lastRunAt", "lastTx", "lastSkip", "lastResult" }, "distribute": {} } },
+  "units": { "eth": "wei", "comd": "atomic (18 decimals)" },
   "computedAt": "2026-10-06T12:00:00.000Z"
 }
 ```
 
 `events` are the newest 50 (last `FLYWHEEL_EVENT_BLOCKS`, 50,000 blocks) of: flywheel `TaxIn` `Buyback` `Swept`
-`SweptAwarded` `BpsSet`; hook `Trimmed` `Split` `Flushed` `CapUpdated`; buyWall `Rebalanced` `WallPosted` `WallClosed`
-`WallParked`; rewardDripper `Dripped` `RewardNotified`; bond `Bonded`; revenueRouter `Distributed` — each with the
-event's own arguments flattened in (bigints as strings).
+`SweptAwarded` `BpsSet` `SwapperSet`; revenueRouter `Distributed` — each with the event's own arguments flattened in
+(bigints as strings).
 
 **`GET /flywheel/sweep-candidates`** returns `[]` unless a listing source is configured. To plug one in, point
 `SWEEP_LISTINGS_URL` at any JSON endpoint you run or proxy (your own indexer, a marketplace API behind your key, a
@@ -178,12 +168,14 @@ waiting for funds, retry feedback now).
 ## End-to-end on anvil
 
 `e2e/run.ts` (`cd e2e && npm run e2e`) starts anvil (chain 46630, port 8545), places Permit2 (built from source with
-solc 0.8.17) at its canonical address, runs `Deploy.s.sol` + `SeedPool.s.sol`, starts this API from `dist/` (port 8789)
-with the real services and the keeper, mints six free Counsel, registers six ERC-8004 agents and pairs six
-`comd start --runtime mock` workers over HTTP. A customer buys COMD through ComdRouter, approves Permit2 once and pays
-five actions in COMD; the run then verifies on chain the keeper's flush, buyback-and-burn, RevenueRouter 80/20,
-BuyWall rebalance and drip, a floor sweep through MockMarketplace, an inventory trim (the owner lowers the cap decay on
-the test chain and time is advanced), sCOMD staking, a Bond buy with ETH, reputation, the oracle attestation, seat COMD
+solc 0.8.17) at its canonical address, runs `Deploy.s.sol` (test-chain path: a `MockComd` stands in for the Pons
+token, plus a local v4 PoolManager and MockMarketplace), starts this API from `dist/` (port 8789) with the real
+services and the keeper, mints six free Counsel, registers six ERC-8004 agents and pairs six
+`comd start --runtime mock` workers over HTTP. A customer receives COMD by transfer (as if bought on Pons), approves
+Permit2 once and pays five actions in COMD; "Pons" pays ETH into the Flywheel by plain transfer; the run verifies on
+chain that the keeper cannot buy back until the swapper is configured, configures the `UniswapV4PoolSwapper` against a
+hookless ETH/COMD pool on the local PoolManager (two-sided liquidity), then the keeper's buyback (COMD to `0x…dEaD`),
+`RevenueRouter.distribute()` 80/20, a floor sweep through MockMarketplace, reputation, the oracle attestation, seat COMD
 reward claims, the launch and a contributor claim, and `GET /flywheel` against the chain. It prints a PASS/FAIL table
 (logs in `e2e/.run/logs`).
 

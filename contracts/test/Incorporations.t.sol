@@ -2,24 +2,19 @@
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Base} from "./utils/Base.sol";
-import {Incorporations, IComdRouterSwaps, IRewardDripperLike} from "../src/Incorporations.sol";
+import {Incorporations} from "../src/Incorporations.sol";
+import {IBuybackSwapper} from "../src/interfaces/IBuybackSwapper.sol";
 
 contract IncorporationsTest is Base {
-    Incorporations inc;
     address launcher = makeAddr("launcher");
     address coin;
 
     function setUp() public {
         setUpSystem();
-        initSeedAndTrade();
-        inc = new Incorporations(
-            ERC20Burnable(address(comd)), IComdRouterSwaps(address(router)), IRewardDripperLike(address(dripper)), admin
-        );
         vm.prank(launcher);
         coin = inc.create("Acme Litigation Co", "ACME", "https://api.example/coins/acme.json");
-        deal(address(comd), alice, 10_000_000e18);
+        comd.transfer(alice, 10_000_000e18);
         vm.prank(alice);
         comd.approve(address(inc), type(uint256).max);
         vm.prank(alice);
@@ -35,10 +30,13 @@ contract IncorporationsTest is Base {
         assertEq(c.creator, launcher);
         assertEq(c.virtualComd, 100_000e18);
         assertEq(c.metadataURI, "https://api.example/coins/acme.json");
-        // spot = 100k / 1B = 0.0001 COMPANY per coin
+        // spot = 100k / 1B = 0.0001 COMD per coin
         assertEq(inc.spotPrice(coin), 1e14);
         vm.expectRevert(Incorporations.EmptyName.selector);
         inc.create("", "X", "");
+        assertEq(address(inc.comd()), address(comd));
+        assertEq(inc.rewardDistributor(), address(distributor));
+        assertEq(address(inc.swapper()), address(swapper));
     }
 
     function test_createEmitsEvent() public {
@@ -50,17 +48,23 @@ contract IncorporationsTest is Base {
 
     function test_buySellWithComdFees() public {
         uint256 supply0 = comd.totalSupply();
-        uint256 rew0 = comd.balanceOf(address(dripper));
+        uint256 rew0 = comd.balanceOf(address(distributor));
         uint256 q = inc.quoteBuy(coin, 10_000e18);
+        vm.expectEmit(true, false, false, true, address(inc));
+        emit Incorporations.Fees(coin, 100e18, 50e18, 50e18, 0);
         vm.expectEmit(true, true, false, true);
         emit Incorporations.Trade(coin, alice, true, 10_000e18, q, 0);
         vm.prank(alice);
         uint256 out = inc.buyWithComd(coin, 10_000e18, q);
         assertEq(out, q);
         assertEq(IERC20(coin).balanceOf(alice), out);
-        assertEq(comd.balanceOf(address(dripper)) - rew0, 100e18, "1% to sCOMD stakers");
-        assertEq(supply0 - comd.totalSupply(), 50e18, "0.5% burned");
-        assertEq(comd.balanceOf(launcher), 50e18, "0.5% launcher in COMPANY");
+        assertEq(comd.balanceOf(address(distributor)) - rew0, 100e18, "1% to Counsel rewards");
+        assertEq(distributor.unallocated(address(comd)), 100e18, "claimable by settler roots");
+        assertEq(comd.totalSupply(), supply0, "no burn(): supply unchanged");
+        assertEq(comd.balanceOf(DEAD), 50e18, "0.5% to the dead address");
+        assertEq(inc.totalBurned(), 50e18);
+        assertEq(inc.totalToRewards(), 100e18);
+        assertEq(comd.balanceOf(launcher), 50e18, "0.5% launcher in COMD");
         assertEq(inc.coinInfo(coin).comdReserve, 9_800e18);
         assertEq(inc.totalBacking(), 9_800e18);
 
@@ -88,17 +92,21 @@ contract IncorporationsTest is Base {
         vm.stopPrank();
     }
 
-    function test_buySellWithEth() public {
+    // ------------------------------------------------------------------ ETH paths (mock venue)
+
+    function test_buySellWithEthViaSwapper() public {
         vm.deal(bob, 10 ether);
-        uint256 supply0 = comd.totalSupply();
-        uint256 taxed0 = hook.totalTaxed();
+        uint256 dead0 = comd.balanceOf(DEAD);
         vm.prank(bob);
         uint256 out = inc.buyWithETH{value: 1 ether}(coin, 1);
         assertGt(out, 0);
         assertEq(IERC20(coin).balanceOf(bob), out);
         assertEq(inc.launcherEthOwed(launcher), 0.005 ether, "0.5% of the ETH side");
         assertEq(comd.balanceOf(launcher), 0, "no COMD launcher fee on ETH trades");
-        assertGt(supply0 - comd.totalSupply(), 0, "0.5% COMD burned");
+        // 0.995 ETH → 0.995e8 COMD: 1% rewards, 0.5% burned
+        assertEq(comd.balanceOf(DEAD) - dead0, 0.995e8 ether * 50 / 10_000, "0.5% COMD to the dead address");
+        assertEq(comd.balanceOf(address(distributor)), 0.995e8 ether * 100 / 10_000);
+        assertEq(address(inc).balance, 0.005 ether, "only the launcher's ETH stays");
 
         vm.startPrank(bob);
         IERC20(coin).approve(address(inc), out);
@@ -106,20 +114,27 @@ contract IncorporationsTest is Base {
         uint256 ethOut = inc.sellForETH(coin, out, 1);
         vm.stopPrank();
         assertEq(bob.balance - before, ethOut);
-        // ETH legs pay the pool's 5% tax both ways (+ 2% + 2% curve fees, 0.5% + 0.5% launcher)
-        // ≈ 0.995 · 0.95 · 0.985 · 0.985 · 0.95 · 0.995 ≈ 0.869
-        assertLt(ethOut, 0.875 ether);
-        assertGt(ethOut, 0.86 ether);
-        // buy tax: 5% of 0.995 ETH; sell tax: 5% of the gross ETH out (ethOut = 0.995 · 0.95 · gross)
-        uint256 sellGross = ethOut * 1e8 / (9_950 * 9_500);
-        assertApproxEqAbs(hook.totalTaxed() - taxed0, 0.04975 ether + sellGross * 500 / 10_000, 1e12);
+        // fixed-rate venue: ≈ 0.995 · 0.985 · 0.985 · 0.995 ≈ 0.960
+        assertLt(ethOut, 0.961 ether);
+        assertGt(ethOut, 0.955 ether);
         assertGt(inc.launcherEthOwed(launcher), 0.005 ether);
+        assertEq(comd.balanceOf(address(inc)), inc.totalBacking(), "no COMD stranded");
 
         uint256 owed = inc.launcherEthOwed(launcher);
         vm.prank(launcher);
         inc.claimLauncherEth();
         assertEq(launcher.balance, owed);
         assertEq(inc.launcherEthOwed(launcher), 0);
+        assertEq(address(inc).balance, 0);
+    }
+
+    function test_ethBuyRefundsUnusedEth() public {
+        swapper.setRefundBps(1_000); // venue only fills 90%
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        inc.buyWithETH{value: 1 ether}(coin, 1);
+        assertEq(bob.balance, 0.0995 ether, "unused ETH back to the trader");
+        assertEq(address(inc).balance, 0.005 ether);
     }
 
     function test_ethSlippage() public {
@@ -127,6 +142,60 @@ contract IncorporationsTest is Base {
         vm.prank(bob);
         vm.expectRevert();
         inc.buyWithETH{value: 1 ether}(coin, type(uint256).max);
+        assertEq(bob.balance, 1 ether);
+    }
+
+    function test_ethPathsRevertUntilSwapperSet() public {
+        Incorporations i2 = new Incorporations(IERC20(address(comd)), address(distributor), IBuybackSwapper(address(0)), admin);
+        vm.prank(bob);
+        address c2 = i2.create("No Venue Yet", "NVY", "");
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        vm.expectRevert(Incorporations.SwapperNotSet.selector);
+        i2.buyWithETH{value: 1 ether}(c2, 0);
+        vm.prank(bob);
+        vm.expectRevert(Incorporations.SwapperNotSet.selector);
+        i2.sellForETH(c2, 1, 0);
+        // COMD trades work without a venue
+        vm.startPrank(alice);
+        comd.approve(address(i2), type(uint256).max);
+        uint256 got = i2.buyWithComd(c2, 1_000e18, 1);
+        vm.stopPrank();
+        assertGt(got, 0);
+        vm.prank(alice);
+        vm.expectRevert();
+        i2.setSwapper(address(swapper));
+        vm.expectEmit(false, false, false, true, address(i2));
+        emit Incorporations.SwapperSet(address(swapper));
+        vm.prank(admin);
+        i2.setSwapper(address(swapper));
+        assertEq(comd.allowance(address(i2), address(swapper)), type(uint256).max);
+        vm.prank(bob);
+        assertGt(i2.buyWithETH{value: 1 ether}(c2, 1), 0);
+        // re-pointing revokes the old approval
+        vm.prank(admin);
+        i2.setSwapper(address(0));
+        assertEq(comd.allowance(address(i2), address(swapper)), 0);
+    }
+
+    /// ETH paths through the real (hookless) v4 pool.
+    function test_buySellWithEthViaRealPool() public {
+        setUpV4Pool();
+        useV4Swapper();
+        vm.deal(bob, 10 ether);
+        vm.prank(bob);
+        uint256 out = inc.buyWithETH{value: 0.2 ether}(coin, 1);
+        assertGt(out, 0);
+        assertEq(inc.launcherEthOwed(launcher), 0.001 ether);
+        vm.startPrank(bob);
+        IERC20(coin).approve(address(inc), out);
+        uint256 ethOut = inc.sellForETH(coin, out, 1);
+        vm.stopPrank();
+        // pool fee 0.3% + impact both ways, curve 1.5% + 1.5%, launcher 0.5% + 0.5%
+        assertLt(ethOut, 0.195 ether);
+        assertGt(ethOut, 0.17 ether);
+        assertEq(comd.balanceOf(address(inc)), inc.totalBacking());
+        assertEq(address(inc).balance, inc.launcherEthOwed(launcher));
     }
 
     function test_sharedBackingIsolatedPerCoin() public {
@@ -154,7 +223,7 @@ contract IncorporationsTest is Base {
         vm.startPrank(alice);
         uint256 o1 = inc.buyWithComd(coin, x, 0);
         vm.stopPrank();
-        deal(address(comd), bob, y);
+        comd.transfer(bob, y);
         vm.startPrank(bob);
         comd.approve(address(inc), y);
         uint256 o2 = inc.buyWithComd(coin, y, 0);

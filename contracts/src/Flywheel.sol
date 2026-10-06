@@ -1,42 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IMarketplaceAdapter} from "./interfaces/IMarketplaceAdapter.sol";
+import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 
-interface IComdRouterLike {
-    function swapExactETHForComd(uint256 minOut, address to, uint256 deadline) external payable returns (uint256);
-}
-
-/// @title Flywheel — where the 5% COMD/ETH pool tax goes
+/// @title Flywheel — where the $COMD tax goes (Pons mode)
 /// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
-/// @notice Receives the ETH tax from ComdTaxHook (`notifyTax`, hook only) and splits every wei into two buckets by
-///         bps of the tax (default buyback 5000 / floor sweep 5000 = 2.5% / 2.5% of volume):
-///         - **buyback**: keeper `buyback(minOut)` swaps the whole bucket ETH→COMD through ComdRouter (the hook
-///           exempts this one path, so the buyback is not taxed into itself) and burns all COMD received.
+/// @notice $COMD is launched on Pons, which pays the creator wallet in ETH (the 5% tax + its fee share). That ETH
+///         is forwarded here: `receive()` (or `notifyTax()`) accepts ETH from anyone and splits every wei into two
+///         buckets by bps (default buyback 5000 / floor sweep 5000):
+///         - **buyback**: keeper `buyback(minOut)` swaps the whole bucket ETH→COMD through the pluggable
+///           `IBuybackSwapper` (owner `setSwapper`; reverts `SwapperNotSet()` until configured, ETH just accumulates)
+///           and sends every COMD received to the dead address 0x…dEaD (the Pons token may have no `burn()`).
 ///         - **floor sweep**: keeper `sweep(adapter, data, tokenId, maxPrice)` buys one Company.md Counsel NFT
 ///           through an owner-allowlisted IMarketplaceAdapter, paying at most min(maxPrice, maxSweepPrice, bucket).
 ///           Swept NFTs are held here ("the firm's vault"); the owner re-issues them with `awardSwept`.
 ///         Conservation (tested as an invariant): totalTaxIn == buyback + sweep buckets + totalBoughtBack + sweepSpent.
 /// @notice Owner powers (Ownable2Step, renounceable): bps split (sum 10000; applies to future tax), maxSweepPrice,
-///         adapter allowlist, keeper, `awardSwept` (give a swept NFT to anyone), hook and router (once each).
+///         adapter allowlist, keeper, swapper (re-pointable), `awardSwept` (give a swept NFT to anyone), `setComd`
+///         (once, only if the Flywheel was deployed before the Pons launch with comd = 0).
 ///         Keeper powers: choose the buyback `minOut` (a careless/compromised keeper can be sandwiched) and choose
 ///         which listing to sweep, bounded by `maxSweepPrice`. Nobody can withdraw bucket ETH any other way.
 ///         The NFT collection is immutable.
 contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
-    uint256 public constant BPS = 10_000;
+    using SafeERC20 for IERC20;
 
-    ERC20Burnable public immutable comd;
+    uint256 public constant BPS = 10_000;
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+
+    IERC20 public comd;
     IERC721 public immutable counsel;
 
-    address public hook;
-    IComdRouterLike public router;
+    IBuybackSwapper public swapper;
     address public keeper;
 
     uint16 public buybackBps = 5_000;
@@ -47,7 +50,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
 
     uint256 public totalTaxIn;
     uint256 public totalBoughtBack; // ETH spent on buybacks
-    uint256 public totalBurned; // COMD burned by buybacks
+    uint256 public totalBurned; // COMD sent to the dead address by buybacks
     uint256 public totalSwept; // NFTs swept (cumulative)
     uint256 public sweepSpent; // ETH spent on sweeps
 
@@ -68,12 +71,10 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     event MaxSweepPriceSet(uint256 maxSweepPrice);
     event AdapterSet(address indexed adapter, bool allowed);
     event KeeperSet(address keeper);
-    event HookSet(address hook);
-    event RouterSet(address router);
+    event SwapperSet(address swapper);
+    event ComdSet(address comd);
 
-    error NotHook();
     error NotKeeper();
-    error UnexpectedEth();
     error BadBps();
     error Empty();
     error AdapterNotAllowed();
@@ -85,14 +86,18 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     error AlreadySet();
     error ZeroAddress();
     error TransferFailed();
+    error SwapperNotSet();
+    error ComdNotSet();
+    error NothingReceived();
 
     modifier onlyKeeper() {
         if (msg.sender != keeper && msg.sender != owner()) revert NotKeeper();
         _;
     }
 
-    constructor(ERC20Burnable comd_, IERC721 counsel_, address owner_, address keeper_) Ownable(owner_) {
-        if (address(comd_) == address(0) || address(counsel_) == address(0)) revert ZeroAddress();
+    /// @param comd_ the Pons $COMD token; may be address(0) when deploying before the launch (then `setComd` once)
+    constructor(IERC20 comd_, IERC721 counsel_, address owner_, address keeper_) Ownable(owner_) {
+        if (address(counsel_) == address(0)) revert ZeroAddress();
         comd = comd_;
         counsel = counsel_;
         keeper = keeper_;
@@ -103,9 +108,23 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     //                                        tax in
     // =====================================================================================
 
+    /// @notice ETH from anyone (Pons creator payouts forwarded here, or the Flywheel set as the recipient).
+    ///         During our own buyback/sweep the incoming ETH is the venue's refund, not tax.
+    receive() external payable {
+        if (_inOp) {
+            _opRefund += msg.value;
+            return;
+        }
+        _taxIn(msg.value);
+    }
+
+    /// @notice Alias of `receive()` for explicit forwards.
     function notifyTax() external payable {
-        if (msg.sender != hook) revert NotHook();
-        uint256 v = msg.value;
+        _taxIn(msg.value);
+    }
+
+    function _taxIn(uint256 v) private {
+        if (v == 0) return;
         uint256 b = (v * buybackBps) / BPS;
         buybackBucket += b;
         sweepBucket += v - b;
@@ -113,26 +132,28 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
         emit TaxIn(v);
     }
 
-    /// @dev Only refunds during our own buyback/sweep calls are accepted; stray ETH is refused.
-    receive() external payable {
-        if (!_inOp) revert UnexpectedEth();
-        _opRefund += msg.value;
-    }
-
     // =====================================================================================
     //                                       buyback
     // =====================================================================================
 
+    /// @notice Swap the whole buyback bucket ETH→COMD through the swapper and send the COMD to the dead address.
+    /// @return burned COMD actually received and sent to 0x…dEaD (measured by balance, not trusted from the venue)
     function buyback(uint256 minOut) external onlyKeeper nonReentrant returns (uint256 burned) {
+        if (address(swapper) == address(0)) revert SwapperNotSet();
+        if (address(comd) == address(0)) revert ComdNotSet();
         uint256 amt = buybackBucket;
         if (amt == 0) revert Empty();
         buybackBucket = 0;
+        uint256 bal0 = comd.balanceOf(address(this));
         _beginOp();
-        burned = router.swapExactETHForComd{value: amt}(minOut, address(this), block.timestamp);
+        swapper.swapExactETHForComd{value: amt}(minOut, address(this), block.timestamp);
         uint256 refund = _endOp();
+        if (refund > amt) revert TransferFailed();
+        burned = comd.balanceOf(address(this)) - bal0;
+        if (burned == 0 || burned < minOut) revert NothingReceived();
         uint256 spent = amt - refund;
         buybackBucket += refund;
-        comd.burn(burned);
+        comd.safeTransfer(DEAD, burned);
         totalBoughtBack += spent;
         totalBurned += burned;
         emit Buyback(spent, burned);
@@ -213,18 +234,18 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
         emit KeeperSet(k);
     }
 
-    function setHook(address h) external onlyOwner {
-        if (hook != address(0)) revert AlreadySet();
-        if (h == address(0)) revert ZeroAddress();
-        hook = h;
-        emit HookSet(h);
+    /// @notice Point at the ETH↔COMD venue (configured after the Pons graduation). Re-pointable; 0 disables buybacks.
+    function setSwapper(address s) external onlyOwner {
+        swapper = IBuybackSwapper(s);
+        emit SwapperSet(s);
     }
 
-    function setRouter(address r) external onlyOwner {
-        if (address(router) != address(0)) revert AlreadySet();
-        if (r == address(0)) revert ZeroAddress();
-        router = IComdRouterLike(r);
-        emit RouterSet(r);
+    /// @notice Set the Pons token once, if the Flywheel was deployed before the launch.
+    function setComd(address c) external onlyOwner {
+        if (address(comd) != address(0)) revert AlreadySet();
+        if (c == address(0)) revert ZeroAddress();
+        comd = IERC20(c);
+        emit ComdSet(c);
     }
 
     // =====================================================================================

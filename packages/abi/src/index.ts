@@ -4,22 +4,19 @@ export * from "./eip712.js";
 
 export const CHAIN_IDS = { mainnet: 4663, testnet: 46630 } as const;
 
-/** The official COMD/ETH pool (ComdTaxHook + BuyWall): LP fee 0, tick spacing 200, ETH is currency0; 5% ETH tax (max). */
-export const COMD_POOL = {
-  fee: 0,
-  tickSpacing: 200,
-  currency0: "0x0000000000000000000000000000000000000000",
-  maxTaxBps: 500,
-} as const;
+/**
+ * $COMD is launched on Pons (1B supply, ETH pair, 5% tax set in Pons); Pons locks the graduated liquidity in a
+ * Uniswap v4 pool with its own hook. The contracts reach that pool only through the pluggable swapper
+ * (`UniswapV4PoolSwapper.setPoolKey` after graduation). Burns are transfers to the dead address.
+ */
+export const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD" as const;
+export const COMD_SUPPLY = 1_000_000_000n * 10n ** 18n;
 
-/** Flywheel default split of the 5% ETH tax (bps of the tax): buyback-and-burn / Counsel floor sweep. */
+/** Flywheel default split of the ETH it receives (bps): buyback-and-burn / Counsel floor sweep. */
 export const FLYWHEEL_DEFAULT_BPS = { buyback: 5_000, sweep: 5_000 } as const;
 
-/** Default split of every COMD trimmed from the official pool (or bought by the buy wall), in bps. */
-export const TRIM_SPLIT_BPS = { burn: 8_500, bond: 600, stakers: 450, seats: 450 } as const;
-
-/** Default cap ratchet of the official pool (COMD wei). */
-export const CAP_DEFAULTS = { capFloor: 100_000n * 10n ** 18n, capDecayPerDay: 100_000n * 10n ** 18n } as const;
+/** Incorporations fees (bps of the COMD side): Counsel rewards / dead-address burn / launcher. */
+export const INCORPORATIONS_FEE_BPS = { rewards: 100, burn: 50, launcher: 50 } as const;
 
 /** RevenueRouter default split of COMD job revenue (bps): Counsel rewards / firm treasury. */
 export const REVENUE_DEFAULT_BPS = { rewards: 8_000, treasury: 2_000 } as const;

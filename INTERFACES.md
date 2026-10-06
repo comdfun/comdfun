@@ -1,3 +1,73 @@
+# >>> V6 — PONS MODE (2026-10-06 14:35, FINAL for launch; supersedes V2–V5 where they conflict) <<<
+
+The owner launches $COMD on **Pons** (Robinhood Chain launchpad). Pons mints the token (1B supply, ETH pair, 5% tax
+set in Pons), runs the bonding curve, and on graduation locks liquidity in a full-range Uniswap v4 position with
+Pons's own hook. Pons pays the creator wallet in ETH (tax + 70% of its 1% fee). We do NOT run our own pool.
+
+**Removed from deploy and repo:** ComdToken, ComdTaxHook, ComdRouter, BuyWall, StakedComd, RewardDripper, Bond,
+SeedPool.s.sol, POL wallet, INITIAL_MARKET_CAP_WEI. (Engine 2 and staking are gone per V5 as well.)
+
+**Kept:** CounselNFT (free mint), ERC-8004 registries, RewardDistributor, RevenueRouter (COMD 80% Counsel rewards /
+20% treasury), Flywheel, Incorporations, ProjectFactory + ContributorDistributor + LaunchGuardHook + LaunchToken,
+OracleAttestationVerifier, Create2Deployer, MockMarketplace/SeaportAdapter.
+
+**COMD** = external ERC-20 address (`COMD_TOKEN` env, from Pons). It may have NO `burn()`: every "burn" in our
+contracts = transfer to `0x000000000000000000000000000000000000dEaD` (count it as burned). Decimals: read from token
+(expect 18; do not hardcode). Test chains: deploy a plain `MockComd` ERC-20 (1B, 18 dec) standing in for Pons's token.
+
+**Flywheel (Pons mode):**
+- `receive() payable` accepts ETH from anyone (Pons payout forwards / direct recipient) → counted in `totalTaxIn`,
+  split into the two buckets by `bps()` (default 50/50 buyback / floor sweep). Keep `notifyTax()` as alias.
+- `buyback(uint256 minOut)` (keeper/owner): swaps bucket ETH → COMD through a pluggable `IBuybackSwapper`
+  (`swapExactETHForComd(uint256 minOut, address to, uint256 deadline) payable returns (uint256)`), then sends the COMD
+  to the dead address; owner `setSwapper(address)`; reverts `SwapperNotSet()` until configured (ETH accumulates).
+- Ship `UniswapV4PoolSwapper`: owner-configurable PoolKey (currency0 = ETH 0x0, currency1 = COMD, fee, tickSpacing,
+  hooks = Pons's hook address), swaps via `IPoolManager.unlock`; configured after Pons graduation (`setPoolKey`).
+  Also ship `UniversalRouterSwapper` skeleton only if cheap; otherwise document the adapter interface.
+- `sweep`, `awardSwept`, `setAdapter`, `setMaxSweepPrice`, `setKeeper`, views unchanged (minus hook/router setters).
+- `comd` settable once (`setComd`) so Flywheel can be deployed before the Pons launch if needed; default from env.
+
+**Incorporations:** priced in COMD (external token); `buyWithETH/sellForETH` route through the same `IBuybackSwapper`
+(sell path needs COMD→ETH: add `swapExactComdForETH(uint256 amountIn, uint256 minOut, address to, uint256 deadline)`
+to the interface; if time is short, make ETH paths revert `SwapperNotSet()` until configured). 1% fee → RewardDistributor.
+Burn = dead address.
+
+**Deploy.s.sol:** single stage, requires `COMD_TOKEN` (reverts if unset on real chains; test chains deploy MockComd),
+no POL; keys: `comdToken` (external), `counselNFT`, `identityRegistry`, `reputationRegistry`, `rewardDistributor`,
+`revenueRouter`, `flywheel`, `swapper`, `incorporations`, `projectFactory`, `contributorDistributor`,
+`launchGuardHook`, `create2Deployer`, `mockMarketplace` (test), `seaportAdapter` (if SEAPORT set), `admin`,
+`treasury`, `keeper`, `settler`, `registrar`.
+
+**GitHub names:** org for swarm output and releases = `comdfun`; worker release repo `comdfun/worker`; main repo
+`comdfun/comdfun`. Replace `comdfun/worker` and `comdfun` everywhere.
+
+**Website:** /swap links to Pons's trade page for $COMD (`NEXT_PUBLIC_PONS_URL`) and, after graduation, to Uniswap;
+shows live price from the pool when `NEXT_PUBLIC_COMD_POOL_ID`/swapper configured, else a "trade on Pons" card.
+Vault nav = Flywheel only (Swap link goes to Pons). Token page: launched on Pons, 1B supply, liquidity locked by Pons,
+5% tax → Flywheel. Docs updated. No screenshots/GIF regeneration this round.
+
+**API/keeper:** tasks = Flywheel.buyback (when swapper set and bucket ≥ threshold), RevenueRouter.distribute.
+GET /flywheel: tax in, buckets, burned (dead-address transfers), swept, revenue router, events, keeper; `pons: {url}`.
+Payments: COMD via x402 + Permit2 unchanged (asset = COMD_TOKEN, 18 dec assumed via on-chain decimals()).
+
+---
+
+# >>> V5 (2026-10-06 12:05, FINAL for launch; supersedes V2–V4 where they conflict) <<<
+
+- Own pool, own hook: `ComdTaxHook` = **tax only** (5% ETH on every buy and sell → Flywheel), atomic
+  `initializeAndSeed` with 100% of 1B COMD, only POL initializes, swaps revert until seeded, third-party LP blocked,
+  liquidity locked forever in the hook, router-only flywheel exemption, `flush()` for tax held as claims.
+- **REMOVED:** capped inventory / trims (engine 2), `BuyWall`, `StakedComd` (sCOMD), `RewardDripper`, `Bond`. No staking,
+  no bonds. Hook views/events for cap/trim/split are gone.
+- Flywheel unchanged: 50% buyback-and-burn / 50% Counsel floor sweep.
+- Jobs paid in **$COMD** (x402 + Permit2), `PRICE_COMD` default 100 COMD; RevenueRouter (COMD) 80% Counsel rewards
+  (RewardDistributor) / 20% firm treasury.
+- Incorporations: the 1% fee that went to stakers now goes to **Counsel rewards** (RewardDistributor, COMD).
+- Counsel rewards = COMD only: 80% of job revenue + 1% Incorporations fee.
+- Website "Vault" nav: Swap · Flywheel (no Stake, no Bond); /stake and /bond redirect to /flywheel.
+
+---
+
 # >>> V4 (2026-10-06 10:15, FINAL for launch today; supersedes V2/V3 where they conflict) <<<
 
 - **Jobs are paid in $COMD** (like IMD charges $IMD): x402 + Permit2, asset = COMD (18 dec), `PRICE_COMD` default
@@ -95,8 +165,8 @@ Owner corrections:
 
 **Brand:** product name **Company.md** (always written exactly so; the firm, "Company.md counsel"), token **$COMD**,
 domain **comd.fun** (web `https://comd.fun`, API `https://api.comd.fun`, hosted sites `https://<label>.sites.comd.fun`),
-contact **team@comd.fun**. CLI binary `comd` (config `~/.comd/`), GitHub org for swarm output `comd-filings`, worker
-release repo `comd-fun/worker`. NFT collection "Company.md Counsel" / symbol `COUNSEL`, items "Counsel #0042".
+contact **team@comd.fun**. CLI binary `comd` (config `~/.comd/`), GitHub org for swarm output `comdfun`, worker
+release repo `comdfun/worker`. NFT collection "Company.md Counsel" / symbol `COUNSEL`, items "Counsel #0042".
 Internal npm scope stays `@company/*` (not user-facing). No old brand names, "$COMPANY", "USDG payments",
 "sCOMPANY", "Trust" (as product), "Bond" anywhere user-facing.
 

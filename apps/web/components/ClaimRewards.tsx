@@ -11,7 +11,7 @@ import { ConnectButton } from "./ConnectButton";
 import { TxButton } from "./tx/TxButton";
 
 /**
- * Seat rewards (RewardDistributor), paid in COMD: 4.5% of every COMD the official pool trims plus 80% of job revenue
+ * Seat rewards (RewardDistributor), paid in COMD: 80% of job revenue plus the 1% Incorporations fee
  * (RevenueRouter). The API publishes one Merkle root per (epoch, asset) with each seat's proof under
  * GET /wallets/:holder/earnings `rewards[]`. The current holder claims COMD with claim(epoch, tokenId, amount, proof);
  * any other asset uses claimToken(asset, epoch, tokenId, amount, proof). Only `posted` roots are claimable.
@@ -63,7 +63,7 @@ export function ClaimRewards({ tokenId, owner }: { tokenId: string; owner: strin
         <h3 style={{ margin: 0, color: "var(--lime)" }}>Claim counsel rewards</h3>
         {rows && rows.length > 0 && <span className="badge ok">{rows.length} reward{rows.length === 1 ? "" : "s"}</span>}
       </div>
-      <p className="small muted" style={{ margin: "8px 0 12px" }}>Seats earn $COMD: 4.5% of every COMD the pool trims and 80% of every job payment, split by accepted work each epoch. The current holder claims; unclaimed epochs expire.</p>
+      <p className="small muted" style={{ margin: "8px 0 12px" }}>Seats earn $COMD: 80% of every job payment and the 1% fee on every Incorporations trade, split by accepted work each epoch. The current holder claims; unclaimed epochs expire.</p>
       {rows === null ? (
         <p className="small muted">Reading the reward roots…</p>
       ) : rows.length === 0 ? (

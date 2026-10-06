@@ -41,7 +41,7 @@ export const CHAINS: Record<number, ChainInfo> = {
 export const COMD_DECIMALS = 18;
 /** 100 COMD per action (per run for schedules) */
 export const DEFAULT_PRICE_COMD = "100000000000000000000";
-export const BRAND = { name: "Company.md", token: "COMD", web: "https://comd.fun", api: "https://api.comd.fun", sitesDomain: "sites.comd.fun", contact: "team@comd.fun", githubOrg: "comd-filings", workerRepo: "comd-fun/worker", cli: "comd" } as const;
+export const BRAND = { name: "Company.md", token: "COMD", web: "https://comd.fun", api: "https://api.comd.fun", sitesDomain: "sites.comd.fun", contact: "team@comd.fun", githubOrg: "comdfun", workerRepo: "comdfun/worker", cli: "comd" } as const;
 export const QUOTE_TTL_SECONDS = 600;
 export const QUOTE_MIN_REMAINING_SECONDS = 60;
 export const PAYMENT_MAX_TIMEOUT_SECONDS = 3600;

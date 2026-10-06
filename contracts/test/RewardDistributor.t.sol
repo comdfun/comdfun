@@ -4,14 +4,14 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {ComdToken} from "../src/ComdToken.sol";
+import {MockComd} from "../src/mocks/MockComd.sol";
 import {CounselNFT} from "../src/CounselNFT.sol";
 import {RewardDistributor} from "../src/RewardDistributor.sol";
 import {MockERC20} from "./mocks/Mocks.sol";
 import {MerkleHelper} from "./utils/MerkleHelper.sol";
 
 contract RewardDistributorTest is Test, MerkleHelper {
-    ComdToken comd;
+    MockComd comd;
     CounselNFT counsel;
     RewardDistributor dist;
     MockERC20 other;
@@ -22,7 +22,7 @@ contract RewardDistributorTest is Test, MerkleHelper {
     bytes32[] leaves;
 
     function setUp() public {
-        comd = new ComdToken(address(this));
+        comd = new MockComd();
         counsel = new CounselNFT(admin, admin, "u/");
         other = new MockERC20("Other", "OTH");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);

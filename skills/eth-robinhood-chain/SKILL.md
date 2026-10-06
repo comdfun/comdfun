@@ -58,7 +58,7 @@ blockExplorers: { default: { name: "Blockscout", url: "https://robinhoodchain.bl
 | ERC-8004 Identity / Reputation | deployed by the firm (CC0 reference contracts) | deployed by the firm | addresses in `@company/abi` |
 
 Environment names used across the repo: `CHAIN_ID`, `RPC_URL`, `PERMIT2_ADDRESS`, `COUNSEL_NFT`,
-`COMD_TOKEN`, `COMD_ROUTER`, `COMD_TAX_HOOK`, `FLYWHEEL`, `BUY_WALL`, `STAKED_COMD`, `REWARD_DRIPPER`, `BOND`,
+`COMD_TOKEN`, `COMD_ROUTER`, `COMD_TAX_HOOK`, `FLYWHEEL`,
 `IDENTITY_REGISTRY`, `REPUTATION_REGISTRY`,
 `PROJECT_FACTORY`, `REWARD_DISTRIBUTOR`, `CONTRIBUTOR_DISTRIBUTOR`, `REVENUE_ROUTER`. The per-chain address book is `packages/abi` (`addresses.ts`).
 

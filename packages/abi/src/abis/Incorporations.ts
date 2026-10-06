@@ -6,17 +6,17 @@ export const incorporationsAbi = [
       {
         "name": "comd_",
         "type": "address",
-        "internalType": "contract ERC20Burnable"
+        "internalType": "contract IERC20"
       },
       {
-        "name": "router_",
+        "name": "rewardDistributor_",
         "type": "address",
-        "internalType": "contract IComdRouterSwaps"
+        "internalType": "address"
       },
       {
-        "name": "dripper_",
+        "name": "swapper_",
         "type": "address",
-        "internalType": "contract IRewardDripperLike"
+        "internalType": "contract IBuybackSwapper"
       },
       {
         "name": "owner_",
@@ -71,6 +71,19 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
+    "name": "DEAD",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "LAUNCHER_BPS",
     "inputs": [],
     "outputs": [
@@ -110,7 +123,7 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
-    "name": "STAKERS_BPS",
+    "name": "REWARDS_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -285,7 +298,7 @@ export const incorporationsAbi = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract ERC20Burnable"
+        "internalType": "contract IERC20"
       }
     ],
     "stateMutability": "view"
@@ -318,19 +331,6 @@ export const incorporationsAbi = [
       }
     ],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "dripper",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IRewardDripperLike"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -434,13 +434,13 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
-    "name": "router",
+    "name": "rewardDistributor",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IComdRouterSwaps"
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -505,6 +505,19 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
+    "name": "setSwapper",
+    "inputs": [
+      {
+        "name": "s",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setVirtualComd",
     "inputs": [
       {
@@ -537,6 +550,19 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
+    "name": "swapper",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IBuybackSwapper"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "totalBacking",
     "inputs": [],
     "outputs": [
@@ -563,7 +589,7 @@ export const incorporationsAbi = [
   },
   {
     "type": "function",
-    "name": "totalToStakers",
+    "name": "totalToRewards",
     "inputs": [],
     "outputs": [
       {
@@ -648,7 +674,7 @@ export const incorporationsAbi = [
         "internalType": "address"
       },
       {
-        "name": "toStakers",
+        "name": "toRewards",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -726,6 +752,19 @@ export const incorporationsAbi = [
         "name": "newOwner",
         "type": "address",
         "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SwapperSet",
+    "inputs": [
+      {
+        "name": "swapper",
+        "type": "address",
+        "indexed": false,
         "internalType": "address"
       }
     ],
@@ -853,12 +892,22 @@ export const incorporationsAbi = [
   },
   {
     "type": "error",
+    "name": "SwapperNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "TransferFailed",
     "inputs": []
   },
   {
     "type": "error",
     "name": "UnknownCoin",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
     "inputs": []
   },
   {

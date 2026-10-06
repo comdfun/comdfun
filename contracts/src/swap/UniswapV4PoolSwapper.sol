@@ -6,39 +6,52 @@ import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.s
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title ComdRouter — ETH <-> COMD swaps on the official Company.md pool (ComdTaxHook)
+import {IBuybackSwapper} from "../interfaces/IBuybackSwapper.sol";
+
+/// @title UniswapV4PoolSwapper — IBuybackSwapper over one Uniswap v4 ETH/COMD pool
 /// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
-/// @notice Exact-input swaps through PoolManager.unlock with a minimum output and a deadline. No owner, no fee of
-///         its own; the pool's 5% ETH tax is applied by the hook, so every amount here is NET of the tax.
-/// @notice The router passes its caller (`msg.sender`) to the hook as `hookData`. The hook trusts that value only
-///         when the swap's sender is this router, and exempts exactly one caller from the tax: the Flywheel.
+/// @notice Exact-input ETH <-> COMD swaps through `IPoolManager.unlock` on an owner-configured pool: after Pons
+///         graduates $COMD into its v4 position, the owner calls `setPoolKey(fee, tickSpacing, hooks)` with
+///         Pons's pool parameters (currency0 is always ETH, currency1 always COMD). Until then every swap reverts
+///         `PoolNotSet()`. Holds nothing between calls; no fee of its own; empty hookData.
 /// @notice Quotes (`quoteETHForComd`, `quoteComdForETH`) are NON-VIEW: they simulate the swap inside unlock and
-///         revert with the result (V4Quoter style); call them with eth_call (viem `simulateContract`). They are
-///         net of the tax for the calling address and equal the executed amount in the same state.
-contract ComdRouter is IUnlockCallback, ReentrancyGuard {
+///         revert with the result (V4Quoter style); call them with eth_call (viem `simulateContract`).
+/// @dev Pons's hook may charge its tax inside the swap (amounts here are whatever the pool returns) or may reject
+///      swaps from arbitrary unlock callers; if so, a different IBuybackSwapper (e.g. through Pons's or Uniswap's
+///      router) is plugged into the Flywheel and Incorporations with `setSwapper`.
+contract UniswapV4PoolSwapper is IBuybackSwapper, IUnlockCallback, Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using PoolIdLibrary for PoolKey;
 
     IPoolManager public immutable poolManager;
     IERC20 public immutable comd;
-    IHooks public immutable hook;
-    uint24 public immutable fee;
-    int24 public immutable tickSpacing;
+
+    uint24 public fee;
+    int24 public tickSpacing;
+    IHooks public hooks;
+    bool public configured;
 
     error NotPoolManager();
+    error PoolNotSet();
     error Expired();
     error Slippage(uint256 out, uint256 minOut);
     error ZeroAmount();
+    error ZeroAddress();
     error QuoteResult(uint256 amountOut);
     error UnexpectedRevert(bytes data);
     error TransferFailed();
 
+    event PoolKeySet(uint24 fee, int24 tickSpacing, address hooks, PoolId poolId);
     event Swapped(address indexed sender, address indexed to, bool ethIn, uint256 amountIn, uint256 amountOut);
 
     struct CallbackData {
@@ -49,20 +62,34 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
         address to;
     }
 
-    constructor(IPoolManager poolManager_, IERC20 comd_, IHooks hook_, uint24 fee_, int24 tickSpacing_) {
+    constructor(IPoolManager poolManager_, IERC20 comd_, address owner_) Ownable(owner_) {
+        if (address(poolManager_) == address(0) || address(comd_) == address(0)) revert ZeroAddress();
         poolManager = poolManager_;
         comd = comd_;
-        hook = hook_;
-        fee = fee_;
-        tickSpacing = tickSpacing_;
     }
 
     receive() external payable {
         if (msg.sender != address(poolManager)) revert TransferFailed();
     }
 
+    // ------------------------------------------------------------------ owner
+
+    /// @notice Point at the (Pons) ETH/COMD pool. Can be changed later (e.g. a new pool or hook).
+    function setPoolKey(uint24 fee_, int24 tickSpacing_, IHooks hooks_) external onlyOwner {
+        if (tickSpacing_ <= 0) revert ZeroAmount();
+        fee = fee_;
+        tickSpacing = tickSpacing_;
+        hooks = hooks_;
+        configured = true;
+        emit PoolKeySet(fee_, tickSpacing_, address(hooks_), poolKey().toId());
+    }
+
     function poolKey() public view returns (PoolKey memory) {
-        return PoolKey(Currency.wrap(address(0)), Currency.wrap(address(comd)), fee, tickSpacing, hook);
+        return PoolKey(Currency.wrap(address(0)), Currency.wrap(address(comd)), fee, tickSpacing, hooks);
+    }
+
+    function poolId() external view returns (PoolId) {
+        return poolKey().toId();
     }
 
     // ------------------------------------------------------------------ swaps
@@ -73,6 +100,7 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
         nonReentrant
         returns (uint256 out)
     {
+        if (!configured) revert PoolNotSet();
         if (block.timestamp > deadline) revert Expired();
         if (msg.value == 0) revert ZeroAmount();
         (uint256 used, uint256 got) = abi.decode(
@@ -89,6 +117,7 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
         nonReentrant
         returns (uint256 out)
     {
+        if (!configured) revert PoolNotSet();
         if (block.timestamp > deadline) revert Expired();
         if (amountIn == 0) revert ZeroAmount();
         (uint256 used, uint256 got) = abi.decode(
@@ -110,6 +139,7 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
     }
 
     function _quote(bool zeroForOne, uint256 amountIn) internal returns (uint256) {
+        if (!configured) revert PoolNotSet();
         if (amountIn == 0) return 0;
         try poolManager.unlock(abi.encode(CallbackData(true, zeroForOne, amountIn, msg.sender, address(0)))) {
             revert UnexpectedRevert("");
@@ -138,7 +168,7 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
                 amountSpecified: -int256(d.amountIn),
                 sqrtPriceLimitX96: d.zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
             }),
-            abi.encode(d.payer)
+            ""
         );
         int128 a0 = delta.amount0();
         int128 a1 = delta.amount1();
@@ -155,12 +185,12 @@ contract ComdRouter is IUnlockCallback, ReentrancyGuard {
 
         if (d.zeroForOne) {
             poolManager.settle{value: paid}();
-            poolManager.take(key.currency1, d.to, out);
+            if (out > 0) poolManager.take(key.currency1, d.to, out);
         } else {
             poolManager.sync(key.currency1);
             comd.safeTransferFrom(d.payer, address(poolManager), paid);
             poolManager.settle();
-            poolManager.take(key.currency0, d.to, out);
+            if (out > 0) poolManager.take(key.currency0, d.to, out);
         }
         return abi.encode(paid, out);
     }

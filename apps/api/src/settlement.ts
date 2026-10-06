@@ -5,7 +5,7 @@
  *    (/reviews/:hash.json) and assessments (Bench findings, oracle members) (/review-documents/:hash.json)
  *  - reputation: one feedback batch per finished job → ERC-8004 ReputationRegistry.giveFeedback per entry,
  *    sent when SETTLER_PRIVATE_KEY + REPUTATION_REGISTRY are set, otherwise queued (status "queued")
- *  - rewards: epochs (7 days), COMD only (80% of x402 revenue via RevenueRouter.distribute() + 4.5% of hook trims):
+ *  - rewards: epochs (7 days), COMD only (80% of x402 revenue via RevenueRouter.distribute() + the 1% Incorporations fee):
  *    the pool is split among seats by accepted work → RewardDistributor.postRoot(epoch, COMD, root, total)
  *    (leaf (epoch, tokenId, amount))
  *  - launches: the ContributorDistributor root is registered by ProjectFactory.launch itself (see launches.ts)
@@ -181,8 +181,8 @@ export class Settlement {
   }
 
   /**
-   * Seat rewards are paid in COMD only: 80% of x402 revenue (RevenueRouter.distribute()) plus 4.5% of the hook's
-   * inventory trims both land in the RewardDistributor. REWARD_EPOCH_COMD_POOL caps an epoch.
+   * Seat rewards are paid in COMD only: 80% of x402 revenue (RevenueRouter.distribute()) plus the 1% Incorporations
+   * fee both land in the RewardDistributor. REWARD_EPOCH_COMD_POOL caps an epoch.
    */
   rewardAssets(): { asset: Address; symbol: string; decimals: number; cap: bigint | null; source: RewardEpochAsset["poolSource"] }[] {
     const cfg = this.app.cfg;

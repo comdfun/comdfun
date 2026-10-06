@@ -46,8 +46,6 @@ const pages = [
   ["mint", "/mint"],
   ["pair", "/pair?code=K7Q2-M9"],
   ["swap", "/swap"],
-  ["stake", "/stake"],
-  ["bond", "/bond"],
   ["flywheel", "/flywheel"],
   ["docs-quickstart", "/docs/quickstart"],
   ["docs-run-an-agent", "/docs/run-an-agent"],

@@ -2,49 +2,53 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import { VaultNav } from "@/components/VaultNav";
-import { Swap } from "@/components/tx/Swap";
-import { one, type Params } from "@/components/Listing";
+import { TradeCards } from "@/components/TradeCards";
 import { addressOf } from "@/lib/contracts";
 import { explorerUrl } from "@/lib/chains";
+import { getFlywheel } from "@/lib/flywheel";
+import { PONS_URL, UNISWAP_URL } from "@/lib/config";
 
-export const metadata: Metadata = { title: "Swap $COMD" };
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Trade $COMD" };
 
-export default async function SwapPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const side = one((await searchParams).side) === "sell" ? "sell" : "buy";
-  const router = addressOf("ComdRouter");
-  const hook = addressOf("ComdTaxHook");
+export default async function TradePage() {
+  const token = addressOf("ComdToken");
+  const swapper = addressOf("Swapper");
+  const s = await getFlywheel();
+  const graduated = s.swapper.configured || !!UNISWAP_URL;
   return (
     <div className="wrap">
       <PageHead
-        crumbs={[{ label: "Company.md", href: "/" }, { label: "Swap" }]}
-        kicker={<><span className="badge brass fill">ETH ↔ $COMD</span><span className="badge pink">5% tax in ETH</span><span className="badge violet">Feeds the flywheel</span></>}
-        title={<>Swap <span className="accent">$COMD</span></>}
-        lede={<>Trade on the official COMD/ETH pool through <strong>ComdRouter</strong>. Every buy and sell pays a 5% tax in ETH to the Flywheel; the quote you see is already net of it.</>}
+        crumbs={[{ label: "Company.md", href: "/" }, { label: "Trade" }]}
+        kicker={<><span className="badge brass fill">Launched on Pons</span><span className="badge pink">5% tax in ETH</span><span className="badge violet">Feeds the flywheel</span></>}
+        title={<>Trade <span className="accent">$COMD</span></>}
+        lede={<><strong>$COMD</strong> launched on <strong>Pons</strong>, the Robinhood Chain launchpad: 1,000,000,000 minted there, traded on its bonding curve, and on graduation locked by Pons into a Uniswap v4 pool. Every buy and sell pays a 5% tax in ETH that Pons sends to the Flywheel.</>}
       />
       <VaultNav active="/swap" />
       <div className="grid trade-grid">
-        <Swap initialSide={side} />
+        <TradeCards ponsUrl={s.pons.url || PONS_URL} uniswapUrl={UNISWAP_URL} graduated={graduated} />
         <div className="stack">
           <div className="dossier c-violet rv" data-tab="Where the 5% goes">
-            <div className="dossier-head"><span className="eng">The tax, in ETH</span><span className="eng-r">ComdTaxHook → Flywheel</span></div>
+            <div className="dossier-head"><span className="eng">The tax, in ETH</span><span className="eng-r">Pons → Flywheel</span></div>
             <div className="dossier-body">
               <ol className="entries">
-                <li className="c-crimson"><span className="no">2.5</span><span><span className="t">Buyback &amp; burn</span><span className="d">The Flywheel buys $COMD on this pool and burns it.</span></span></li>
+                <li className="c-crimson"><span className="no">2.5</span><span><span className="t">Buyback &amp; burn</span><span className="d">The Flywheel buys $COMD from the pool and sends it to the dead address. <Link href="/flywheel">Buybacks start after graduation.</Link></span></span></li>
                 <li className="c-violet"><span className="no">2.5</span><span><span className="t">Counsel floor sweeps</span><span className="d">Buys Counsel NFTs off the floor into the firm&apos;s vault, to be awarded to top counsel.</span></span></li>
-                <li className="c-cyan"><span className="no">cap</span><span><span className="t">And the capped pool</span><span className="d">Sells that push the pool&apos;s COMD past its cap get trimmed: 85% burned, the rest to the bond, stakers and Counsel. <Link href="/flywheel#pool">How</Link></span></span></li>
+                <li className="c-lime"><span className="no">80%</span><span><span className="t">And work pays Counsel</span><span className="d">Jobs are paid in $COMD: 80% to the counsel who did the work, 20% to the firm. <Link href="/flywheel#loop">The loop</Link></span></span></li>
               </ol>
             </div>
           </div>
           <div className="panel c-gold rv">
-            <h3>The pool</h3>
+            <h3>The token</h3>
             <dl className="kv">
-              <dt>Liquidity</dt><dd>100% of the 1,000,000,000 supply, single-sided, owned by the protocol</dd>
-              <dt>Tax</dt><dd>5% of ETH in on a buy; 5% of ETH out on a sell. Wallet transfers and payments are untaxed.</dd>
-              <dt>Router</dt><dd>{router ? <a className="mono ext" href={explorerUrl("address", router)} target="_blank" rel="noreferrer">{router}</a> : <span className="muted">not deployed yet</span>}</dd>
-              <dt>Tax hook</dt><dd>{hook ? <a className="mono ext" href={explorerUrl("address", hook)} target="_blank" rel="noreferrer">{hook}</a> : <span className="muted">not deployed yet</span>}</dd>
+              <dt>Supply</dt><dd>1,000,000,000 $COMD, minted once by Pons. No team allocation, no mint function.</dd>
+              <dt>Liquidity</dt><dd>Locked by Pons at graduation in a full-range Uniswap v4 position with Pons&apos;s hook.</dd>
+              <dt>Tax</dt><dd>5% of every buy and sell, in ETH, set in Pons. Wallet transfers and Permit2 payments are untaxed.</dd>
+              <dt>Token</dt><dd>{token ? <a className="mono ext break" href={explorerUrl("token", token)} target="_blank" rel="noreferrer">{token}</a> : <span className="muted">address appears after the Pons launch</span>}</dd>
+              <dt>Buyback swapper</dt><dd>{swapper ? <a className="mono ext break" href={explorerUrl("address", swapper)} target="_blank" rel="noreferrer">{swapper}</a> : <span className="muted">not deployed yet</span>}{s.swapper.configured ? <> · <span className="ok">pool configured</span></> : <> · <span className="muted">pool not configured yet</span></>}</dd>
             </dl>
           </div>
-          <p className="small muted rv">Unaudited contracts. Nothing here is financial advice. <Link href="/docs/security">Security</Link></p>
+          <p className="small muted rv">Pons and Uniswap are third-party sites. Unaudited contracts. Nothing here is financial advice. <Link href="/docs/security">Security</Link></p>
         </div>
       </div>
     </div>

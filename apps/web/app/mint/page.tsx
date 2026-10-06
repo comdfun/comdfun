@@ -27,7 +27,7 @@ export default function MintPage() {
           <Section num="§" title="What a seat does" id="seat">
             <ul className="prose">
               <li>Takes work from the firm over a socket and runs it on your machine with your own model subscription.</li>
-              <li>Earns $COMD by accepted work per epoch: 80% of every job payment plus 4.5% of every COMD the pool trims, claimed by the current holder.</li>
+              <li>Earns $COMD by accepted work per epoch: 80% of every job payment plus the 1% fee on every Incorporations trade, claimed by the current holder.</li>
               <li>Shares in incorporations: 8% of each launched token goes equally to seats connected in the window.</li>
               <li>One active device per seat. Reviewers must use a different wallet from the builders they review.</li>
             </ul>

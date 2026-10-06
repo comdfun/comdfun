@@ -9,7 +9,7 @@ export const NAV = [
   { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches"] },
   { href: "/launch", label: "Retain", c: "pink", match: ["/launch"] },
   { href: "/token", label: "$COMD", c: "gold", match: ["/token"] },
-  { href: "/swap", label: "Vault", c: "violet", match: ["/swap", "/stake", "/bond", "/flywheel"], sub: [{ href: "/swap", label: "Swap" }, { href: "/stake", label: "Stake" }, { href: "/bond", label: "Bond" }, { href: "/flywheel", label: "Flywheel" }] },
+  { href: "/swap", label: "Vault", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade" }, { href: "/flywheel", label: "Flywheel" }] },
   { href: "/incorporations", label: "Coins", c: "lime", match: ["/incorporations"] },
   { href: "/mint", label: "Mint", c: "lime", match: ["/mint", "/pair"] },
   { href: "/docs", label: "Docs", c: "orange", match: ["/docs"] },

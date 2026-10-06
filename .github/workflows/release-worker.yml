@@ -6,7 +6,7 @@ name: release-worker
 #   SHA256SUMS           "<sha256>  comd-worker.tgz"
 # The GitHub release is created as tag `v<version>` (the updater reads /releases/latest, strips a leading "v" from
 # tag_name and compares it with the installed version) in the releases repository from package.json
-# comdWorker.releasesRepo (default comd-fun/worker). Publishing to a repository other than this one needs the secret
+# comdWorker.releasesRepo (default comdfun/worker). Publishing to a repository other than this one needs the secret
 # WORKER_RELEASE_TOKEN: a fine-grained token with "Contents: read and write" on that repository only.
 # Tags with a pre-release suffix (worker-v0.2.0-rc.1) become GitHub pre-releases, which auto-update ignores.
 
@@ -41,7 +41,7 @@ jobs:
         id: meta
         run: |
           version="$(node -p "require('./apps/worker/package.json').version")"
-          repo="$(node -p "const p=require('./apps/worker/package.json'); (p.comdWorker ?? p.companyWorker)?.releasesRepo ?? 'comd-fun/worker'")"
+          repo="$(node -p "const p=require('./apps/worker/package.json'); (p.comdWorker ?? p.companyWorker)?.releasesRepo ?? 'comdfun/worker'")"
           asset="$(node -p "const p=require('./apps/worker/package.json'); (p.comdWorker ?? p.companyWorker)?.asset ?? 'comd-worker.tgz'")"
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             tag_version="${GITHUB_REF_NAME#worker-v}"

@@ -197,7 +197,7 @@ const JOBS: MockJob[] = [];
           }),
         }
       : null;
-    const repoUrl = /contract|website|frontend|launch|multi|impl_tests|readme|ponder|fuzz|audit/.test(template) ? `https://github.com/comd-filings/matter-${1000 + i}-${kind.replace(/_/g, "-")}` : null;
+    const repoUrl = /contract|website|frontend|launch|multi|impl_tests|readme|ponder|fuzz|audit/.test(template) ? `https://github.com/comdfun/matter-${1000 + i}-${kind.replace(/_/g, "-")}` : null;
     JOBS.push({
       id,
       state,
@@ -705,33 +705,19 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       const swept = [7, 133, 404, 777, 1001, 1234, 1500, 1776, 42];
       const events = [
         { type: "Buyback", source: "flywheel", ethIn: wei(0.84), comdBurned: comd(338_120) },
-        { type: "Trimmed", source: "hook", excess: comd(212_400), liquidityRemoved: "0", ethOut: wei(0.31), comdOut: comd(212_400) },
-        { type: "Split", source: "hook", amount: comd(212_400), burned: comd(180_540), toBond: comd(12_744), toStakers: comd(9_558), toSeats: comd(9_558) },
         { type: "Swept", source: "flywheel", tokenId: 42, price: wei(0.061) },
-        { type: "WallPosted", source: "buyWall", tickLower: -138_200, tickUpper: -137_000, liquidity: "0", eth: wei(1.42) },
         { type: "TaxIn", source: "flywheel", eth: wei(0.0213) },
-        { type: "Dripped", source: "rewardDripper", vault: "0x5c0d000000000000000000000000000000005c0d", amount: comd(41_220) },
-        { type: "Bonded", source: "bond", buyer: "0x9fad00000000000000000000000000000000f63f", ethIn: wei(0.5), comdOut: comd(50_000) },
         { type: "Buyback", source: "flywheel", ethIn: wei(0.62), comdBurned: comd(251_004) },
         { type: "Distributed", source: "revenueRouter", total: comd(48_000), toRewards: comd(38_400), toTreasury: comd(9_600) },
         { type: "Swept", source: "flywheel", tokenId: 1776, price: wei(0.058) },
-        { type: "CapUpdated", source: "hook", cap: comd(31_400_000), inventory: comd(30_880_000) },
         { type: "TaxIn", source: "flywheel", eth: wei(0.0472) },
         { type: "Swept", source: "flywheel", tokenId: 1500, price: wei(0.064) },
+        { type: "SwapperSet", source: "flywheel", swapper: "0x5a9e000000000000000000000000000000005a9e" },
       ].map((e, i) => ({ ...e, blockNumber: 1_290_000 - i * 1_311, txHash: `0x${hex(64)}`, at: at((i + 1) * 47 * MIN) }));
       const flywheel = { bps: { buyback: 5000, sweep: 5000 }, buckets: { buyback: wei(0.412), sweep: wei(0.388) }, totals: { taxIn: wei(41.27), boughtBack: wei(20.1), burned: comd(8_102_118), swept: swept.length, sweepSpent: wei(0.55) }, sweptTokenIds: swept, maxSweepPrice: wei(0.08) };
-      const hook = {
-        taxBps: 500, totalTaxed: wei(41.27), pendingTax: wei(0.0042),
-        stats: { trimmedComd: comd(12_880_400), trimmedEth: wei(9.64), split: comd(14_102_900), burned: comd(11_987_465), toBond: comd(846_174), toStakers: comd(634_630), toSeats: comd(634_630) },
-        cap: comd(31_400_000), currentCap: comd(31_400_000), inventory: comd(28_120_000), lastInventory: comd(28_120_000),
-        params: { capFloor: comd(100_000), capDecayPerDay: comd(100_000), burnBps: 8500, bondBps: 600, stakersBps: 450, seatsBps: 450, refStepTicks: 200 },
-        claims: { eth: "0", comd: "0" },
-      };
-      const buyWall = { postedEth: wei(1.42), floorTick: -138_200, previewFloorTick: -138_000, totalBought: comd(1_222_500), totalTips: wei(0.011), parkedEth: wei(0.08), wallLower: -138_200, wallUpper: -137_000, wallLiquidity: "1", canRebalance: false };
-      const staking = { totalAssets: comd(46_210_400), totalShares: (44_980_000n * 10n ** 24n).toString(), ratePerSecond: (BigInt(Math.round((634_630 / 30 / 86_400) * 1e6)) * 10n ** 12n).toString(), streamCapPerDay: comd(250_000), pending: comd(12_400), totalDripped: comd(560_000) };
-      const bond = { enabled: true, priceEth: (10n ** 10n).toString(), reserve: comd(796_174), sold: comd(50_000), proceeds: wei(0.5) };
+      const swapper = { address: "0x5a9e000000000000000000000000000000005a9e", configured: true, onFlywheel: true };
       const revenueRouter = { totalToRewards: comd(1_270_131), totalToTreasury: comd(317_533), bps: { rewards: 8000, treasury: 2000 } };
-      return ok({ chainId: CH, configured: true, tax: { taxBps: 500, totalTaxed: hook.totalTaxed, pending: hook.pendingTax, toFlywheel: flywheel.totals.taxIn }, flywheel, hook, buyWall, staking, bond, revenueRouter, ...flywheel, events, errors: {}, computedAt: new Date().toISOString() });
+      return ok({ chainId: CH, configured: true, pons: { url: "https://pons.fun" }, swapper, tax: { taxBps: 500, totalTaxIn: flywheel.totals.taxIn, toFlywheel: flywheel.totals.taxIn, source: "pons" }, flywheel, revenueRouter, ...flywheel, events, errors: {}, computedAt: new Date().toISOString() });
     }
     if (p === "/steps/hourly") return ok({ until: new Date().toISOString(), hours: 24, accepted: Array.from({ length: 24 }, (_, i) => 1800 + Math.round(900 * Math.sin(i / 3)) + i * 20) });
     if (p === "/services") return ok({ services: [{ kind: "verifier", label: "The Clerk", keyPrefix: "c1e7", version: "0.1.4", up: true, lastSeenAt: at(8000), claims: 2 }, { kind: "publisher", label: "Records Office", keyPrefix: "7ec0", version: "0.1.4", up: true, lastSeenAt: at(12000), claims: 0 }, { kind: "deployer", label: "Registrar", keyPrefix: "4e61", version: "0.1.4", up: true, lastSeenAt: at(9000), claims: 0 }] });

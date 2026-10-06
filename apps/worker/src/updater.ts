@@ -1,6 +1,6 @@
 /**
  * Updates from GitHub Releases only (never the npm registry): fetch the latest release of the worker repository
- * (COMD_WORKER_REPO, or package.json comdWorker.releasesRepo, default comd-fun/worker), download the
+ * (COMD_WORKER_REPO, or package.json comdWorker.releasesRepo, default comdfun/worker), download the
  * tarball and SHA256SUMS, verify the checksum, test the install offline into a scratch prefix, then install globally.
  * With --auto-update the daemon checks at start and every five minutes and drains running work before restarting.
  */
@@ -19,7 +19,7 @@ export function packageInfo(): { version: string; repo: string; asset: string } 
   for (const p of [join(here, "..", "package.json"), join(here, "..", "..", "package.json")]) {
     try { pkg = JSON.parse(readFileSync(p, "utf8")); if (pkg.name === "@company/worker") break; } catch { /* try next */ }
   }
-  return { version: pkg.version ?? "0.0.0", repo: process.env.COMD_WORKER_REPO ?? (pkg.comdWorker ?? pkg.companyWorker)?.releasesRepo ?? "comd-fun/worker", asset: (pkg.comdWorker ?? pkg.companyWorker)?.asset ?? "comd-worker.tgz" };
+  return { version: pkg.version ?? "0.0.0", repo: process.env.COMD_WORKER_REPO ?? (pkg.comdWorker ?? pkg.companyWorker)?.releasesRepo ?? "comdfun/worker", asset: (pkg.comdWorker ?? pkg.companyWorker)?.asset ?? "comd-worker.tgz" };
 }
 
 export function compareVersions(a: string, b: string): number {
