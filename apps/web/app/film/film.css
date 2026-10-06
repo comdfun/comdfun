@@ -324,3 +324,22 @@
 .af-burn .af-coin3d { position: relative; z-index: 1; }
 .af-burn .af-rtitle.on .af-coin3d { animation: fs-pop 0.6s steps(8, end) 0.1s both, af-spin 3.2s steps(16, end) 0.8s infinite; }
 .af-burn .af-rtitle.on .af-title-sm { animation: fs-in 0.5s steps(8, end) 1.2s both; }
+
+/* "receipt" — a paper receipt */
+.af-receipt { justify-items: center; }
+.af-paper { position: relative; width: 1040px; background: var(--parch); color: #0b0a10; padding: 40px 56px 44px; box-shadow: 18px 18px 0 #000; display: grid; gap: 12px; opacity: 0; }
+.af-reg .af-task.on .af-paper { animation: fs-in 0.5s steps(8, end) 0.2s both; }
+.af-paper .rc-h { font-family: var(--font-px); font-size: 26px; letter-spacing: 0.06em; text-align: center; border-bottom: 4px dashed #0b0a10; padding-bottom: 18px; }
+.af-paper .rc-meta { display: flex; justify-content: space-between; font-size: 20px; color: #4a4538; letter-spacing: 0.04em; }
+.af-paper ol { list-style: none; margin: 10px 0 118px; padding: 0; display: grid; gap: 18px; }
+.af-paper li { display: grid; grid-template-columns: 54px 1fr 48px; gap: 16px; align-items: start; opacity: 0; }
+.af-paper li i { font-style: normal; font-family: var(--font-num); font-size: 34px; line-height: 1.1; color: #4a4538; }
+.af-paper li div { display: grid; gap: 4px; }
+.af-paper li b { font-size: 27px; font-weight: 600; line-height: 1.2; }
+.af-paper li span { font-size: 21px; color: #3a3630; line-height: 1.4; }
+.af-paper li em { font-style: normal; font-family: var(--font-px); font-size: 30px; color: var(--lime-dk, #1f7a3a); text-align: right; }
+.af-reg .af-task.on .af-paper li { animation: fs-in 0.4s steps(6, end) calc(0.9s + var(--i) * 0.9s) both; }
+.af-paper .rc-total { border-top: 4px dashed #0b0a10; margin-top: 12px; padding-top: 16px; display: flex; justify-content: space-between; font-family: var(--font-px); font-size: 22px; letter-spacing: 0.06em; }
+.af-paper .rc-stamp { position: absolute; right: 80px; bottom: 118px; transform: rotate(-12deg); border: 6px solid var(--crimson); color: var(--crimson); font-family: var(--font-px); font-size: 46px; letter-spacing: 0.1em; padding: 10px 22px 6px; opacity: 0; mix-blend-mode: multiply; }
+.af-reg .af-task.on .rc-stamp { animation: rc-stamp-in 0.45s steps(6, end) 6.0s both; }
+@keyframes rc-stamp-in { from { opacity: 0; transform: rotate(-12deg) scale(0.3); } 70% { transform: rotate(-12deg) scale(1.1); } to { opacity: 1; transform: rotate(-12deg); } }

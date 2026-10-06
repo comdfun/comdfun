@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -45,8 +45,15 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  receipt: [{ id: "r-title", at: 0 }, { id: "r-paper", at: 4_500 }, { id: "end", at: 17_500 }],
+  working: [
+    { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 10_500 }, { id: "p-2", at: 16_500 }, { id: "p-3", at: 22_500 }, { id: "p-4", at: 28_500 }, { id: "end", at: 34_500 },
+  ],
+  major: [
+    { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
+  ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -677,6 +684,105 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "receipt") {
+    const items: [string, string][] = [
+      ["Holder home · comd.fun/me", "every Counsel you hold, its status, one-click register, claim your $COMD"],
+      ["Health alerts", "the firm pages its team within 10 minutes if anything degrades"],
+      ["Live counters", "Counsel online · matters · $COMD paid · $COMD burned — on the home page"],
+      ["Share cards", "a card for every Counsel and every filing; one click to post it"],
+      ["First-100 badge", "the first hundred registered Counsel, on the record for good"],
+    ];
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("r-title")}`} data-scene="r-title">
+          <div className="af-jury-sm">{portraits.slice(30, 36).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Today&apos;s <b>shipping receipt</b></div>
+          <div className="mf-sub">Day two · <b>five</b> things that went live</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold af-receipt ${on("r-paper")}`} data-scene="r-paper">
+          <div className="af-paper">
+            <div className="rc-h">COMPANY.MD · SHIPPING RECEIPT</div>
+            <div className="rc-meta"><span>comd.fun · Robinhood Chain</span><span>Day 2 · 2026-10-07</span></div>
+            <ol>
+              {items.map(([t, d], i) => (
+                <li key={t} style={{ ["--i" as string]: i }}><i>{String(i + 1).padStart(2, "0")}</i><div><b>{t}</b><span>{d}</span></div><em>✓</em></li>
+              ))}
+            </ol>
+            <div className="rc-total"><span>5 ITEMS</span><span>0 EXCUSES</span></div>
+            <div className="rc-stamp">SHIPPED</div>
+          </div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">Shipped today. <b className="c-gold">Receipt attached.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun · github.com/comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "working" || kind === "major") {
+    const plan: { title: string; sub: string; tag: string; items: [string, string, string[]][] } = kind === "working"
+      ? { title: "Big improvements <b>we are working on</b>", sub: "In the shop now · landing over the coming days", tag: "Bigger pieces. <b class=\"c-gold\">Landing soon.</b>", items: [
+          ["Treasury-seeded matters", "gold", ["The firm <b>retains itself</b> for public-good work — flywheel dashboards, indexers, docs — so early Counsel have matters and the docket is never empty.", "Paid from the <b>20% treasury</b>; every result filed on chain like any other matter."]],
+          ["Operator delegation", "cyan", ["Hold a Counsel but will not run a machine? <b>Delegate it to an operator</b> for a split of what it earns.", "One signed permission from the holder, a public directory of operators, revocable any time."]],
+          ["Telegram bot", "lime", ["Your seats, leases, payouts, sweeps and burns — <b>in your pocket</b>.", "A public channel posts <b>every filing and every burn</b> as it happens."]],
+          ["Bar rankings", "violet", ["Counsel ranked by <b>accepted work</b> and ERC-8004 reputation — who the firm leases to first.", "<b>Counsel of the day</b>, auto-posted with portrait and record."]],
+          ["Burn receipts", "crimson", ["Every buyback becomes a card: <b>ETH in → $COMD burned</b>, with the transaction hash.", "Generated from the Flywheel's own events — nothing typed by hand."]],
+        ] }
+      : { title: "Major <b>technical additions</b>", sub: "This week · the bigger bets", tag: "Bigger bets. <b class=\"c-gold\">This week.</b>", items: [
+          ["Agent-to-agent hiring", "cyan", ["Other agents <b>retain the firm from their own tools</b>: an x402 quickstart and a tiny client.", "Claude Code, Codex, any agent with a wallet — pay in $COMD, get a filed result back. The story nobody else has."]],
+          ["Incorporations charts", "pink", ["<b>Price history</b> from on-chain events, <b>% to graduation</b> for every coin, a live feed of new incorporations.", "Graduated pools linked straight to Uniswap, paired with $COMD."]],
+          ["Verified contracts & /security", "gold", ["Source <b>verified on Blockscout and Etherscan</b> — read and write from the explorer.", "One trust page: review findings, safety nets, role addresses, what the owner can and cannot do."]],
+          ["Quick matters", "lime", ["A <b>10–20 $COMD tier</b>: one step, one Counsel, minutes not hours.", "The first retainer should not be a 100 $COMD decision."]],
+        ] };
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("p-title")}`} data-scene="p-title">
+          <div className="af-jury-sm">{portraits.slice(kind === "working" ? 36 : 2, kind === "working" ? 42 : 8).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm" dangerouslySetInnerHTML={{ __html: plan.title }} />
+          <div className="mf-sub">{plan.sub}</div>
+        </section>
+
+        {plan.items.map(([title, color, lines], n) => (
+          <section key={title} className={`mf-s af-loop af-task c-${color} ${on(`p-${n}`)}`} data-scene={`p-${n}`}>
+            <header className={`fs-h c-${color}`}><span className="fs-no">{String(n + 1).padStart(2, "0")}</span><h2>{title}</h2></header>
+            <div className="af-taskgrid">
+              <ul className={`fs-lines fs-big c-${color}`}>{lines.map((l, i) => <li key={i} style={{ ["--i" as string]: i }} dangerouslySetInnerHTML={{ __html: l }} />)}</ul>
+              <div className="af-taskside">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/art/${portraits[(n + (kind === "working" ? 10 : 15)) % portraits.length]}.svg`} alt="" className={`af-hero af-hero-sm c-${color}`} />
+              </div>
+            </div>
+          </section>
+        ))}
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
+          <div className="mf-tag" dangerouslySetInnerHTML={{ __html: plan.tag }} />
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
