@@ -453,6 +453,21 @@ export function ogBanner(): Asset {
   return { r, unit: 5 };
 }
 
+/** GitHub repository social preview (1280×640): the card GitHub renders when the repo link is shared. */
+export function githubSocial(): Asset {
+  const W = 256, H = 128, horizon = 112;
+  const r = nightScene({ w: W, h: H, horizon, seed: "github" });
+  moon(r, 232, 52, 7);
+  city(r, "gh-back", 0, W, horizon, 16, 36, hex("#0D0828"), 0.2);
+  city(r, "gh-front", 0, W, horizon, 8, 22, hex("#160D3A"), 0.3);
+  const ch = courthouse(r, W / 2, horizon, 96, { cols: 4, colH: 23, steps: 3 });
+  plaza(r, horizon, { cx: W / 2, w: ch.doorX1 - ch.doorX0 - 1 });
+  lineup(r, [12, 1, 26, 6, 3, 21], [...spread(3, 2, 100), ...spread(3, 156, 254)], 123);
+  title(r, W / 2, 4, 2);
+  sublines(r, W / 2, 25);
+  return { r, unit: 5 };
+}
+
 export function discordBanner(): Asset {
   const W = 240, H = 135, horizon = 116;
   const r = nightScene({ w: W, h: H, horizon, seed: "discord" });

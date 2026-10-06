@@ -11,7 +11,7 @@ import { drawText7, titleWidth } from "../src/font7.js";
 import { composeFigure } from "../src/counsel.js";
 import {
   logoMark, logoHorizontal, logoStacked, squareProfile, appleTouch, favicon,
-  heroBanner, ogBanner, discordBanner, xHeader, title, TITLE_RAMP, type Asset,
+  heroBanner, ogBanner, githubSocial, discordBanner, xHeader, title, TITLE_RAMP, type Asset,
 } from "../src/brandkit.js";
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "out", "brand");
@@ -55,6 +55,7 @@ asset("logo-stacked-1600.png", logoStacked());
 const hero = heroBanner(), og = ogBanner(), dc = discordBanner(), x = xHeader(), prof = squareProfile();
 asset("hero-1920x1080.png", hero);
 asset("og-1200x630.png", og);
+asset("github-social-1280x640.png", githubSocial());
 asset("discord-banner-960x540.png", dc);
 asset("x-header-1500x500.png", x);
 asset("square-profile-400.png", prof);
