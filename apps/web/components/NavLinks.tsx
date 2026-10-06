@@ -12,7 +12,7 @@ type Sub = { href: string; label: string; hint?: string };
 type Item = { href: string; label: string; c: string; match: string[]; hint?: string; sub?: Sub[] };
 
 /**
- * Main navigation. Desktop: the inline bar. At phone and tablet widths (globals.css, ≤ 1140px): a hamburger that opens a
+ * Main navigation. Desktop: the inline bar. At phone and tablet widths (globals.css, ≤ 1280px): a hamburger that opens a
  * right-hand drawer with large rows, the Treasury sub-items, the active page marked, "What is this?", Connect and the
  * X link. The drawer closes on route change, Escape, the scrim or the close button, and locks page scroll while open.
  */
