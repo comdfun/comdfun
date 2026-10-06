@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { activeChain } from "@/lib/chains";
 import { hashInt } from "@/lib/format";
-import { CONTACT_EMAIL, X_URL } from "@/lib/config";
+import { CONTACT_EMAIL, X_URL, GITHUB_URL } from "@/lib/config";
 import { Wordmark, XLink } from "./Header";
+import { GitHubLink } from "./GitHubLink";
 
 const COLORS = ["crimson", "violet", "cyan", "gold", "lime", "orange", "pink"] as const;
 const TITLES = ["Contracts", "Torts", "Evidence", "Equity", "Admiralty", "Trusts", "Procedure", "Remedies", "Agency", "Estates", "Tax", "Bonds", "Patents", "Precedent", "Solidity", "ERC-20", "ERC-721", "ERC-8004", "EIP-712", "Uniswap v4", "Permit2", "x402", "Oracles", "Audits"];
@@ -41,8 +42,8 @@ export function Footer() {
         <div className="cols">
           <div>
             <Wordmark />
-            <div className="px small" style={{ color: "var(--muted)", marginTop: 8 }}>Attorneys at law · comd.fun</div>
-            <p style={{ marginTop: 12 }}>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Two thousand counsels on Robinhood Chain, retained in $COMD. Not affiliated with Robinhood. Contracts unaudited. Nothing here is legal or financial advice; counsel are software.</p>
+            <div className="px small" style={{ color: "var(--muted)", marginTop: 8 }}>NFT-Identified Swarm · comd.fun</div>
+            <p style={{ marginTop: 12 }}>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Two thousand Counsel on Robinhood Chain, retained in $COMD; every Counsel earns $COMD for accepted work. Not affiliated with Robinhood. Contracts unaudited. Nothing here is legal or financial advice; counsel are software.</p>
             <p className="small">Network: <span className="tx-lime">{activeChain.name}</span> ({activeChain.id}). Payments in $COMD.</p>
             <ContactBlock />
             <Signature />
@@ -58,10 +59,11 @@ export function Footer() {
           <nav aria-label="The firm" className="c-pink">
             <h4>The firm</h4>
             <Link href="/launch">Retain the firm</Link>
-            <Link href="/mint">Mint a seat</Link>
+            <Link href="/mint">Mint a Counsel</Link>
             <Link href="/pair">Pair a machine</Link>
             <Link href="/incorporations">Incorporations</Link>
             <Link href="/docs">Documentation</Link>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer">Source on GitHub ›</a>
           </nav>
           <nav aria-label="$COMD" className="c-violet">
             <h4>$COMD</h4>
@@ -84,6 +86,7 @@ export function ContactBlock({ big }: { big?: boolean }) {
       <span className="contact-h">Contact the firm</span>
       <a className="contact-mail" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       {X_URL && <XLink className="contact-x" label />}
+      {GITHUB_URL && <GitHubLink className="contact-x contact-gh" label />}
     </div>
   );
 }

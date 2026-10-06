@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DOCS, DOC_BY_SLUG } from "@/lib/docs/pages";
 import { renderMd } from "@/lib/md";
 import { ADDRESS_BOOK, addressOf, keyOf } from "@/lib/contracts";
+import { ROLE_ADDRESSES, roleExplorerUrl } from "@/lib/roles";
 import { api } from "@/lib/api";
 import { comd } from "@/lib/format";
 import { DEFAULT_PRICE } from "@/lib/config";
@@ -45,6 +46,10 @@ export async function DocView({ slug }: { slug: string }) {
       return `| ${n} | \`${keyOf(n)}\` | ${ROLE[n] ?? ""} | ${a ? `[\`${a}\`](https://robinhoodchain.blockscout.com/address/${a})` : "not deployed yet"} |`;
     });
     md = md.replace("{{contracts}}", ["| Contract | Key | Role | Robinhood Chain (4663) |", "|---|---|---|---|", ...rows].join("\n"));
+  }
+  if (md.includes("{{roles}}")) {
+    const rows = ROLE_ADDRESSES.map((r) => `| **${r.role}** | [\`${r.address}\`](${roleExplorerUrl(r.address)}) | ${r.does} |`);
+    md = md.replace("{{roles}}", ["| Role | Address | What it does |", "|---|---|---|", ...rows].join("\n"));
   }
   const { nodes, headings } = renderMd(md);
   return (

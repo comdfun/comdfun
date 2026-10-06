@@ -12,7 +12,7 @@ import { artModule } from "./art.ts";
 import { FlywheelView } from "./flywheel.ts";
 import { Engine } from "./engine.ts";
 import { Oracle } from "./oracle.ts";
-import { Launches, seedPolicies } from "./launches.ts";
+import { Launches, seedPolicies, syncPairingsWithFactory } from "./launches.ts";
 import { Workflows } from "./workflows.ts";
 import { Scheduler } from "./scheduler.ts";
 import { Settlement } from "./settlement.ts";
@@ -158,6 +158,8 @@ export class App {
     const port = deps.keeperPort !== undefined ? deps.keeperPort : kc.key && cfg.rpcUrl ? new ViemKeeperPort(cfg.rpcUrl, cfg.chainId, kc.key) : null;
     app.keeper = new Keeper(kc, port, { now: app.now, reason: !kc.key ? "KEEPER_PRIVATE_KEY not set" : !cfg.rpcUrl ? "RPC_URL not set" : null });
     seedPolicies(app);
+    // the factory decides which pairings a launch may use (ETH only when deployed with ALLOW_ETH_PAIRING)
+    await syncPairingsWithFactory(app).catch((e) => console.warn(`[launches] pairing sync skipped: ${(e as Error).message.split("\n")[0].slice(0, 120)}`));
     app.router = buildRouter(app);
     app.server = createServer(handler(app));
     attachAgentWs(app.server, app);

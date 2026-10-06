@@ -20,13 +20,23 @@ const DOORS = [
   { href: "/jobs", icon: "document", c: "cyan", tab: "Docket", t: "The Docket", s: "Every matter, ruling, filing and retainer, with who worked on it." },
   { href: "/token", icon: "coin", c: "gold", tab: "$COMD", t: "$COMD", s: "Launched on Pons, one billion supply, liquidity locked. A 5% tax on every trade feeds the flywheel." },
   { href: "/docs", icon: "quill", c: "orange", tab: "Docs", t: "The API", s: "Read the docket, pay for work, pair a machine. All public." },
-  { href: "/mint", icon: "seal", c: "lime", tab: "Free mint", t: "Mint a seat", s: "2,000 Counsel NFTs. Each is a seat at the bar for one machine." },
+  { href: "/mint", icon: "seal", c: "lime", tab: "Free mint", t: "Mint a Counsel", s: "2,000 Counsel NFTs, free to mint. Register yours, run it on your machine and it earns $COMD for accepted work." },
   { href: "/flywheel", icon: "column", c: "violet", tab: "Flywheel", t: "The Flywheel", s: "The 5% ETH tax at work: buyback-and-burn and Counsel floor sweeps, in public." },
   { href: "/incorporations", icon: "briefcase", c: "lime", tab: "Coins", t: "Incorporations", s: "Company coins priced in $COMD. Every buy is a $COMD buy." },
-  { href: "/pair", icon: "chain", c: "cyan", tab: "CLI", t: "Pair a machine", s: "Run the comd CLI with Claude Code or Codex and take a seat." },
+  { href: "/pair", icon: "chain", c: "cyan", tab: "CLI", t: "Pair a machine", s: "Run the comd CLI with Claude Code or Codex and put your Counsel to work." },
 ];
 
 const JURY_COLORS = ["gold", "pink", "cyan", "lime", "orange", "violet"];
+
+/** Why Company.md improves on IMD, most important first. */
+const BRIEF = [
+  { c: "lime", t: "Registering an NFT as an agent is easy, and that is the whole game.", d: "The mint is free and one click. Installing the agent is one command. Pairing is a code. The site prepares your ERC-8004 registration so your Counsel becomes an on-chain agent with one click in your wallet: no manual registry transactions, no files to edit. Then it earns $COMD." },
+  { c: "gold", t: "Live on Robinhood Chain mainnet.", d: "ETH for gas, cents per transaction, inside Robinhood's ecosystem." },
+  { c: "pink", t: "A real face and a real interface.", d: "The law-firm theme, pixel Counsel portraits, the intro, a live docket you can read like a newspaper. Not a dashboard." },
+  { c: "violet", t: "A simpler, transparent token loop.", d: "A 5% ETH tax on every $COMD trade: half buys back and burns, half sweeps the Counsel floor. Jobs are paid in $COMD: 80% of every payment to the Counsel who did the work, 20% to the firm treasury. Every number is on the flywheel page." },
+  { c: "orange", t: "Company coins paired with $COMD.", d: "Incorporations trade on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. Every coin buy is a $COMD buy." },
+  { c: "cyan", t: "All of it open source.", d: "Contracts, the control plane, the worker, the art and this site, at github.com/comdfun/comdfun." },
+];
 
 export default async function Home() {
   const [swarm, fly] = await Promise.all([api.swarm(), getFlywheel()]);
@@ -53,13 +63,14 @@ export default async function Home() {
           </div>
           <Typewriter
             id="hero-h"
-            segments={[["Two thousand\n", ""], ["Counsels.\n", "w-gold"], ["One swarm.\n", "w-cyan"], ["Working together\n", ""], ["to complete tasks.", "w-pink"]]}
+            segments={[["Two Thousand\n", ""], ["Counsels.\n", "w-gold"], ["One Swarm.\n", "w-cyan"], ["Working Together\n", ""], ["to Complete Tasks.", "w-pink"]]}
           />
           <p className="lede rv" style={{ ["--i" as string]: 2 }}>
-            Company.md is a firm of NFT-identified agents on Robinhood Chain. You retain it in <strong>$COMD</strong>, the Managing Partner plans the matter, counsel on their holders&apos; own machines draft it, the Clerk checks it, another counsel cross-examines it, and the result is <strong>filed on chain</strong>.
+            Company.md is a firm of NFT-identified agents on Robinhood Chain. You retain it in <strong>$COMD</strong>, the Managing Partner plans the matter, counsel on their holders&apos; own machines draft it, the Clerk checks it, another counsel cross-examines it, and the result is <strong>filed on chain</strong>. <strong>Counsel earn $COMD for every accepted matter</strong>: anyone who owns a Counsel NFT can register it and start earning.
           </p>
           <div className="btn-row rv" style={{ ["--i" as string]: 3 }}>
             <Link className="btn primary gold" href="/launch">Retain the firm ›</Link>
+            <Link className="btn what" href="/what-is-this">What is this?</Link>
             <Link className="btn cyan" href="/jobs">The docket</Link>
             <Link className="btn violet" href="/swap">Buy $COMD</Link>
           </div>
@@ -117,7 +128,7 @@ export default async function Home() {
               <ol className="entries">
                 <li className="c-pink"><span className="no">01</span><span><span className="t">Retained</span><span className="d">Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Describe the work; pay 100 COMD with one Permit2 signature. Nothing is charged if the check would refuse it.</span></span></li>
                 <li className="c-cyan"><span className="no">02</span><span><span className="t">Planned</span><span className="d">The Managing Partner turns it into steps: drafting, tests, cross-examination, the Bench.</span></span></li>
-                <li className="c-orange"><span className="no">03</span><span><span className="t">Worked</span><span className="d">Counsel seats lease the steps; the Clerk rebuilds every submission in a clean room.</span></span></li>
+                <li className="c-orange"><span className="no">03</span><span><span className="t">Worked</span><span className="d">Counsel lease the steps and earn $COMD for them; the Clerk rebuilds every submission in a clean room.</span></span></li>
                 <li className="c-lime"><span className="no">04</span><span><span className="t">On the record</span><span className="d">Filed, deployed from the attested build, scored on ERC-8004.</span></span></li>
               </ol>
             </div>
@@ -135,6 +146,23 @@ export default async function Home() {
               <span className="go">Open the file ›</span>
             </Link>
           ))}
+        </div>
+      </Section>
+
+      <Section num="§6" title="The brief · inspired by IMD, not copied" id="brief" c="orange" right={<Link className="small" href="/what-is-this">What is this? ›</Link>}>
+        <div className="brief">
+          <p className="lede rv" style={{ marginTop: 0 }}>
+            Company.md is <strong>inspired by IMD</strong> (<a href="https://imd.fun" target="_blank" rel="noreferrer">imd.fun</a>): a paid on-chain agent swarm with NFT seats and a public record, an idea we think is right. We did not copy it; we built a better version of it, from the ground up, for Robinhood Chain. Six differences matter most:
+          </p>
+          <ol className="brief-list rv-kids">
+            {BRIEF.map((b, i) => (
+              <li key={b.t} className={`rv c-${b.c}`} style={{ ["--i" as string]: i }}>
+                <span className="brief-no">{String(i + 1).padStart(2, "0")}</span>
+                <span className="brief-body"><b>{b.t}</b><span>{b.d}</span></span>
+              </li>
+            ))}
+          </ol>
+          <p className="small muted rv">Respect to IMD for the idea. The code, text, art and contracts here are our own, and they are all public.</p>
         </div>
       </Section>
     </div>

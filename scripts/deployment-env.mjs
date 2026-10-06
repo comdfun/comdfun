@@ -39,6 +39,7 @@ const api = {
   // x402 payTo: COMD received is split by RevenueRouter.distribute() (80% Counsel rewards / 20% firm treasury)
   PAYTO_ADDRESS: d.revenueRouter,
   TREASURY_ADDRESS: d.treasury,
+  // the ERC1967 proxy of the UUPS Counsel NFT (counselNFTImpl is informational and not needed by the apps)
   COUNSEL_NFT: d.counselNFT,
   // the payment asset ($COMD, 18 decimals)
   COMD_TOKEN: d.comdToken,

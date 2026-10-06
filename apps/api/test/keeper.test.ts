@@ -53,7 +53,7 @@ class MockPort implements KeeperPort {
 function make(env: Record<string, string> = {}, port = new MockPort()) {
   let t = 1_000_000;
   const cfg = keeperConfig({
-    KEEPER_PRIVATE_KEY: `0x${"11".repeat(32)}`, KEEPER_DISTRIBUTE_MIN_COMD: String(100n * E), KEEPER_BUYBACK_MIN_WEI: String(E / 10n),
+    KEEPER_PRIVATE_KEY: `0x${"11".repeat(32)}`, KEEPER_BUYBACK_AUTO: "true", KEEPER_DISTRIBUTE_MIN_COMD: String(100n * E), KEEPER_BUYBACK_MIN_WEI: String(E / 10n),
     KEEPER_DISTRIBUTE_EVERY_SECONDS: "60", KEEPER_BUYBACK_EVERY_SECONDS: "60",
     ...env,
   }, { revenueRouter: RR, flywheel: FW });
@@ -168,7 +168,7 @@ test("keeper: off without KEEPER_PRIVATE_KEY; /services, /health and /flywheel r
   } finally { await off.close(); }
   const port = new MockPort();
   port.state.rrComd = 3_000n * E; // default threshold KEEPER_DISTRIBUTE_MIN_COMD = 1,000 COMD
-  const on = await harness({ env: { KEEPER_PRIVATE_KEY: `0x${"22".repeat(32)}`, REVENUE_ROUTER: RR }, keeperPort: port });
+  const on = await harness({ env: { KEEPER_PRIVATE_KEY: `0x${"22".repeat(32)}`, KEEPER_BUYBACK_AUTO: "true", REVENUE_ROUTER: RR }, keeperPort: port });
   try {
     await on.app.keeper.tick();
     const s = await (await fetch(`${on.url}/services`)).json();

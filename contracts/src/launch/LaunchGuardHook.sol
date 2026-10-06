@@ -7,19 +7,28 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {ModifyLiquidityParams, SwapParams} from "v4-core/src/types/PoolOperation.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title LaunchGuardHook — factory-only pool initialization for swarm launches
 /// @notice UNAUDITED — experimental.
 /// @notice A v4 hook with a single permission (beforeInitialize) that only lets the ProjectFactory create
 ///         pools with it. Launch pools that use it cannot be front-run with an attacker-chosen price
 ///         (a plain hookless pool for a not-yet-deployed CREATE2 token address could be). Swaps and
-///         liquidity are untouched. No owner.
+///         liquidity are untouched. No owner of its own: the ProjectFactory's admin (DEFAULT_ADMIN_ROLE) may
+///         `rescueERC20` tokens forced into it (it holds nothing by design; V7 safety net).
 contract LaunchGuardHook is IHooks {
+    using SafeERC20 for IERC20;
+
     address public immutable factory;
     address public immutable poolManager;
 
+    event Rescued(address indexed token, address indexed to, uint256 amount);
+
     error NotFactory();
     error NotPoolManager();
+    error NotFactoryAdmin();
     error HookNotImplemented();
 
     constructor(address poolManager_, address factory_) {
@@ -34,6 +43,13 @@ contract LaunchGuardHook is IHooks {
         if (msg.sender != poolManager) revert NotPoolManager();
         if (sender != factory) revert NotFactory();
         return IHooks.beforeInitialize.selector;
+    }
+
+    /// @notice Factory admin only: recover ERC-20s sent here by mistake.
+    function rescueERC20(IERC20 token, address to, uint256 amount) external {
+        if (!IAccessControl(factory).hasRole(0x00, msg.sender)) revert NotFactoryAdmin();
+        token.safeTransfer(to, amount);
+        emit Rescued(address(token), to, amount);
     }
 
     function afterInitialize(address, PoolKey calldata, uint160, int24) external pure returns (bytes4) {

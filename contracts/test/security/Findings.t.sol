@@ -8,6 +8,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {MerkleHelper} from "../utils/MerkleHelper.sol";
 import {MockComd} from "../../src/mocks/MockComd.sol";
 import {CounselNFT} from "../../src/CounselNFT.sol";
+import {CounselFixture} from "../utils/CounselFixture.sol";
 import {RewardDistributor} from "../../src/RewardDistributor.sol";
 import {MockERC20} from "../mocks/Mocks.sol";
 import {LaunchMath} from "../../src/libraries/LaunchMath.sol";
@@ -28,7 +29,7 @@ contract M03_DistributorOverClaim is Test, MerkleHelper {
 
     function setUp() public {
         comd = new MockComd();
-        counsel = new CounselNFT(admin, admin, "u/");
+        counsel = CounselFixture.deploy(admin, admin, "u/");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         bytes32 role = dist.SETTLER_ROLE();
         vm.startPrank(admin);

@@ -2,22 +2,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-// Reveal-on-scroll for `.rv` elements: pixel dissolve, rubber-stamp slam, wax seal, stepped meters, the quill
-// signature. Driven by the Web Animations API with fill "both", so React-owned attributes are never touched
-// (no hydration mismatches). Elements start hidden only when the head script set `html.fx` (motion allowed).
+// Reveal-on-scroll for `.rv` elements: a short eased rise (opacity + a few px of translate), the rubber-stamp slam,
+// the wax seal, stepped meters, the quill signature. Timings come from the CSS tokens on :root (--rv-dur, --rv-stagger,
+// --rv-rise, --rv-ease) so every reveal on the site moves the same way. Driven by the Web Animations API with fill
+// "both", so React-owned attributes are never touched (no hydration mismatches). Elements start hidden only when the
+// head script set `html.fx` (motion allowed).
 
-const svgMask = (rects: string) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E${rects}%3C/svg%3E")`;
-const M1 = svgMask("%3Crect width='4' height='4'/%3E");
-const M2 = svgMask("%3Crect width='4' height='4'/%3E%3Crect x='4' y='4' width='4' height='4'/%3E");
-const M3 = svgMask("%3Crect width='8' height='4'/%3E%3Crect x='4' y='4' width='4' height='4'/%3E");
 const S = "steps(1, end)";
-
-const dissolve: Keyframe[] = [
-  { opacity: 1, maskImage: M1, WebkitMaskImage: M1, maskSize: "8px 8px", WebkitMaskSize: "8px 8px", transform: "translateY(8px)", easing: S } as Keyframe,
-  { opacity: 1, maskImage: M2, WebkitMaskImage: M2, maskSize: "8px 8px", WebkitMaskSize: "8px 8px", transform: "translateY(4px)", offset: 0.33, easing: S } as Keyframe,
-  { opacity: 1, maskImage: M3, WebkitMaskImage: M3, maskSize: "8px 8px", WebkitMaskSize: "8px 8px", transform: "translateY(0)", offset: 0.66, easing: S } as Keyframe,
-  { opacity: 1, maskImage: "none", WebkitMaskImage: "none", transform: "none" } as Keyframe,
-];
 
 function stampFrames(rot: number): Keyframe[] {
   const r = (d: number) => `rotate(${rot + d}deg)`;
@@ -46,29 +37,51 @@ const num = (el: Element, v: string, d = 0) => {
   return Number.isFinite(n) ? n : d;
 };
 
-function reveal(el: HTMLElement) {
-  const delay = num(el, "--i") * 70;
+/** The reveal tokens from :root, read once per pass (ms / px / easing). */
+function tokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const ms = (v: string, d: number) => {
+    const raw = cs.getPropertyValue(v).trim();
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n)) return d;
+    return raw.endsWith("ms") ? n : raw.endsWith("s") ? n * 1000 : n;
+  };
+  const px = (v: string, d: number) => {
+    const n = parseFloat(cs.getPropertyValue(v));
+    return Number.isFinite(n) ? n : d;
+  };
+  return { dur: ms("--rv-dur", 340), stagger: ms("--rv-stagger", 45), rise: px("--rv-rise", 10), ease: cs.getPropertyValue("--rv-ease").trim() || "cubic-bezier(0.22, 0.61, 0.36, 1)" };
+}
+
+function reveal(el: HTMLElement, t: ReturnType<typeof tokens>) {
+  const i = num(el, "--i");
+  const delay = i * t.stagger;
   const both = { fill: "both" as const, delay };
+  if (el.classList.contains("sig-line")) {
+    el.querySelector(".sig-ink")?.animate([{ strokeDashoffset: 420 }, { strokeDashoffset: 0 }], { fill: "both", duration: 2200, delay: 200, easing: "steps(28, end)" });
+    return;
+  }
+  // the CSS fallback (rv-auto) already showed it: hold it visible, do not replay the rise
+  if (getComputedStyle(el).opacity === "1") {
+    el.animate([{ opacity: 1 }, { opacity: 1 }], { fill: "both", duration: 1 });
+    return;
+  }
   if (el.classList.contains("rstamp")) {
-    el.animate(stampFrames(num(el, "--rot", -7)), { ...both, duration: 550, delay: num(el, "--i") * 90 });
+    el.animate(stampFrames(num(el, "--rot", -7)), { ...both, duration: 550, delay: i * 90 });
     el.querySelector(".splat")?.animate(
       [{ opacity: 0, transform: "scale(.4)", easing: S }, { opacity: 1, transform: "scale(.7)", offset: 0.5, easing: S }, { opacity: 1, transform: "scale(1)", offset: 0.7, easing: S }, { opacity: 0.85, transform: "scale(1)" }],
-      { ...both, duration: 550, delay: num(el, "--i") * 90 },
+      { ...both, duration: 550, delay: i * 90 },
     );
     return;
   }
   if (el.classList.contains("seal")) {
     el.animate([{ opacity: 1 }, { opacity: 1 }], { fill: "both", duration: 1 });
-    el.querySelector(".wax")?.animate(sealFrames, { ...both, duration: 700, delay: num(el, "--i") * 90 });
+    el.querySelector(".wax")?.animate(sealFrames, { ...both, duration: 700, delay: i * 90 });
     return;
   }
-  if (el.classList.contains("sig-line")) {
-    el.querySelector(".sig-ink")?.animate([{ strokeDashoffset: 420 }, { strokeDashoffset: 0 }], { fill: "both", duration: 2200, delay: 200, easing: "steps(28, end)" });
-    return;
-  }
-  el.animate(dissolve, { ...both, duration: 420 });
+  el.animate([{ opacity: 0, transform: `translateY(${t.rise}px)` }, { opacity: 1, transform: "none" }], { ...both, duration: t.dur, easing: t.ease });
   if (el.classList.contains("meter")) {
-    el.querySelector(":scope > span")?.animate([{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0 0 0)" }], { fill: "both", duration: 900, delay: delay + 150, easing: "steps(12, end)" });
+    el.querySelector(":scope > span")?.animate([{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0 0 0)" }], { fill: "both", duration: 900, delay: delay + 120, easing: "steps(12, end)" });
   }
 }
 
@@ -81,12 +94,14 @@ export function FxRuntime() {
   useEffect(() => {
     const html = document.documentElement;
     if (!html.classList.contains("fx")) return;
-    // while the intro covers the page, hold reveals so they play when the doors open
-    if (html.classList.contains("has-intro") && !html.classList.contains("intro-gone")) {
+    // while the intro covers the page, hold reveals so they play as the doors open
+    const covered = html.classList.contains("has-intro") && !html.classList.contains("intro-gone") && !html.classList.contains("intro-opening") && !html.classList.contains("intro-fade");
+    if (covered && !(window as unknown as { __introReveal?: boolean }).__introReveal) {
       const again = () => setTick((t) => t + 1);
-      window.addEventListener("company:intro-done", again, { once: true });
-      return () => window.removeEventListener("company:intro-done", again);
+      window.addEventListener("company:intro-reveal", again, { once: true });
+      return () => window.removeEventListener("company:intro-reveal", again);
     }
+    const t = tokens();
     const seen = new WeakSet<Element>();
     const io =
       "IntersectionObserver" in window
@@ -94,12 +109,12 @@ export function FxRuntime() {
             (entries) => {
               for (const e of entries) {
                 if (e.isIntersecting) {
-                  reveal(e.target as HTMLElement);
+                  reveal(e.target as HTMLElement, t);
                   io!.unobserve(e.target);
                 }
               }
             },
-            { rootMargin: "0px 0px -6% 0px", threshold: 0.01 },
+            { rootMargin: "0px 0px -4% 0px", threshold: 0.01 },
           )
         : null;
     const scan = (root: ParentNode) => {
@@ -107,7 +122,7 @@ export function FxRuntime() {
         if (seen.has(el)) return;
         seen.add(el);
         if (io) io.observe(el);
-        else reveal(el as HTMLElement);
+        else reveal(el as HTMLElement, t);
       });
     };
     scan(document);

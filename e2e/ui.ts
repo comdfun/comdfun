@@ -3,9 +3,9 @@
  *
  *   cd e2e && npm run e2e:ui          (node --import tsx ui.ts)
  *
- * Boots the same local stack as run.ts (anvil 46630, Permit2, Deploy.s.sol with MockComd, Chambers with the real
+ * Boots the same local stack as run.ts (anvil, Permit2, Deploy.s.sol with MockComd, Chambers with the real
  * services and the keeper, six paired mock-runtime seats), builds apps/web in LIVE mode against it (no
- * NEXT_PUBLIC_MOCK; API, RPC, chain 46630 and every contract address from the deployment) and starts it with
+ * NEXT_PUBLIC_MOCK; API, RPC, chain id and every contract address from the deployment) and starts it with
  * `next start`. Chromium gets an injected EIP-1193 wallet (window.ethereum + EIP-6963 announce) whose requests are
  * answered in Node by a viem wallet holding an anvil key, and the test drives the real pages:
  *
@@ -66,7 +66,7 @@ async function loadPlaywright(): Promise<any> {
 // ============================================================================================ the wallet
 
 const D = () => R.D;
-const chainDef = () => ({ id: CHAIN_ID, name: "anvil-46630", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [R.RPC] } } }) as const;
+const chainDef = () => ({ id: CHAIN_ID, name: `anvil-${CHAIN_ID}`, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [R.RPC] } } }) as const;
 const walletLog: string[] = [];
 
 /** Turn the JSON typed data a dapp sends (bigints as strings) into what viem signs. */
@@ -331,11 +331,11 @@ async function startLaunch() {
   await send(7, D().comdToken, erc20Abi, "approve", [PERMIT2, 1_000n * E18]);
   const p = await pay("launch.open", {
     objective: "Launch $DOCKET, a fixed-supply token for the Company.md UI e2e, through ProjectFactory.",
-    skill: "build-contract-project", onchain: "custom_token", chainId: CHAIN_ID, pairWith: "eth",
-    economics: { poolBps: 8800, initialMarketCapWei: "10000000000000000000", remainderTo: CUSTOMER.address.toLowerCase() },
+    skill: "build-contract-project", onchain: "custom_token", chainId: CHAIN_ID, // pairWith omitted → $COMD (the default pairing)
+    economics: { poolBps: 8800, initialMarketCapWei: String(1_000_000n * E18), remainderTo: CUSTOMER.address.toLowerCase() },
   });
   launchJob = p.result.jobId;
-  return `customer funded with COMD, approved Permit2, paid launch.open in COMD (job ${launchJob.slice(0, 8)}); runs in the background`;
+  return `customer funded with COMD, approved Permit2, paid launch.open in COMD (job ${launchJob.slice(0, 8)}, paired with COMD by default); runs in the background`;
 }
 
 /**

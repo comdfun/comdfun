@@ -9,6 +9,7 @@ import {Base} from "../utils/Base.sol";
 import {MerkleHelper} from "../utils/MerkleHelper.sol";
 import {MockComd} from "../../src/mocks/MockComd.sol";
 import {CounselNFT} from "../../src/CounselNFT.sol";
+import {CounselFixture} from "../utils/CounselFixture.sol";
 import {RewardDistributor} from "../../src/RewardDistributor.sol";
 import {ContributorDistributor} from "../../src/launch/ContributorDistributor.sol";
 import {Flywheel} from "../../src/Flywheel.sol";
@@ -104,6 +105,21 @@ contract FlywheelHandler is Test {
         vm.prank(flywheel.owner());
         flywheel.setBps(b, uint16(10_000 - b));
     }
+
+    /// Owner emergency: pause, rescue part of the buckets, unpause (V7). Conservation must include totalRescued.
+    function rescue(uint256 b, uint256 s) external {
+        (uint256 bb, uint256 sb) = flywheel.bucketBalances();
+        b = bound(b, 0, bb);
+        s = bound(s, 0, sb);
+        if (b + s == 0) return;
+        address o = flywheel.owner();
+        vm.startPrank(o);
+        flywheel.pause();
+        flywheel.rescueETH(makeAddr("vault"), b, s);
+        flywheel.unpause();
+        vm.stopPrank();
+        ++ok["rescue"];
+    }
 }
 
 contract FlywheelConservationInvariant is Base {
@@ -141,8 +157,9 @@ contract FlywheelConservationInvariant is Base {
         handler.award(0);
         handler.setBps(7_000);
         handler.tax(1 ether, false);
-        bytes32[4] memory tags = [bytes32("tax"), "buyback", "sweep", "award"];
-        for (uint256 k; k < 4; ++k) {
+        handler.rescue(0.1 ether, 0.1 ether);
+        bytes32[5] memory tags = [bytes32("tax"), "buyback", "sweep", "award", "rescue"];
+        for (uint256 k; k < 5; ++k) {
             assertGt(handler.ok(tags[k]), 0, string(abi.encodePacked("action failed: ", tags[k])));
         }
         invariant_flywheelConservation();
@@ -293,7 +310,7 @@ contract DistributorsInvariant is Test {
 
     function setUp() public {
         comd = new MockComd();
-        counsel = new CounselNFT(admin, admin, "u/");
+        counsel = CounselFixture.deploy(admin, admin, "u/");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         bytes32 role = dist.SETTLER_ROLE();
         vm.startPrank(admin);
@@ -355,7 +372,7 @@ contract DistributorsInvariantOtherToken is Test {
     function setUp() public {
         tkn = new MockERC20("Other", "OTH");
         comd = new MockComd();
-        counsel = new CounselNFT(admin, admin, "u/");
+        counsel = CounselFixture.deploy(admin, admin, "u/");
         dist = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         bytes32 role = dist.SETTLER_ROLE();
         vm.startPrank(admin);
@@ -448,6 +465,23 @@ contract IncHandler is Test {
         vm.prank(who);
         try inc.sellForETH(coin, bound(amt, 1, bal), 0) {} catch {}
     }
+
+    /// The launcher (this handler created every coin) pulls its ETH fees.
+    function claimLauncher() external {
+        inc.claimLauncherEth();
+    }
+
+    /// The owner tries to rescue: must never be able to take backing or owed ETH (V7). Surplus only.
+    function ownerRescue(uint256 amt) external {
+        address o = inc.owner();
+        uint256 surplus = inc.comdSurplus();
+        vm.startPrank(o);
+        try inc.rescueERC20(comd, makeAddr("vault"), bound(amt, 0, surplus + 1)) {} catch {}
+        try inc.rescueETH(makeAddr("vault"), bound(amt, 0, inc.ethSurplus() + 1)) {} catch {}
+        vm.stopPrank();
+    }
+
+    receive() external payable {}
 }
 
 contract IncorporationsSolvencyInvariant is Base {
@@ -482,6 +516,8 @@ contract IncorporationsSolvencyInvariant is Base {
         assertEq(sumReserve, inc.totalBacking(), "per-coin reserves != totalBacking");
         assertLe(sumSells, inc.totalBacking(), "possible sells > backing");
         assertGe(comd.balanceOf(address(inc)), inc.totalBacking(), "balance < backing");
+        assertGe(address(inc).balance, inc.totalLauncherEthOwed(), "ETH balance < launcher ETH owed");
+        assertEq(inc.launcherEthOwed(address(handler)), inc.totalLauncherEthOwed(), "single launcher owns all owed ETH");
         assertEq(comd.balanceOf(DEAD), inc.totalBurned(), "dead address == burned");
         assertEq(comd.balanceOf(address(distributor)), inc.totalToRewards(), "1% fee lands in Counsel rewards");
         assertEq(comd.totalSupply(), SUPPLY, "external token: nothing minted or burned");

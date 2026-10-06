@@ -125,8 +125,8 @@ test("metadata defaults: comd.fun URLs, Company.md copy, collection document", a
   assert.match(m.description, /Company\.md/);
   assert.ok(!/The Company|\$COMPANY/.test(m.description));
   const c = collectionMetadata();
-  assert.equal(c.name, "Company.md Counsel");
-  assert.equal(COLLECTION_NAME, "Company.md Counsel");
+  assert.equal(c.name, "Counsel");
+  assert.equal(COLLECTION_NAME, "Counsel");
   assert.equal(c.external_link, "https://comd.fun");
 });
 

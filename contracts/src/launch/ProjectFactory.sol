@@ -14,6 +14,7 @@ import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
@@ -43,9 +44,13 @@ import {LaunchMath} from "../libraries/LaunchMath.sol";
 ///   (the policy's lpPosition owner), who can collect fees, remove liquidity or hand the position over.
 /// - Gas ceiling (gasCeilingWei) is enforced by the deployer service, not on-chain.
 ///
-/// Admin powers (DEFAULT_ADMIN_ROLE, renounceable): grant REGISTRAR_ROLE, set the policy (lock seconds ≤ 30 d,
-/// default lpOwner, paired currency allowlist + market cap bounds, guard hook once).
-contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
+/// Admin powers (DEFAULT_ADMIN_ROLE, renounceable): grant/revoke REGISTRAR_ROLE (hot-key rotation), set the policy
+/// (lock seconds ≤ 30 d, default lpOwner, paired currency allowlist + market cap bounds, guard hook once).
+/// Safety nets (V7): admin `pause()` stops `launch` and `deployContract` (LP owners keep collecting/removing);
+/// admin `rescueERC20`/`rescueETH` recover anything stranded in the factory (it holds nothing by design — every
+/// launched token is in the pool, the distributor or `remainderTo` by the end of `launch`); admin
+/// `rescueFromDistributor` recovers the ContributorDistributor's surplus above what claimants are owed.
+contract ProjectFactory is AccessControl, Pausable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
@@ -133,6 +138,7 @@ contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
     event PairedConfigSet(address indexed paired, bool allowed, uint256 minMarketCap, uint256 maxMarketCap);
     event PolicySet(uint64 contributorLockSeconds, address defaultLpOwner);
     event GuardHookSet(address hook);
+    event Rescued(address indexed token, address indexed to, uint256 amount);
 
     error BadKind();
     error BadPoolBps();
@@ -151,6 +157,7 @@ contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
     error ZeroAddress();
     error AlreadySet();
     error BadLock();
+    error TransferFailed();
 
     enum Op {
         Seed,
@@ -179,6 +186,7 @@ contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
     function deployContract(bytes32 ref, bytes32 salt, bytes calldata initCode)
         external
         onlyRole(REGISTRAR_ROLE)
+        whenNotPaused
         returns (address deployed)
     {
         deployed = Create2.deploy(0, salt, initCode);
@@ -193,6 +201,7 @@ contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
         external
         onlyRole(REGISTRAR_ROLE)
         nonReentrant
+        whenNotPaused
         returns (uint256 launchId, address token)
     {
         uint256 supply = _validate(p);
@@ -413,6 +422,42 @@ contract ProjectFactory is AccessControl, ReentrancyGuard, IUnlockCallback {
         contributorLockSeconds = lockSeconds;
         defaultLpOwner = lpOwner_;
         emit PolicySet(lockSeconds, lpOwner_);
+    }
+
+    // ------------------------------------------------------------ safety nets
+
+    /// @notice Stop new launches and registrar deployments. LP owners keep their position powers.
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    /// @notice Recover tokens stranded in the factory (none are held by design).
+    function rescueERC20(IERC20 token, address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        token.safeTransfer(to, amount);
+        emit Rescued(address(token), to, amount);
+    }
+
+    /// @notice Recover ETH forced into the factory (it never holds ETH by design).
+    function rescueETH(address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+        emit Rescued(address(0), to, amount);
+    }
+
+    /// @notice Recover the ContributorDistributor's surplus (above what claimants are owed; see its `rescue`).
+    function rescueFromDistributor(address token, address to, uint256 amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        nonReentrant
+    {
+        if (to == address(0)) revert ZeroAddress();
+        contributorDistributor.rescue(token, to, amount);
     }
 
     // =====================================================================================

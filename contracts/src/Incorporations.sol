@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {LaunchToken} from "./launch/LaunchToken.sol";
@@ -19,14 +20,26 @@ import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 /// @notice COMD is the external Pons token (may have no `burn()`): burns are transfers to the dead address.
 ///         Fees per trade: 1% of the COMD side to Counsel rewards (RewardDistributor, COMD), 0.5% of the COMD side
 ///         burned, and 0.5% to the launcher — in ETH for ETH trades (of the ETH side), in COMD for COMD trades.
-///         Launcher ETH accrues here and is pulled with `claimLauncherEth`.
+///         Launcher ETH accrues here (`launcherEthOwed`, total in `totalLauncherEthOwed`) and is pulled with
+///         `claimLauncherEth`.
 /// @notice ETH trades route ETH↔COMD through the pluggable `IBuybackSwapper` (owner `setSwapper`, configured after
 ///         the Pons graduation); until then `buyWithETH`/`sellForETH` revert `SwapperNotSet()` and COMD trades work.
 ///         The intermediate leg has no own minimum; the trader's `minOut` on the final asset bounds the whole route.
 /// @notice Graduation (migrating a coin to a v4 COMD pool at a threshold) is NOT implemented (phase 2).
 /// @notice Owner powers (Ownable2Step, renounceable): set `virtualComd` for coins created afterwards, within bounds;
 ///         set the swapper.
-contract Incorporations is Ownable2Step, ReentrancyGuard {
+///         **Safety nets (V7).** `pause()` stops `create` and all four trade functions (launcher ETH claims stay
+///         open). Recovery policy, from least to most invasive:
+///         1. `rescueERC20(token, to, amount)` — only SURPLUS: for COMD what exceeds `totalBacking`, for a company
+///            coin what exceeds its `coinReserve`, any other token fully. `rescueETH(to, amount)` — only what exceeds
+///            `totalLauncherEthOwed`. Both work any time and can never touch what traders are owed.
+///         2. `scheduleEmergencyWithdraw()` (paused) → wait `EMERGENCY_DELAY` (48 h, public countdown in
+///            `emergencyWithdrawAt`, cancellable) → `emergencyWithdraw(to)` moves ALL COMD and ETH out. This is the
+///            true-emergency path (curve bug): trading is already frozen by the pause, the delay gives traders and
+///            launchers notice, and `unpause()` refuses until the contract is solvent again
+///            (COMD balance ≥ `totalBacking`, ETH balance ≥ `totalLauncherEthOwed`), so trading cannot resume on an
+///            emptied curve without the owner first restoring the backing.
+contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant COIN_SUPPLY = 1_000_000_000e18;
@@ -36,6 +49,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     uint256 public constant BURN_BPS = 50;
     uint256 public constant MIN_VIRTUAL = 1_000e18;
     uint256 public constant MAX_VIRTUAL = 10_000_000e18;
+    uint256 public constant EMERGENCY_DELAY = 48 hours;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     struct Coin {
@@ -55,9 +69,12 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     address[] public coins;
     mapping(address => Coin) internal _coins;
     mapping(address => uint256) public launcherEthOwed;
+    uint256 public totalLauncherEthOwed;
     uint256 public totalBacking;
     uint256 public totalBurned;
     uint256 public totalToRewards;
+    /// @notice 0 = no emergency withdraw scheduled; otherwise the timestamp from which `emergencyWithdraw` works.
+    uint256 public emergencyWithdrawAt;
 
     event CoinCreated(address indexed coin, address indexed creator, string name, string symbol, string metadataURI);
     event Trade(
@@ -72,6 +89,10 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     event LauncherEthClaimed(address indexed launcher, uint256 amount);
     event VirtualComdSet(uint256 virtualComd);
     event SwapperSet(address swapper);
+    event Rescued(address indexed token, address indexed to, uint256 amount);
+    event EmergencyWithdrawScheduled(uint256 at);
+    event EmergencyWithdrawCancelled();
+    event EmergencyWithdrawn(address indexed to, uint256 comdAmount, uint256 ethAmount);
 
     error UnknownCoin();
     error ZeroAmount();
@@ -81,6 +102,10 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     error TransferFailed();
     error EmptyName();
     error SwapperNotSet();
+    error ExceedsSurplus(uint256 surplus, uint256 requested);
+    error NotScheduled();
+    error TooEarly(uint256 at);
+    error Insolvent(uint256 comdBalance, uint256 backing, uint256 ethBalance, uint256 ethOwed);
 
     /// @param swapper_ may be address(0): ETH paths revert `SwapperNotSet()` until the owner sets one
     constructor(IERC20 comd_, address rewardDistributor_, IBuybackSwapper swapper_, address owner_) Ownable(owner_) {
@@ -99,6 +124,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     function create(string calldata name, string calldata symbol, string calldata metadataURI)
         external
         nonReentrant
+        whenNotPaused
         returns (address coin)
     {
         if (bytes(name).length == 0 || bytes(symbol).length == 0) revert EmptyName();
@@ -119,7 +145,12 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     //                                    COMD trades
     // =====================================================================================
 
-    function buyWithComd(address coin, uint256 comdIn, uint256 minOut) external nonReentrant returns (uint256 out) {
+    function buyWithComd(address coin, uint256 comdIn, uint256 minOut)
+        external
+        nonReentrant
+        whenNotPaused
+        returns (uint256 out)
+    {
         Coin storage c = _coin(coin);
         if (comdIn == 0) revert ZeroAmount();
         comd.safeTransferFrom(msg.sender, address(this), comdIn);
@@ -133,6 +164,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     function sellForComd(address coin, uint256 amountIn, uint256 minComdOut)
         external
         nonReentrant
+        whenNotPaused
         returns (uint256 out)
     {
         Coin storage c = _coin(coin);
@@ -149,12 +181,18 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     //                                      ETH trades
     // =====================================================================================
 
-    function buyWithETH(address coin, uint256 minOut) external payable nonReentrant returns (uint256 out) {
+    function buyWithETH(address coin, uint256 minOut)
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (uint256 out)
+    {
         Coin storage c = _coin(coin);
         if (address(swapper) == address(0)) revert SwapperNotSet();
         if (msg.value == 0) revert ZeroAmount();
         uint256 launcherEth = (msg.value * LAUNCHER_BPS) / BPS;
-        launcherEthOwed[c.creator] += launcherEth;
+        _oweLauncher(c.creator, launcherEth);
         uint256 sent = msg.value - launcherEth;
         uint256 bal0 = address(this).balance;
         uint256 comd0 = comd.balanceOf(address(this));
@@ -180,6 +218,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     function sellForETH(address coin, uint256 amountIn, uint256 minEthOut)
         external
         nonReentrant
+        whenNotPaused
         returns (uint256 ethOut)
     {
         Coin storage c = _coin(coin);
@@ -192,7 +231,7 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         swapper.swapExactComdForETH(net, 0, address(this), block.timestamp);
         uint256 ethGross = address(this).balance - bal0;
         uint256 launcherEth = (ethGross * LAUNCHER_BPS) / BPS;
-        launcherEthOwed[c.creator] += launcherEth;
+        _oweLauncher(c.creator, launcherEth);
         ethOut = ethGross - launcherEth;
         if (ethOut < minEthOut) revert Slippage(ethOut, minEthOut);
         (bool ok,) = msg.sender.call{value: ethOut}("");
@@ -201,9 +240,11 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         emit Trade(coin, msg.sender, false, net, amountIn, ethOut);
     }
 
+    /// @notice Launchers pull their ETH fees. Not paused: it is money already owed.
     function claimLauncherEth() external nonReentrant returns (uint256 amount) {
         amount = launcherEthOwed[msg.sender];
         launcherEthOwed[msg.sender] = 0;
+        totalLauncherEthOwed -= amount;
         (bool ok,) = msg.sender.call{value: amount}("");
         if (!ok) revert TransferFailed();
         emit LauncherEthClaimed(msg.sender, amount);
@@ -241,6 +282,18 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         return _coins[coin];
     }
 
+    /// @notice COMD held above what the curves are owed (rescuable any time).
+    function comdSurplus() public view returns (uint256) {
+        uint256 bal = comd.balanceOf(address(this));
+        return bal > totalBacking ? bal - totalBacking : 0;
+    }
+
+    /// @notice ETH held above what launchers are owed (rescuable any time).
+    function ethSurplus() public view returns (uint256) {
+        uint256 bal = address(this).balance;
+        return bal > totalLauncherEthOwed ? bal - totalLauncherEthOwed : 0;
+    }
+
     // =====================================================================================
     //                                        owner
     // =====================================================================================
@@ -264,6 +317,79 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
         emit SwapperSet(s);
     }
 
+    // ------------------------------------------------------------ safety nets
+
+    /// @notice Freeze creation and trading. Launcher ETH claims keep working.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resume trading — only if the contract is solvent (backing and launcher ETH fully present).
+    function unpause() external onlyOwner {
+        uint256 cb = comd.balanceOf(address(this));
+        uint256 eb = address(this).balance;
+        if (cb < totalBacking || eb < totalLauncherEthOwed) revert Insolvent(cb, totalBacking, eb, totalLauncherEthOwed);
+        _unpause();
+    }
+
+    /// @notice Recover surplus only: COMD above `totalBacking`, a company coin above its `coinReserve`, other tokens
+    ///         fully. Never touches what traders or launchers are owed.
+    function rescueERC20(IERC20 token, address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 surplus;
+        if (token == comd) {
+            surplus = comdSurplus();
+        } else if (_coins[address(token)].creator != address(0)) {
+            uint256 bal = token.balanceOf(address(this));
+            uint256 reserve = _coins[address(token)].coinReserve;
+            surplus = bal > reserve ? bal - reserve : 0;
+        } else {
+            surplus = token.balanceOf(address(this));
+        }
+        if (amount > surplus) revert ExceedsSurplus(surplus, amount);
+        token.safeTransfer(to, amount);
+        emit Rescued(address(token), to, amount);
+    }
+
+    /// @notice Recover ETH above what launchers are owed.
+    function rescueETH(address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 surplus = ethSurplus();
+        if (amount > surplus) revert ExceedsSurplus(surplus, amount);
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+        emit Rescued(address(0), to, amount);
+    }
+
+    /// @notice Step 1 of the true-emergency path: start the 48 h countdown. Requires the contract to be paused.
+    function scheduleEmergencyWithdraw() external onlyOwner whenPaused {
+        emergencyWithdrawAt = block.timestamp + EMERGENCY_DELAY;
+        emit EmergencyWithdrawScheduled(emergencyWithdrawAt);
+    }
+
+    function cancelEmergencyWithdraw() external onlyOwner {
+        emergencyWithdrawAt = 0;
+        emit EmergencyWithdrawCancelled();
+    }
+
+    /// @notice Step 2: after the countdown, while still paused, move ALL COMD and ETH to `to`. Accounting is left
+    ///         untouched so `unpause()` keeps refusing until the owner has restored the backing.
+    function emergencyWithdraw(address to) external onlyOwner whenPaused nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 at = emergencyWithdrawAt;
+        if (at == 0) revert NotScheduled();
+        if (block.timestamp < at) revert TooEarly(at);
+        emergencyWithdrawAt = 0;
+        uint256 cb = comd.balanceOf(address(this));
+        uint256 eb = address(this).balance;
+        if (cb > 0) comd.safeTransfer(to, cb);
+        if (eb > 0) {
+            (bool ok,) = to.call{value: eb}("");
+            if (!ok) revert TransferFailed();
+        }
+        emit EmergencyWithdrawn(to, cb, eb);
+    }
+
     // =====================================================================================
     //                                       internals
     // =====================================================================================
@@ -271,6 +397,11 @@ contract Incorporations is Ownable2Step, ReentrancyGuard {
     function _coin(address coin) internal view returns (Coin storage c) {
         c = _coins[coin];
         if (c.creator == address(0)) revert UnknownCoin();
+    }
+
+    function _oweLauncher(address creator, uint256 amount) internal {
+        launcherEthOwed[creator] += amount;
+        totalLauncherEthOwed += amount;
     }
 
     function _buyOut(Coin storage c, uint256 net) internal view returns (uint256) {

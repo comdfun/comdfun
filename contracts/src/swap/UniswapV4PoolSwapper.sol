@@ -23,7 +23,8 @@ import {IBuybackSwapper} from "../interfaces/IBuybackSwapper.sol";
 /// @notice Exact-input ETH <-> COMD swaps through `IPoolManager.unlock` on an owner-configured pool: after Pons
 ///         graduates $COMD into its v4 position, the owner calls `setPoolKey(fee, tickSpacing, hooks)` with
 ///         Pons's pool parameters (currency0 is always ETH, currency1 always COMD). Until then every swap reverts
-///         `PoolNotSet()`. Holds nothing between calls; no fee of its own; empty hookData.
+///         `PoolNotSet()`. Holds nothing between calls; no fee of its own; empty hookData. Owner `sweep(token, to)`
+///         recovers anything forced in (V7 safety net).
 /// @notice Quotes (`quoteETHForComd`, `quoteComdForETH`) are NON-VIEW: they simulate the swap inside unlock and
 ///         revert with the result (V4Quoter style); call them with eth_call (viem `simulateContract`).
 /// @dev Pons's hook may charge its tax inside the swap (amounts here are whatever the pool returns) or may reject
@@ -53,6 +54,7 @@ contract UniswapV4PoolSwapper is IBuybackSwapper, IUnlockCallback, Ownable2Step,
 
     event PoolKeySet(uint24 fee, int24 tickSpacing, address hooks, PoolId poolId);
     event Swapped(address indexed sender, address indexed to, bool ethIn, uint256 amountIn, uint256 amountOut);
+    event Swept(address indexed token, address indexed to, uint256 amount);
 
     struct CallbackData {
         bool quote;
@@ -82,6 +84,20 @@ contract UniswapV4PoolSwapper is IBuybackSwapper, IUnlockCallback, Ownable2Step,
         hooks = hooks_;
         configured = true;
         emit PoolKeySet(fee_, tickSpacing_, address(hooks_), poolKey().toId());
+    }
+
+    /// @notice Safety net (V7): move out anything left behind (the swapper holds nothing between calls; ETH can
+    ///         only be forced in by selfdestruct, tokens by a plain transfer). `token` = 0 sweeps ETH.
+    function sweep(address token, address to) external onlyOwner nonReentrant returns (uint256 amount) {
+        if (to == address(0)) revert ZeroAddress();
+        if (token == address(0)) {
+            amount = address(this).balance;
+            if (amount > 0) _sendEth(to, amount);
+        } else {
+            amount = IERC20(token).balanceOf(address(this));
+            if (amount > 0) IERC20(token).safeTransfer(to, amount);
+        }
+        emit Swept(token, to, amount);
     }
 
     function poolKey() public view returns (PoolKey memory) {

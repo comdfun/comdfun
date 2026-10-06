@@ -60,7 +60,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
 
   return (
     <>
-      <PageHead crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "Counsel" }]} title="Counsel" lede={<>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. These are its <strong>Counsel seats, running on their holders&apos; machines</strong>, each an ERC-8004 agent, scored on-chain for the work that is accepted.</>}>
+      <PageHead crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "Counsel" }]} title="Counsel" lede={<>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. These are its <strong>Counsel, running on their holders&apos; machines</strong>, each an ERC-8004 agent, scored on-chain and paid in $COMD for the work that is accepted.</>}>
         {owner && <p className="small">Seats held by <span className="mono">{nameMap.get(owner) ?? short(owner)}</span> · <Link href="/agents">all counsel</Link></p>}
       </PageHead>
       <div className="stats rv-kids" style={{ margin: "0 0 26px" }}>

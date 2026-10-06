@@ -338,7 +338,11 @@ export class Engine {
       lease.research = { rubric: job.input.rubric ? { contains: job.input.rubric.contains, mayNotRestOn: job.input.rubric.mayNotRestOn ?? [] } : null, minCitations: job.input.minCitations ?? 0 };
     }
     if (node.variables.mode === "fuzz") lease.fuzz = { runs: Number(node.variables.runs), contracts: job.input.contracts ?? [], projectPath: job.input.projectPath ?? null };
-    lease.launch = job.launch.requested ? { kind: job.launch.kind ?? "evm_project", chainId: job.launch.chainId ?? this.app.cfg.launchChains[0], pairWith: job.input.pairWith ?? "eth", economics: (job.input.economics as Record<string, unknown>) ?? null } : null;
+    if (job.launch.requested) {
+      const chainId = job.launch.chainId ?? this.app.cfg.launchChains[0];
+      // swarm launches pair with $COMD unless the payer chose ETH (Launches.defaultPairing)
+      lease.launch = { kind: job.launch.kind ?? "evm_project", chainId, pairWith: job.input.pairWith ?? this.app.launches.defaultPairing(chainId), economics: (job.input.economics as Record<string, unknown>) ?? null };
+    } else lease.launch = null;
     return lease;
   }
 

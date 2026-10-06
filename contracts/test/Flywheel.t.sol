@@ -141,7 +141,7 @@ contract FlywheelTest is Base {
     }
 
     function test_swapperNotSetAccumulates() public {
-        Flywheel fw = new Flywheel(IERC20(address(comd)), IERC721(address(counsel)), admin, keeper);
+        Flywheel fw = _newFlywheel(IERC20(address(comd)), address(0), address(0));
         vm.deal(alice, 1 ether);
         vm.prank(alice);
         (bool ok,) = address(fw).call{value: 1 ether}("");
@@ -171,9 +171,7 @@ contract FlywheelTest is Base {
     }
 
     function test_setComdOnce() public {
-        Flywheel fw = new Flywheel(IERC20(address(0)), IERC721(address(counsel)), admin, keeper);
-        vm.prank(admin);
-        fw.setSwapper(address(swapper));
+        Flywheel fw = _newFlywheel(IERC20(address(0)), address(swapper), address(0));
         vm.deal(alice, 1 ether);
         vm.prank(alice);
         (bool ok,) = address(fw).call{value: 1 ether}("");
@@ -285,7 +283,7 @@ contract FlywheelTest is Base {
 
     function test_seaportAdapterSkeleton() public {
         MockSeaport sp = new MockSeaport();
-        SeaportAdapter ad = new SeaportAdapter(address(sp));
+        SeaportAdapter ad = new SeaportAdapter(address(sp), admin);
         vm.prank(seller);
         counsel.approve(address(sp), 2);
         sp.setOrder(IERC721(address(counsel)), seller, 2, 0.12 ether);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {IERC8004Identity, IERC8004Reputation} from "../src/interfaces/IERC8004.sol";
 import {CounselNFT} from "../src/CounselNFT.sol";
+import {CounselFixture} from "./utils/CounselFixture.sol";
 import {ERC8004Fixture} from "./utils/ERC8004Fixture.sol";
 
 /// @notice A Counsel holder registers their seat as an ERC-8004 agent; the platform (a different wallet)
@@ -17,7 +18,7 @@ contract ERC8004Test is ERC8004Fixture {
 
     function setUp() public {
         (identity, reputation) = deployErc8004(admin);
-        counsel = new CounselNFT(admin, admin, "https://api.example/agents/by-token/");
+        counsel = CounselFixture.deploy(admin, admin, "https://api.example/agents/by-token/");
         vm.prank(admin);
         counsel.reserveMint(holder, 42);
     }

@@ -428,7 +428,7 @@ export function heroBanner(): Asset {
   moon(r, 292, 74, 9);
   city(r, "hero-back", 0, W, horizon, 24, 52, hex("#0D0828"), 0.2);
   city(r, "hero-front", 0, W, horizon, 10, 30, hex("#160D3A"), 0.32);
-  const ch = courthouse(r, W / 2, horizon, 168, { cols: 6, colH: 36, steps: 4, label: "COMPANY.MD · ATTORNEYS AT LAW" });
+  const ch = courthouse(r, W / 2, horizon, 168, { cols: 6, colH: 36, steps: 4, label: "COMPANY.MD · NFT-IDENTIFIED SWARM" });
   plaza(r, horizon, { cx: W / 2, w: ch.doorX1 - ch.doorX0 - 1 });
   const ids = LINEUP.slice(0, 8);
   const left = spread(4, 6, 120), right = spread(4, 200, 314);

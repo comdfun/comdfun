@@ -24,6 +24,7 @@ import {UniswapV4PoolSwapper} from "../../src/swap/UniswapV4PoolSwapper.sol";
 import {MockMarketplace} from "../../src/mocks/MockMarketplace.sol";
 import {MockSwapper} from "../mocks/Mocks.sol";
 import {MerkleHelper} from "./MerkleHelper.sol";
+import {CounselFixture} from "./CounselFixture.sol";
 
 /// @notice Company.md system in Pons mode: COMD is an external plain ERC-20 (MockComd, 1B to this test contract),
 ///         the Flywheel receives ETH from anyone and swaps through a pluggable IBuybackSwapper. By default the
@@ -66,23 +67,28 @@ abstract contract Base is Deployers, MerkleHelper {
     function setUpSystem() internal {
         deployFreshManagerAndRouters();
         comd = new MockComd();
-        counsel = new CounselNFT(admin, treasury, "https://api.comd.fun/agents/by-token/");
+        counsel = CounselFixture.deploy(admin, treasury, "https://api.comd.fun/agents/by-token/");
         distributor = new RewardDistributor(IERC20(address(comd)), IERC721(address(counsel)), admin);
         revenue = new RevenueRouter(IERC20(address(comd)), address(distributor), treasury, admin);
-        flywheel = new Flywheel(IERC20(address(comd)), IERC721(address(counsel)), admin, keeper);
         swapper = new MockSwapper(IERC20(address(comd)), RATE * 1e18);
         comd.transfer(address(swapper), 300_000_000e18);
         vm.deal(address(swapper), 100 ether);
         marketplace = new MockMarketplace();
+        flywheel = _newFlywheel(IERC20(address(comd)), address(swapper), address(marketplace));
         inc = new Incorporations(
             IERC20(address(comd)), address(distributor), IBuybackSwapper(address(swapper)), admin
         );
 
-        vm.startPrank(admin);
-        flywheel.setSwapper(address(swapper));
-        flywheel.setAdapter(address(marketplace), true);
-        distributor.grantRole(distributor.SETTLER_ROLE(), settler);
-        vm.stopPrank();
+        bytes32 settlerRole = distributor.SETTLER_ROLE();
+        vm.prank(admin);
+        distributor.grantRole(settlerRole, settler);
+    }
+
+    /// @dev A Flywheel owned by `admin` (keeper `keeper`, 0.5 ETH sweep cap) with one allowlisted adapter.
+    function _newFlywheel(IERC20 comd_, address swapper_, address adapter) internal returns (Flywheel) {
+        address[] memory adapters = new address[](adapter == address(0) ? 0 : 1);
+        if (adapter != address(0)) adapters[0] = adapter;
+        return new Flywheel(comd_, IERC721(address(counsel)), admin, keeper, IBuybackSwapper(swapper_), 0.5 ether, adapters);
     }
 
     /// @dev Hookless ETH/COMD pool at ≈ 1e8 COMD per ETH with full-range liquidity (≈ 5 ETH + 5e8 COMD), and a
@@ -125,7 +131,11 @@ abstract contract Base is Deployers, MerkleHelper {
     /// @dev Tax conservation: everything received is at the Flywheel (buckets) or was spent (buyback / sweeps).
     function _assertTaxConservation() internal view {
         (uint256 b, uint256 s) = flywheel.bucketBalances();
-        assertEq(flywheel.totalTaxIn(), b + s + flywheel.totalBoughtBack() + flywheel.sweepSpent(), "flywheel conservation");
+        assertEq(
+            flywheel.totalTaxIn(),
+            b + s + flywheel.totalBoughtBack() + flywheel.sweepSpent() + flywheel.totalRescued(),
+            "flywheel conservation"
+        );
         assertEq(address(flywheel).balance, b + s, "flywheel ETH == buckets");
         assertEq(comd.balanceOf(address(flywheel)), 0, "flywheel holds no COMD (all buybacks burned)");
         assertEq(comd.balanceOf(DEAD), flywheel.totalBurned() + inc.totalBurned(), "dead address == burned");

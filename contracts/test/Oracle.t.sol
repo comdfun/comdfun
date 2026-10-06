@@ -12,7 +12,7 @@ contract OracleTest is Test {
 
     function setUp() public {
         attester = vm.addr(attesterPk);
-        consumer = new OracleConsumerExample(attester);
+        consumer = new OracleConsumerExample(attester, address(this));
         vm.warp(1_800_000_000);
     }
 

@@ -3,16 +3,20 @@ import { logo } from "@/lib/art";
 import { Svg } from "./Svg";
 import { NavLinks } from "./NavLinks";
 import { ConnectButton } from "./ConnectButton";
-import { X_URL, X_HANDLE } from "@/lib/config";
+import { XLink } from "./XLink";
+import { GitHubLink } from "./GitHubLink";
+import { WhatIsThisLink } from "./WhatIsThisLink";
+
+export { XLink };
 
 export const NAV = [
-  { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches"] },
-  { href: "/launch", label: "Retain", c: "pink", match: ["/launch"] },
-  { href: "/token", label: "$COMD", c: "gold", match: ["/token"] },
-  { href: "/swap", label: "Vault", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade" }, { href: "/flywheel", label: "Flywheel" }] },
-  { href: "/incorporations", label: "Coins", c: "lime", match: ["/incorporations"] },
-  { href: "/mint", label: "Mint", c: "lime", match: ["/mint", "/pair"] },
-  { href: "/docs", label: "Docs", c: "orange", match: ["/docs"] },
+  { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches"], hint: "Matters · Rulings · Filings · Counsel" },
+  { href: "/launch", label: "Retain", c: "pink", match: ["/launch"], hint: "Pay the firm in $COMD" },
+  { href: "/token", label: "$COMD", c: "gold", match: ["/token"], hint: "The token" },
+  { href: "/swap", label: "Treasury", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade", hint: "Pons · Uniswap" }, { href: "/flywheel", label: "Flywheel", hint: "Burns · floor sweeps" }] },
+  { href: "/incorporations", label: "Coins", c: "lime", match: ["/incorporations"], hint: "Company coins in $COMD" },
+  { href: "/mint", label: "Mint", c: "lime", match: ["/mint", "/pair"], hint: "Free Counsel · earn $COMD" },
+  { href: "/docs", label: "Docs", c: "orange", match: ["/docs"], hint: "Guides and the API" },
 ];
 
 /** "COMPANY.MD" set in the pixel display face; the .MD is the accent. */
@@ -32,28 +36,17 @@ export function Header() {
           <Svg svg={logo()} className="logo" />
           <span>
             <Wordmark className="wm" />
-            <span className="est">Attorneys at law · comd.fun</span>
+            <span className="est">NFT-Identified Swarm · comd.fun</span>
           </span>
         </Link>
         <NavLinks items={NAV} />
         <div className="connect">
+          <WhatIsThisLink className="hdr-what" />
           <XLink className="hdr-x" />
+          <GitHubLink className="hdr-x hdr-gh" />
           <ConnectButton className="btn sm primary" />
         </div>
       </div>
     </header>
-  );
-}
-
-/** The firm on X: a pixel "X" glyph (7×7) plus the handle where there is room. */
-export function XLink({ className = "", label = false }: { className?: string; label?: boolean }) {
-  const px = [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [6, 0], [5, 1], [4, 2], [2, 4], [1, 5], [0, 6], [1, 0], [5, 6]];
-  return (
-    <a className={`xlink ${className}`} href={X_URL} target="_blank" rel="noreferrer" aria-label={`Company.md on X (${X_HANDLE})`} title={`${X_HANDLE} on X`}>
-      <svg viewBox="0 0 7 7" width="14" height="14" shapeRendering="crispEdges" aria-hidden="true">
-        {px.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" />)}
-      </svg>
-      {label && <span>{X_HANDLE}</span>}
-    </a>
   );
 }

@@ -11,12 +11,14 @@ name: deploy-contracts
 #
 # Repository secrets: DEPLOYER_PRIVATE_KEY, RPC_URL_MAINNET, RPC_URL_TESTNET.
 # Repository (or environment) variables: ADMIN, TREASURY, KEEPER, SETTLER, REGISTRAR, ATTESTER (addresses),
-# optional MAX_SWEEP_PRICE, SEAPORT, COUNSEL_BASE_URI.
+# optional MAX_SWEEP_PRICE, SEAPORT, COUNSEL_BASE_URI, ALLOW_ETH_PAIRING ("true" to also allow ETH-paired launches).
 # The job runs in the GitHub environment named after the network ("testnet" / "mainnet"): add required reviewers
 # to "mainnet" under Settings → Environments to get a manual approval gate.
 #
-# After it: ADMIN calls acceptOwnership() on Flywheel, commit the deployments JSON (+ `npm run contracts:abi`), set the
-# printed variables on Railway, open the mint; after the Pons graduation the owner calls setPoolKey on the swapper (DEPLOY.md).
+# After it: commit the deployments JSON (+ `npm run contracts:abi`), set the printed variables on Railway, open the
+# mint; after the Pons graduation the owner calls setPoolKey on the swapper (DEPLOY.md). Every contract is owned by
+# ADMIN from its first block (nothing to accept). The Counsel NFT is a UUPS proxy (`counselNFT`; implementation in
+# `counselNFTImpl`); ADMIN upgrades it with upgradeToAndCall. Launch pairing is $COMD only unless ALLOW_ETH_PAIRING.
 
 on:
   workflow_dispatch:
@@ -189,9 +191,10 @@ jobs:
           MAX_SWEEP_PRICE: ${{ vars.MAX_SWEEP_PRICE }}
           SEAPORT: ${{ vars.SEAPORT }}
           COUNSEL_BASE_URI: ${{ vars.COUNSEL_BASE_URI }}
+          ALLOW_ETH_PAIRING: ${{ vars.ALLOW_ETH_PAIRING }}
         run: |
           # unset optional variables must not reach vm.envOr as empty strings
-          for v in COMD_TOKEN COUNSEL_NFT IDENTITY_REGISTRY REPUTATION_REGISTRY ADMIN TREASURY KEEPER SETTLER REGISTRAR MAX_SWEEP_PRICE SEAPORT COUNSEL_BASE_URI; do
+          for v in COMD_TOKEN COUNSEL_NFT IDENTITY_REGISTRY REPUTATION_REGISTRY ADMIN TREASURY KEEPER SETTLER REGISTRAR MAX_SWEEP_PRICE SEAPORT COUNSEL_BASE_URI ALLOW_ETH_PAIRING; do
             [ -n "${!v}" ] || unset "$v"
           done
           broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
@@ -212,18 +215,50 @@ jobs:
           ADMIN: ${{ vars.ADMIN }}
         run: |
           d=.deploy/deployment.json
+          lower() { tr 'A-F' 'a-f'; }
           nft="$(jq -r .counselNFT "$d")"
+          impl="$(jq -r .counselNFTImpl "$d")"
+          # the NFT is a UUPS proxy: calls go through the proxy, the ERC-1967 implementation slot must point at counselNFTImpl
+          slot="$(cast storage "$nft" 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc --rpc-url "$RPC_URL")"
+          slot_addr="0x${slot: -40}"
+          [ "$slot_addr" != "0x0000000000000000000000000000000000000000" ] || { echo "::error::CounselNFT $nft has an empty ERC-1967 implementation slot (not a proxy?)"; exit 1; }
+          [ "$(echo "$slot_addr" | lower)" = "$(echo "$impl" | lower)" ] || { echo "::error::CounselNFT implementation slot $slot_addr != counselNFTImpl $impl"; exit 1; }
+          [ "$(cast call "$nft" 'implementation()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$impl" | lower)" ] || { echo "::error::CounselNFT implementation() != counselNFTImpl"; exit 1; }
           [ "$(cast call "$nft" 'MAX_SUPPLY()(uint256)' --rpc-url "$RPC_URL" | awk '{print $1}')" = "2000" ] || { echo "::error::CounselNFT MAX_SUPPLY != 2000"; exit 1; }
-          [ -z "$ADMIN" ] || [ "$(cast call "$nft" 'owner()(address)' --rpc-url "$RPC_URL" | tr 'A-F' 'a-f')" = "$(echo "$ADMIN" | tr 'A-F' 'a-f')" ] || { echo "::error::CounselNFT owner is not ADMIN"; exit 1; }
-          echo "CounselNFT $nft: 2,000 seats, owner ok, contractURI $(cast call "$nft" 'contractURI()(string)' --rpc-url "$RPC_URL")"
+          name="$(cast call "$nft" 'name()(string)' --rpc-url "$RPC_URL" | tr -d '"')"
+          [ "$name" = "Counsel" ] || { echo "::error::CounselNFT name() is '$name', expected 'Counsel'"; exit 1; }
+          [ "$(cast call "$nft" 'symbol()(string)' --rpc-url "$RPC_URL" | tr -d '"')" = "COUNSEL" ] || { echo "::error::CounselNFT symbol() != COUNSEL"; exit 1; }
+          [ -z "$ADMIN" ] || [ "$(cast call "$nft" 'owner()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$ADMIN" | lower)" ] || { echo "::error::CounselNFT owner (through the proxy) is not ADMIN"; exit 1; }
+          curi="$(cast call "$nft" 'contractURI()(string)' --rpc-url "$RPC_URL" | tr -d '"')"
+          case "$curi" in */collection.json) ;; *) echo "::error::CounselNFT contractURI '$curi' does not end in /collection.json"; exit 1 ;; esac
+          echo "CounselNFT proxy $nft -> impl $impl: name Counsel, 2,000 seats, owner ok, contractURI $curi"
           if [ "$STAGE" = mint ]; then echo "mint stage: done"; exit 0; fi
           guard="$(jq -r .launchGuardHook "$d")"
           # v4 hook permissions are the address's low 14 bits (last 4 hex digits suffice)
           [ $(( 0x${guard: -4} & 0x3fff )) -eq $(( 0x2000 )) ] || { echo "::error::LaunchGuardHook flags wrong: $guard"; exit 1; }
           fw="$(jq -r .flywheel "$d")"
-          [ "$(cast call "$fw" 'comd()(address)' --rpc-url "$RPC_URL" | tr 'A-F' 'a-f')" = "$(jq -r .comdToken "$d" | tr 'A-F' 'a-f')" ] \
+          [ "$(cast call "$fw" 'comd()(address)' --rpc-url "$RPC_URL" | lower)" = "$(jq -r .comdToken "$d" | lower)" ] \
             || { echo "::error::Flywheel.comd() does not match the deployed comdToken"; exit 1; }
-          echo "LaunchGuardHook flags ok; Flywheel bound to COMD $(jq -r .comdToken "$d")"
+          # every owned contract belongs to ADMIN from the first block (no pending Ownable2Step accept, no deployer powers)
+          if [ -n "$ADMIN" ]; then
+            for key in flywheel swapper revenueRouter incorporations; do
+              addr="$(jq -r ".$key" "$d")"
+              [ "$(cast call "$addr" 'owner()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$ADMIN" | lower)" ] || { echo "::error::$key owner is not ADMIN"; exit 1; }
+              [ "$(cast call "$addr" 'pendingOwner()(address)' --rpc-url "$RPC_URL" | lower)" = "0x0000000000000000000000000000000000000000" ] || { echo "::error::$key has a pending owner"; exit 1; }
+            done
+            for key in rewardDistributor projectFactory; do
+              addr="$(jq -r ".$key" "$d")"
+              [ "$(cast call "$addr" 'hasRole(bytes32,address)(bool)' 0x0000000000000000000000000000000000000000000000000000000000000000 "$ADMIN" --rpc-url "$RPC_URL")" = "true" ] || { echo "::error::$key: ADMIN lacks DEFAULT_ADMIN_ROLE"; exit 1; }
+            done
+            for key in identityRegistry reputationRegistry; do
+              addr="$(jq -r ".$key" "$d")"
+              [ "$(cast call "$addr" 'owner()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$ADMIN" | lower)" ] || { echo "::error::$key owner is not ADMIN"; exit 1; }
+            done
+          fi
+          pf="$(jq -r .projectFactory "$d")"
+          comd_allowed="$(cast call "$pf" 'pairedConfig(address)(bool,uint256,uint256)' "$(jq -r .comdToken "$d")" --rpc-url "$RPC_URL" | head -1)"
+          [ "$comd_allowed" = "true" ] || { echo "::error::ProjectFactory: \$COMD pairing not allowlisted"; exit 1; }
+          echo "LaunchGuardHook flags ok; Flywheel bound to COMD $(jq -r .comdToken "$d"); ownership with ADMIN; COMD pairing on"
 
       - name: Environment for Railway (api + web)
         if: ${{ !inputs.dry_run }}
@@ -252,9 +287,10 @@ jobs:
               echo "the free mint; add repository variables COUNSEL_NFT, IDENTITY_REGISTRY, REPUTATION_REGISTRY with the"
               echo "addresses above so the later full stage reuses them (DEPLOY.md)."
             else
-              echo "Next: ADMIN calls acceptOwnership() on Flywheel; commit contracts/deployments/$CHAIN.json and run"
-              echo "\`npm run contracts:abi\`; set the variables above on Railway; after the Pons graduation call"
-              echo "setPoolKey(fee, tickSpacing, hooks) on the swapper (DEPLOY.md)."
+              echo "Next: commit contracts/deployments/$CHAIN.json and run \`npm run contracts:abi\`; set the variables"
+              echo "above on Railway; after the Pons graduation call setPoolKey(fee, tickSpacing, hooks) on the swapper"
+              echo "(DEPLOY.md). Everything is already owned by ADMIN; the Counsel NFT proxy is upgradeable by ADMIN"
+              echo "(DEPLOY.md section 9)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 

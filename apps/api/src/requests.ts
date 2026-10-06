@@ -71,6 +71,8 @@ export class Requests {
           name: CHAINS[chainId]?.name ?? `chain ${chainId}`,
           testnet: CHAINS[chainId]?.testnet ?? true,
           kinds: this.app.launches.kindsFor(chainId),
+          // pairWith when the body omits it: comd (swarm launches pair with $COMD) unless the policy only allows ETH
+          defaultPairWith: this.app.launches.defaultPairing(chainId),
           pairings: this.app.launches.pairingsFor(chainId).map((pairWith) => ({
             pairWith,
             currency: pairWith === "eth" ? "ETH" : "COMD",
@@ -156,7 +158,7 @@ export class Requests {
       const parent = action === "job.continue" ? this.app.store.c<JobX>("jobs").get(input.parentJobId) : null;
       const plan = planJob(input, { skills: this.app.skills, launch: action === "launch.open", parentSkill: parent?.nodes.length === 1 ? parent.nodes[0].skill : null });
       out.plan = describePlan(plan);
-      out.facts = { template: plan.template, shape: plan.shape, nodes: plan.nodes.length, premium: plan.nodes.some((n) => n.premium), reviews: plan.nodes.filter((n) => n.kind !== "work").length, github: input.github ?? null, hosting: input.ipfs ?? false, launch: action === "launch.open" ? { kind: input.onchain === true ? "evm_project" : input.onchain, chainId: input.chainId ?? this.app.cfg.launchChains[0] } : null, notes: plan.notes };
+      out.facts = { template: plan.template, shape: plan.shape, nodes: plan.nodes.length, premium: plan.nodes.some((n) => n.premium), reviews: plan.nodes.filter((n) => n.kind !== "work").length, github: input.github ?? null, hosting: input.ipfs ?? false, launch: action === "launch.open" ? { kind: input.onchain === true ? "evm_project" : input.onchain, chainId: input.chainId ?? this.app.cfg.launchChains[0], pairWith: input.pairWith ?? this.app.launches.defaultPairing(input.chainId ?? this.app.cfg.launchChains[0]) } : null, notes: plan.notes };
       if (!input.references?.length && plan.nodes.some((n) => this.app.skills.get(n.skill)?.tier === 1)) suggestions.push("contract work goes better with references such as solidity-security-review or defi-native");
       if (!plan.nodes.some((n) => n.kind === "review") && action !== "launch.open" && plan.nodes.some((n) => this.app.skills.get(n.skill)?.tier === 1)) suggestions.push("add an adversarial-review step for an independent cross-examination");
       if (parent) {

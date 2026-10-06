@@ -7,6 +7,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IMarketplaceAdapter} from "./interfaces/IMarketplaceAdapter.sol";
@@ -20,17 +21,21 @@ import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 ///         - **buyback**: keeper `buyback(minOut)` swaps the whole bucket ETH→COMD through the pluggable
 ///           `IBuybackSwapper` (owner `setSwapper`; reverts `SwapperNotSet()` until configured, ETH just accumulates)
 ///           and sends every COMD received to the dead address 0x…dEaD (the Pons token may have no `burn()`).
-///         - **floor sweep**: keeper `sweep(adapter, data, tokenId, maxPrice)` buys one Company.md Counsel NFT
+///         - **floor sweep**: keeper `sweep(adapter, data, tokenId, maxPrice)` buys one Counsel NFT
 ///           through an owner-allowlisted IMarketplaceAdapter, paying at most min(maxPrice, maxSweepPrice, bucket).
 ///           Swept NFTs are held here ("the firm's vault"); the owner re-issues them with `awardSwept`.
-///         Conservation (tested as an invariant): totalTaxIn == buyback + sweep buckets + totalBoughtBack + sweepSpent.
+///         Conservation (tested as an invariant):
+///         totalTaxIn == buyback + sweep buckets + totalBoughtBack + sweepSpent + totalRescued.
 /// @notice Owner powers (Ownable2Step, renounceable): bps split (sum 10000; applies to future tax), maxSweepPrice,
 ///         adapter allowlist, keeper, swapper (re-pointable), `awardSwept` (give a swept NFT to anyone), `setComd`
 ///         (once, only if the Flywheel was deployed before the Pons launch with comd = 0).
+///         **Safety nets (V7):** `pause()` stops `buyback` and `sweep` (ETH keeps arriving — Pons payouts must never
+///         revert — and `awardSwept`/rescues keep working); `rescueETH(to, fromBuyback, fromSweep)` (while paused)
+///         moves bucket ETH out, `rescueERC20` any token (the Flywheel holds no COMD at rest), `rescueERC721` any
+///         NFT (a swept Counsel is removed from the swept list). Every rescue is an event.
 ///         Keeper powers: choose the buyback `minOut` (a careless/compromised keeper can be sandwiched) and choose
-///         which listing to sweep, bounded by `maxSweepPrice`. Nobody can withdraw bucket ETH any other way.
-///         The NFT collection is immutable.
-contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
+///         which listing to sweep, bounded by `maxSweepPrice`. The NFT collection is immutable.
+contract Flywheel is Ownable2Step, Pausable, ReentrancyGuard, IERC721Receiver {
     using SafeERC20 for IERC20;
 
     uint256 public constant BPS = 10_000;
@@ -53,6 +58,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     uint256 public totalBurned; // COMD sent to the dead address by buybacks
     uint256 public totalSwept; // NFTs swept (cumulative)
     uint256 public sweepSpent; // ETH spent on sweeps
+    uint256 public totalRescued; // ETH moved out by the owner with rescueETH
 
     uint256 public maxSweepPrice;
     mapping(address => bool) public adapterAllowed;
@@ -73,6 +79,9 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     event KeeperSet(address keeper);
     event SwapperSet(address swapper);
     event ComdSet(address comd);
+    event EthRescued(address indexed to, uint256 fromBuyback, uint256 fromSweep);
+    event TokenRescued(address indexed token, address indexed to, uint256 amount);
+    event NftRescued(address indexed nft, uint256 indexed tokenId, address indexed to);
 
     error NotKeeper();
     error BadBps();
@@ -89,6 +98,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     error SwapperNotSet();
     error ComdNotSet();
     error NothingReceived();
+    error InsufficientBucket();
 
     modifier onlyKeeper() {
         if (msg.sender != keeper && msg.sender != owner()) revert NotKeeper();
@@ -96,12 +106,32 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     }
 
     /// @param comd_ the Pons $COMD token; may be address(0) when deploying before the launch (then `setComd` once)
-    constructor(IERC20 comd_, IERC721 counsel_, address owner_, address keeper_) Ownable(owner_) {
+    /// @param owner_ Admin: owns the Flywheel from the first block (no deployer window, no pending accept)
+    /// @param swapper_ initial IBuybackSwapper (may be 0: buybacks revert `SwapperNotSet()` until `setSwapper`)
+    /// @param maxSweepPrice_ initial per-NFT sweep cap in wei
+    /// @param adapters_ initial allowlisted marketplace adapters
+    constructor(
+        IERC20 comd_,
+        IERC721 counsel_,
+        address owner_,
+        address keeper_,
+        IBuybackSwapper swapper_,
+        uint256 maxSweepPrice_,
+        address[] memory adapters_
+    ) Ownable(owner_) {
         if (address(counsel_) == address(0)) revert ZeroAddress();
         comd = comd_;
         counsel = counsel_;
         keeper = keeper_;
-        maxSweepPrice = 0.5 ether;
+        swapper = swapper_;
+        maxSweepPrice = maxSweepPrice_;
+        emit KeeperSet(keeper_);
+        emit SwapperSet(address(swapper_));
+        emit MaxSweepPriceSet(maxSweepPrice_);
+        for (uint256 i; i < adapters_.length; ++i) {
+            adapterAllowed[adapters_[i]] = true;
+            emit AdapterSet(adapters_[i], true);
+        }
     }
 
     // =====================================================================================
@@ -109,7 +139,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     // =====================================================================================
 
     /// @notice ETH from anyone (Pons creator payouts forwarded here, or the Flywheel set as the recipient).
-    ///         During our own buyback/sweep the incoming ETH is the venue's refund, not tax.
+    ///         During our own buyback/sweep the incoming ETH is the venue's refund, not tax. Never paused.
     receive() external payable {
         if (_inOp) {
             _opRefund += msg.value;
@@ -138,7 +168,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Swap the whole buyback bucket ETH→COMD through the swapper and send the COMD to the dead address.
     /// @return burned COMD actually received and sent to 0x…dEaD (measured by balance, not trusted from the venue)
-    function buyback(uint256 minOut) external onlyKeeper nonReentrant returns (uint256 burned) {
+    function buyback(uint256 minOut) external onlyKeeper nonReentrant whenNotPaused returns (uint256 burned) {
         if (address(swapper) == address(0)) revert SwapperNotSet();
         if (address(comd) == address(0)) revert ComdNotSet();
         uint256 amt = buybackBucket;
@@ -167,6 +197,7 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
         external
         onlyKeeper
         nonReentrant
+        whenNotPaused
         returns (uint256 spent)
     {
         if (!adapterAllowed[adapter]) revert AdapterNotAllowed();
@@ -188,21 +219,16 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
         emit Swept(tokenId, spent);
     }
 
-    /// @notice Owner re-issues a swept Counsel (e.g. to top counsel).
+    /// @notice Owner re-issues a swept Counsel (e.g. to top counsel). Works while paused.
     function awardSwept(uint256 tokenId, address to) external onlyOwner nonReentrant {
-        uint256 pos = _sweptPos[tokenId];
-        if (pos == 0) revert NotSwept();
+        if (_sweptPos[tokenId] == 0) revert NotSwept();
         if (to == address(0)) revert ZeroAddress();
-        uint256 last = _swept[_swept.length - 1];
-        _swept[pos - 1] = last;
-        _sweptPos[last] = pos;
-        _swept.pop();
-        delete _sweptPos[tokenId];
+        _removeSwept(tokenId);
         counsel.safeTransferFrom(address(this), to, tokenId);
         emit SweptAwarded(tokenId, to);
     }
 
-    /// @dev Accept Company.md Counsel only.
+    /// @dev Accept Counsel only.
     function onERC721Received(address, address, uint256, bytes calldata) external view returns (bytes4) {
         if (msg.sender != address(counsel)) revert NotCounsel();
         return IERC721Receiver.onERC721Received.selector;
@@ -248,6 +274,47 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
         emit ComdSet(c);
     }
 
+    // ------------------------------------------------------------ safety nets
+
+    /// @notice Stop buybacks and sweeps (ETH intake continues). Owner only.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /// @notice Emergency: move bucket ETH out (e.g. the swapper is broken and the owner wants to buy back by hand).
+    ///         Only while paused; amounts come out of the named buckets so conservation still holds.
+    function rescueETH(address to, uint256 fromBuyback, uint256 fromSweep) external onlyOwner whenPaused nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (fromBuyback > buybackBucket || fromSweep > sweepBucket) revert InsufficientBucket();
+        uint256 amount = fromBuyback + fromSweep;
+        if (amount == 0) revert Empty();
+        buybackBucket -= fromBuyback;
+        sweepBucket -= fromSweep;
+        totalRescued += amount;
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+        emit EthRescued(to, fromBuyback, fromSweep);
+    }
+
+    /// @notice Recover any ERC-20 (COMD never rests here: every buyback is sent to the dead address in the same tx).
+    function rescueERC20(IERC20 token, address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        token.safeTransfer(to, amount);
+        emit TokenRescued(address(token), to, amount);
+    }
+
+    /// @notice Recover any NFT held here, including a swept Counsel (then also dropped from `sweptTokenIds`).
+    function rescueERC721(IERC721 nft, uint256 tokenId, address to) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (nft == counsel && _sweptPos[tokenId] != 0) _removeSwept(tokenId);
+        nft.transferFrom(address(this), to, tokenId);
+        emit NftRescued(address(nft), tokenId, to);
+    }
+
     // =====================================================================================
     //                                         views
     // =====================================================================================
@@ -270,6 +337,15 @@ contract Flywheel is Ownable2Step, ReentrancyGuard, IERC721Receiver {
     // =====================================================================================
     //                                       internals
     // =====================================================================================
+
+    function _removeSwept(uint256 tokenId) private {
+        uint256 pos = _sweptPos[tokenId];
+        uint256 last = _swept[_swept.length - 1];
+        _swept[pos - 1] = last;
+        _sweptPos[last] = pos;
+        _swept.pop();
+        delete _sweptPos[tokenId];
+    }
 
     function _beginOp() private {
         _inOp = true;

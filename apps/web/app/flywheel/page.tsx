@@ -38,7 +38,7 @@ function evText(e: FlywheelEvent) {
     case "SweptAwarded": return `Counsel ${id(e.tokenId)} awarded to ${short(e.to as string)}`;
     case "BpsSet": return `Tax split set to ${Number(e.buybackBps) / 100}% burn / ${Number(e.sweepBps) / 100}% sweep`;
     case "Flushed": return `Hook flushed ${E(e.tax)} of held tax to the Flywheel`;
-    case "Distributed": return `${C(e.total)} $COMD of job revenue: ${C(e.toRewards)} to Counsel, ${C(e.toTreasury)} to the firm`;
+    case "Distributed": return `${C(e.total)} $COMD of job revenue: ${C(e.toRewards)} to Counsel, ${C(e.toTreasury)} to the firm treasury`;
     default: return e.type;
   }
 }
@@ -56,10 +56,10 @@ export default async function FlywheelPage() {
   return (
     <div className="wrap">
       <PageHead
-        crumbs={[{ label: "Company.md", href: "/" }, { label: "Vault", href: "/swap" }, { label: "Flywheel" }]}
+        crumbs={[{ label: "Company.md", href: "/" }, { label: "Treasury", href: "/swap" }, { label: "Flywheel" }]}
         kicker={<><span className="badge brass fill">5% tax · ETH</span><span className="badge crimson" style={{ ["--c" as string]: "var(--crimson)" }}>{pct(s.bps.buyback)}% burn</span><span className="badge violet">{pct(s.bps.sweep)}% sweeps</span><span className="badge ok">80% of job revenue to Counsel</span></>}
         title={<>The <span className="accent">flywheel</span></>}
-        lede={<>$COMD launched on <strong>Pons</strong> with a <strong>5% tax in ETH on every buy and sell</strong>. Pons pays that tax to the Flywheel, which spends it two ways, on-chain, in public: <strong>buyback-and-burn</strong> (sent to the dead address) and <strong>Counsel floor sweeps</strong>. Work closes the loop: jobs are paid in $COMD, 80% of it to the counsel who did them.</>}
+        lede={<>$COMD launched on <strong>Pons</strong> with a <strong>5% tax in ETH on every buy and sell</strong>. (Pons adds its own 1% protocol fee on top; the firm takes only the 5%.) Pons pays that tax to the Flywheel, which spends it two ways, on-chain, in public, when the firm decides to: <strong>buyback-and-burn</strong> (sent to the dead address) and <strong>Counsel floor sweeps</strong>. Work closes the loop: jobs are paid in $COMD, 80% of it to the Counsel who did them and 20% to the firm treasury.</>}
       />
       <VaultNav active="/flywheel" />
       <div className="fw" style={{ marginBottom: 12 }}>

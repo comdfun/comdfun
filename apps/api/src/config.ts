@@ -78,6 +78,12 @@ export interface Config {
   requestsPerMinute: number;
   quotesPerMinute: number;
   launchChains: number[];
+  /**
+   * Paired currencies offered to swarm launches (LAUNCH_PAIRINGS, default "comd"): $COMD is the default pairing; add
+   * "eth" only when ProjectFactory allowlists ETH (Deploy.s.sol ALLOW_ETH_PAIRING=true). The chain's pairedConfig is
+   * checked at startup and anything the factory refuses is dropped.
+   */
+  launchPairings: ("comd" | "eth")[];
   requireRegistration: boolean;
   leaseScale: number;
   skillsDir: string | null;
@@ -200,6 +206,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     requestsPerMinute: int(env.REQUESTS_PER_MINUTE, 300),
     quotesPerMinute: int(env.QUOTES_PER_MINUTE, 30),
     launchChains: (env.LAUNCH_CHAINS || String(chainId)).split(",").map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0),
+    launchPairings: (() => {
+      const want = (env.LAUNCH_PAIRINGS || "comd").split(",").map((s) => s.trim().toLowerCase()).filter((s): s is "comd" | "eth" => s === "comd" || s === "eth");
+      return want.length ? [...new Set(want)] : ["comd"];
+    })(),
     requireRegistration: env.REQUIRE_REGISTRATION ? env.REQUIRE_REGISTRATION !== "false" : true,
     leaseScale: Number(env.LEASE_SCALE || 1) || 1,
     skillsDir: env.SKILLS_DIR || null,

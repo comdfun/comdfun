@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GitHubLink } from "@/components/GitHubLink";
 
 export interface DocIndexEntry { slug: string; href: string; title: string; group: string; summary: string; text: string }
 
@@ -73,6 +74,10 @@ export function DocsNav({ index, groups }: { index: DocIndexEntry[]; groups: rea
             ))}
           </div>
         ))}
+        <div className="docs-group">
+          <div className="docs-group-h">Source</div>
+          <GitHubLink className="docs-gh" label text="All code on GitHub ›" />
+        </div>
       </nav>
     </aside>
   );

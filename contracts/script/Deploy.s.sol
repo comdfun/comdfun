@@ -41,15 +41,19 @@ import {SeaportAdapter} from "../src/marketplace/SeaportAdapter.sol";
 ///   COMD_TOKEN            (required on mainnet 4663 and any non-test chain, STAGE=full) the Pons $COMD address.
 ///                         Test chains (46630, 31337): a MockComd (1B, 18 dec, to the deployer) is deployed if unset.
 ///   COUNSEL_NFT, IDENTITY_REGISTRY, REPUTATION_REGISTRY   reuse existing deployments (all three or none)
-///   ADMIN                 owner/admin of everything (default: deployer). Use a multisig on mainnet. Flywheel is
-///                         Ownable2Step: ADMIN must call acceptOwnership() on it after the run.
+///   ADMIN                 owner/admin of everything (default: deployer). Use a multisig on mainnet. Every contract
+///                         is owned by ADMIN from its first block: nothing is pending, the deployer keeps no power.
 ///   TREASURY              firm treasury: 20% of COMD job revenue, Counsel royalties (default: ADMIN)
 ///   SETTLER, KEEPER, REGISTRAR   (default: ADMIN)
 ///   POOL_MANAGER          mainnet default 0x8366…40951; testnet/local: deploys a v4 PoolManager if unset
 ///   SEAPORT               optional: deploys a SeaportAdapter for it and allowlists it in the Flywheel
 ///   MAX_SWEEP_PRICE       wei, default 0.5 ether
 ///   COUNSEL_BASE_URI      default "https://api.comd.fun/agents/by-token/"
+///   ALLOW_ETH_PAIRING     default false: launches may only pair with $COMD. true also allowlists ETH (1–1000 ETH
+///                         opening market cap). ADMIN can change the allowlist later with setPairedConfig.
 ///   WRITE_DEPLOYMENTS     default true: writes deployments/<chainId>.json
+///   CounselNFT is UUPS upgradeable: `counselNFT` is the ERC1967 proxy (the address holders and apps use),
+///   `counselNFTImpl` the implementation; ADMIN upgrades with upgradeToAndCall.
 ///   After the Pons graduation: ADMIN calls UniswapV4PoolSwapper.setPoolKey(fee, tickSpacing, ponsHook).
 contract Deploy is Script {
     uint256 constant MAINNET = 4663;
@@ -77,13 +81,15 @@ contract Deploy is Script {
         address seaport; // 0 = no SeaportAdapter
         uint256 maxSweepPrice;
         string counselBaseURI;
+        bool allowEthPairing; // default false: $COMD is the only allowlisted launch pairing
     }
 
     struct Deployment {
         address poolManager;
         address create2Deployer;
         address comd;
-        address counsel;
+        address counsel; // ERC1967 proxy
+        address counselImpl;
         address identityRegistry;
         address reputationRegistry;
         address identityImpl;
@@ -134,6 +140,7 @@ contract Deploy is Script {
         c.seaport = vm.envOr("SEAPORT", address(0));
         c.maxSweepPrice = vm.envOr("MAX_SWEEP_PRICE", uint256(0.5 ether));
         c.counselBaseURI = vm.envOr("COUNSEL_BASE_URI", string("https://api.comd.fun/agents/by-token/"));
+        c.allowEthPairing = vm.envOr("ALLOW_ETH_PAIRING", false);
     }
 
     function _isTestChain() internal view returns (bool) {
@@ -146,8 +153,16 @@ contract Deploy is Script {
         if (c.counsel != address(0)) {
             require(c.counsel.code.length > 0, "COUNSEL_NFT has no code");
             d.counsel = c.counsel;
+            d.counselImpl = CounselNFT(c.counsel).implementation();
+            require(d.counselImpl != address(0), "COUNSEL_NFT is not an ERC1967 proxy");
         } else {
-            d.counsel = address(new CounselNFT(c.admin, c.treasury, c.counselBaseURI));
+            // UUPS: implementation + proxy, initialized atomically in the proxy constructor; owner = ADMIN
+            d.counselImpl = address(new CounselNFT());
+            d.counsel = address(
+                new ERC1967Proxy(
+                    d.counselImpl, abi.encodeCall(CounselNFT.initialize, (c.admin, c.counselBaseURI, c.treasury))
+                )
+            );
         }
         if (c.identityRegistry != address(0) || c.reputationRegistry != address(0)) {
             require(c.identityRegistry.code.length > 0 && c.reputationRegistry.code.length > 0, "registries: set both");
@@ -188,23 +203,26 @@ contract Deploy is Script {
 
         // ---- swapper (unconfigured until the Pons graduation: ADMIN calls setPoolKey) + flywheel
         d.swapper = address(new UniswapV4PoolSwapper(IPoolManager(c.poolManager), IERC20(d.comd), c.admin));
-        Flywheel fw = new Flywheel(IERC20(d.comd), IERC721(d.counsel), c.deployer, c.keeper);
-        d.flywheel = address(fw);
-        fw.setSwapper(d.swapper);
-        fw.setMaxSweepPrice(c.maxSweepPrice);
+        address[] memory adapters = new address[](
+            (_isTestChain() ? 1 : 0) + (c.seaport != address(0) ? 1 : 0)
+        );
+        uint256 n;
         if (_isTestChain()) {
             d.mockMarketplace = address(new MockMarketplace());
-            fw.setAdapter(d.mockMarketplace, true);
+            adapters[n++] = d.mockMarketplace;
         }
         if (c.seaport != address(0)) {
-            d.seaportAdapter = address(new SeaportAdapter(c.seaport));
-            fw.setAdapter(d.seaportAdapter, true);
+            d.seaportAdapter = address(new SeaportAdapter(c.seaport, c.admin));
+            adapters[n++] = d.seaportAdapter;
         }
-        if (c.admin != c.deployer) {
-            fw.transferOwnership(c.admin); // Ownable2Step: ADMIN accepts
-        }
+        // owned by ADMIN from the start (no deployer window, nothing to accept)
+        d.flywheel = address(
+            new Flywheel(
+                IERC20(d.comd), IERC721(d.counsel), c.admin, c.keeper, IBuybackSwapper(d.swapper), c.maxSweepPrice, adapters
+            )
+        );
 
-        // ---- launches (pairing allowlist: ETH, COMD)
+        // ---- launches (pairing allowlist: $COMD; ETH only when ALLOW_ETH_PAIRING=true)
         ProjectFactory f = new ProjectFactory(IPoolManager(c.poolManager), c.deployer, c.admin);
         d.projectFactory = address(f);
         d.contributorDistributor = address(f.contributorDistributor());
@@ -214,8 +232,8 @@ contract Deploy is Script {
             d.launchGuardHook = c2.deploy(mineSalt(address(c2), keccak256(init), GUARD_FLAGS), init);
         }
         f.setGuardHook(IHooks(d.launchGuardHook));
-        f.setPairedConfig(address(0), true, 1 ether, 1_000 ether);
         f.setPairedConfig(d.comd, true, 100_000e18, 100_000_000e18);
+        if (c.allowEthPairing) f.setPairedConfig(address(0), true, 1 ether, 1_000 ether);
         f.grantRole(f.REGISTRAR_ROLE(), c.registrar);
         _handOver(address(f), c.admin, c.deployer);
 
@@ -290,7 +308,8 @@ contract Deploy is Script {
         vm.serializeUint(k, "deployedAtBlock", block.number);
         vm.serializeString(k, "stage", c.mintOnly ? "mint" : "full");
         vm.serializeAddress(k, "comdToken", d.comd); // external (Pons); MockComd on test chains
-        vm.serializeAddress(k, "counselNFT", d.counsel);
+        vm.serializeAddress(k, "counselNFT", d.counsel); // ERC1967 proxy (the address apps and holders use)
+        vm.serializeAddress(k, "counselNFTImpl", d.counselImpl);
         vm.serializeAddress(k, "identityRegistry", d.identityRegistry);
         vm.serializeAddress(k, "reputationRegistry", d.reputationRegistry);
         vm.serializeAddress(k, "rewardDistributor", d.rewardDistributor);
@@ -317,7 +336,8 @@ contract Deploy is Script {
     function _log(Deployment memory d) internal pure {
         console2.log("COMD (external)       ", d.comd);
         console2.log("PoolManager           ", d.poolManager);
-        console2.log("CounselNFT            ", d.counsel);
+        console2.log("CounselNFT (proxy)    ", d.counsel);
+        console2.log("CounselNFT impl       ", d.counselImpl);
         console2.log("IdentityRegistry      ", d.identityRegistry);
         console2.log("ReputationRegistry    ", d.reputationRegistry);
         console2.log("RewardDistributor     ", d.rewardDistributor);

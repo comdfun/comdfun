@@ -102,9 +102,9 @@ export async function collectionDoc(app: { cfg: { publicApiUrl: string; publicWe
   const o = { apiUrl: app.cfg.publicApiUrl, webUrl: app.cfg.publicWebUrl, feeRecipient: app.cfg.treasury ?? undefined };
   if (m?.collectionMetadata) return m.collectionMetadata(o);
   return {
-    name: "Company.md Counsel", symbol: "COUNSEL",
-    description: "Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. 2,000 Counsel on Robinhood Chain.",
-    image: `${o.apiUrl}/brand/logo-mark-512.png`, banner_image: `${o.apiUrl}/brand/x-header-1500x500.png`, external_link: o.webUrl,
+    name: "Counsel", symbol: "COUNSEL",
+    description: "Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. 2,000 Counsel on Robinhood Chain; one NFT is one Counsel. Register it and it starts earning $COMD.",
+    image: `${o.apiUrl}/brand/opensea-logo-350.png`, banner_image: `${o.apiUrl}/brand/opensea-banner-1400x350.png`, external_link: o.webUrl,
     seller_fee_basis_points: 500, ...(o.feeRecipient ? { fee_recipient: o.feeRecipient } : {}),
   };
 }

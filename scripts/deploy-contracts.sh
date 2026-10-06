@@ -7,7 +7,8 @@
 #
 # Env: RPC_URL (default per network), DEPLOYER_PRIVATE_KEY (required), COMD_TOKEN (the $COMD address from Pons;
 # required on mainnet, MockComd on testnet when unset), what Deploy.s.sol reads (ADMIN, TREASURY, SETTLER, KEEPER, REGISTRAR, POOL_MANAGER,
-# SEAPORT, MAX_SWEEP_PRICE, COUNSEL_BASE_URI [https://api.comd.fun/agents/by-token/]),
+# SEAPORT, MAX_SWEEP_PRICE, COUNSEL_BASE_URI [https://api.comd.fun/agents/by-token/], ALLOW_ETH_PAIRING [false: launches
+# pair with $COMD only], STAGE [full|mint], COUNSEL_NFT / IDENTITY_REGISTRY / REPUTATION_REGISTRY [reuse a mint-stage deploy]),
 # FORGE/CAST (binaries),
 # FORGE_ARGS (extra flags, e.g. "--verify --verifier blockscout --verifier-url https://…/api/"),
 # DRY_RUN=1 (simulate without --broadcast), CONFIRM_MAINNET=yes (skip the interactive prompt).
@@ -64,5 +65,18 @@ node "$ROOT/packages/abi/scripts/gen-abi.mjs"
 echo; echo "== Railway variables (paste into the api / web services)"
 node "$ROOT/scripts/deployment-env.mjs" "$CHAIN"
 echo
-echo "Next (DEPLOY.md): commit contracts/deployments/$CHAIN.json + packages/abi; ADMIN accepts ownership of Flywheel;"
-echo "set the printed variables on Railway; after the Pons graduation call setPoolKey on the swapper."
+echo "Next (DEPLOY.md): commit contracts/deployments/$CHAIN.json + packages/abi; set the printed variables on Railway;"
+echo "after the Pons graduation call setPoolKey on the swapper. Every contract is owned by ADMIN already (nothing to"
+echo "accept); the Counsel NFT is a UUPS proxy (counselNFT; implementation counselNFTImpl) upgradeable by ADMIN."
+
+# sanity: the Counsel NFT proxy answers through its implementation and belongs to ADMIN
+json="$ROOT/contracts/deployments/$CHAIN.json"
+if [ -f "$json" ] && command -v jq >/dev/null; then
+  nft="$(jq -r .counselNFT "$json")"; impl="$(jq -r .counselNFTImpl "$json")"
+  slot="$("$CAST" storage "$nft" 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc --rpc-url "$RPC_URL")"
+  [ "$(echo "0x${slot: -40}" | tr 'A-F' 'a-f')" = "$(echo "$impl" | tr 'A-F' 'a-f')" ] || { echo "WARNING: CounselNFT implementation slot does not match counselNFTImpl"; }
+  [ "$("$CAST" call "$nft" 'name()(string)' --rpc-url "$RPC_URL" | tr -d '"')" = "Counsel" ] || echo "WARNING: CounselNFT name() != Counsel"
+  if [ -n "${ADMIN:-}" ]; then
+    [ "$("$CAST" call "$nft" 'owner()(address)' --rpc-url "$RPC_URL" | tr 'A-F' 'a-f')" = "$(echo "$ADMIN" | tr 'A-F' 'a-f')" ] || echo "WARNING: CounselNFT owner is not ADMIN"
+  fi
+fi

@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -19,11 +20,15 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @dev Leaf = keccak256(bytes.concat(keccak256(abi.encode(epoch, tokenId, amount)))) for every asset;
 ///      the asset is bound by the root (one root per (epoch, asset)), not by the leaf.
 ///      `claim` = COMD; `claimToken(asset, ...)` = any asset (incl. COMD; address(0) = ETH).
-/// @notice Admin powers (DEFAULT_ADMIN_ROLE, renounceable): grant/revoke SETTLER_ROLE; expire an epoch root
-///         after EXPIRY (365 days) so its unclaimed remainder becomes unallocated again.
+/// @notice Admin powers (DEFAULT_ADMIN_ROLE, renounceable): grant/revoke SETTLER_ROLE (hot-key rotation); expire an
+///         epoch root after EXPIRY (365 days) so its unclaimed remainder becomes unallocated again.
 ///         Settler powers: post a root once per (epoch, asset); it cannot be changed afterwards. Claims against a
 ///         root are capped at its `total`, so a root can only ever spend the unallocated balance it reserved.
-contract RewardDistributor is AccessControl, ReentrancyGuard {
+///         **Safety nets (V7):** admin `pause()` stops all claims (posting too); admin `revokeRoot(epoch, asset)`
+///         cancels a wrong root at any time (its unclaimed remainder is released; the settler re-posts under a new
+///         epoch id); admin `rescueERC20` / `rescueETH` move out **unallocated** balance only — funds committed to a
+///         live root can only be reached by revoking that root first, which is a separate, evented action.
+contract RewardDistributor is AccessControl, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     bytes32 public constant SETTLER_ROLE = keccak256("SETTLER_ROLE");
@@ -48,6 +53,8 @@ contract RewardDistributor is AccessControl, ReentrancyGuard {
     event RootPosted(uint256 indexed epoch, address indexed asset, bytes32 root, uint256 total);
     event Claimed(uint256 indexed epoch, address indexed asset, uint256 indexed tokenId, address owner, uint256 amount);
     event EpochExpired(uint256 indexed epoch, address indexed asset, uint256 released);
+    event RootRevoked(uint256 indexed epoch, address indexed asset, uint256 released);
+    event Rescued(address indexed asset, address indexed to, uint256 amount);
 
     error RootExists();
     error NoRoot();
@@ -74,7 +81,11 @@ contract RewardDistributor is AccessControl, ReentrancyGuard {
     /// @notice ETH for Counsel rewards (anyone).
     receive() external payable {}
 
-    function postRoot(uint256 epoch, address asset, bytes32 root, uint256 total) external onlyRole(SETTLER_ROLE) {
+    function postRoot(uint256 epoch, address asset, bytes32 root, uint256 total)
+        external
+        onlyRole(SETTLER_ROLE)
+        whenNotPaused
+    {
         Root storage r = _roots[epoch][asset];
         if (r.root != bytes32(0)) revert RootExists();
         if (root == bytes32(0)) revert NoRoot();
@@ -105,6 +116,7 @@ contract RewardDistributor is AccessControl, ReentrancyGuard {
     function _claim(address asset, uint256 epoch, uint256 tokenId, uint256 amount, bytes32[] calldata proof)
         internal
         nonReentrant
+        whenNotPaused
     {
         Root storage r = _roots[epoch][asset];
         if (r.root == bytes32(0) || r.expired) revert NoRoot();
@@ -138,6 +150,45 @@ contract RewardDistributor is AccessControl, ReentrancyGuard {
         uint256 rest = uint256(r.total) - r.claimed;
         outstanding[asset] -= rest;
         emit EpochExpired(epoch, asset, rest);
+    }
+
+    /// @notice Emergency: cancel a wrong root right away (no expiry wait). Already-paid claims stay paid; the
+    ///         unclaimed remainder becomes unallocated; the settler posts the corrected tree under a NEW epoch id.
+    function revokeRoot(uint256 epoch, address asset) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Root storage r = _roots[epoch][asset];
+        if (r.root == bytes32(0) || r.expired) revert NoRoot();
+        r.expired = true;
+        uint256 rest = uint256(r.total) - r.claimed;
+        outstanding[asset] -= rest;
+        emit RootRevoked(epoch, asset, rest);
+    }
+
+    /// @notice Stop claims and root posting. Admin only.
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    /// @notice Move **unallocated** `asset` out (what no live root has reserved). Revoke roots first to free more.
+    function rescueERC20(IERC20 asset, address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 avail = unallocated(address(asset));
+        if (amount > avail) revert InsufficientUnallocated(avail, amount);
+        asset.safeTransfer(to, amount);
+        emit Rescued(address(asset), to, amount);
+    }
+
+    /// @notice Move **unallocated** ETH out. Revoke ETH roots first to free more.
+    function rescueETH(address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 avail = unallocated(address(0));
+        if (amount > avail) revert InsufficientUnallocated(avail, amount);
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+        emit Rescued(address(0), to, amount);
     }
 
     // ------------------------------------------------------------------ views

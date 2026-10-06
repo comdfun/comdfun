@@ -11,7 +11,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
-import { getAddress, keccak256, toHex, zeroAddress, type Address } from "viem";
+import { getAddress, keccak256, toHex, zeroAddress, type Abi, type Address } from "viem";
+import { projectFactoryAbi } from "@company/abi";
 import { buildContributorTree, type LaunchKind, type LaunchPolicy, type LaunchPolicyParams } from "@company/protocol";
 import type { App } from "./app.ts";
 import type { JobX } from "./engine.ts";
@@ -30,11 +31,16 @@ export function seedPolicies(app: App) {
   const owner = cfg.treasury;
   let version = 0;
   const createdAt = iso(Date.UTC(2026, 9, 5));
-  for (const chainId of [46630, 4663]) {
-    const testnet = chainId === 46630;
-    // V2 launch pairing allowlist: ETH and COMD
-    const comd = chainId === cfg.chainId ? cfg.comd : zeroAddress;
-    const allow = [zeroAddress, comd].filter((a, i, xs) => xs.indexOf(a) === i).map((a) => a.toLowerCase() as Address);
+  // Robinhood Chain testnet + mainnet always; plus every chain offered to launch.open (LAUNCH_CHAINS, e.g. a local anvil)
+  const chains = [...new Set([46630, 4663, ...cfg.launchChains])];
+  for (const chainId of chains) {
+    const testnet = chainId !== 4663;
+    // launch pairing allowlist (LAUNCH_PAIRINGS): $COMD (the default pairing) on the chain where COMD is configured;
+    // ETH only when asked for (ProjectFactory allowlists it only with ALLOW_ETH_PAIRING); never empty
+    const comd = chainId === cfg.chainId && !/^0x0{40}$/i.test(cfg.comd) ? cfg.comd : null;
+    const allow: Address[] = [];
+    if (comd && cfg.launchPairings.includes("comd")) allow.push(comd.toLowerCase() as Address);
+    if (cfg.launchPairings.includes("eth") || allow.length === 0) allow.push(zeroAddress);
     for (const kind of KINDS) {
       const params: LaunchPolicyParams = {
         kind,
@@ -52,16 +58,57 @@ export function seedPolicies(app: App) {
         gasCeilingWei: testnet ? "10000000000000000" : "50000000000000000",
         pairedCurrencyAllowlist: allow,
         ...(kind === "evm_contracts" ? {} : {
+          // = ProjectFactory.setPairedConfig: COMD 100k–100M COMD (default 1M), ETH 1–1000 ETH (default 10)
           initialMarketCaps: Object.fromEntries(allow.map((a) => [a, a === zeroAddress ? "10000000000000000000" : "1000000000000000000000000"])),
-          initialMarketCapRanges: Object.fromEntries(allow.map((a) => [a, a === zeroAddress ? { min: "1000000000000000000", max: "1000000000000000000000" } : { min: "100000000000000000000000", max: "100000000000000000000000000" }])), // = ProjectFactory.setPairedConfig(COMD, 100k–100M COMD)
-          minInitialMarketCapWei: "1000000000000000000",
-          maxInitialMarketCapWei: "1000000000000000000000",
+          initialMarketCapRanges: Object.fromEntries(allow.map((a) => [a, a === zeroAddress ? { min: "1000000000000000000", max: "1000000000000000000000" } : { min: "100000000000000000000000", max: "100000000000000000000000000" }])),
+          // flat min/max = the range of the default (first allowlisted) pairing, kept for older readers
+          minInitialMarketCapWei: allow[0] === zeroAddress ? "1000000000000000000" : "100000000000000000000000",
+          maxInitialMarketCapWei: allow[0] === zeroAddress ? "1000000000000000000000" : "100000000000000000000000000",
         }),
       };
       version++;
-      col.save({ id: String(version), version, kind, note: `${testnet ? "Robinhood Chain Testnet" : "Robinhood Chain"} ${kind} terms, paired with ETH or $COMD; swarm 10% equal_connected (2% workers, 8% connected seats), cap 30% per wallet`, params, createdAt });
+      const paired = allow.map((a) => (a === zeroAddress ? "ETH" : "$COMD")).join(" or ");
+      col.save({ id: String(version), version, kind, note: `${chainId === 4663 ? "Robinhood Chain" : chainId === 46630 ? "Robinhood Chain Testnet" : `chain ${chainId}`} ${kind} terms, paired with ${paired}; swarm 10% equal_connected (2% workers, 8% connected seats), cap 30% per wallet`, params, createdAt });
     }
   }
+}
+
+/**
+ * The factory has the last word on pairings: read ProjectFactory.pairedConfig(currency) for every currency the
+ * policies of CHAIN_ID allowlist and drop the ones it refuses (e.g. ETH when it was deployed without
+ * ALLOW_ETH_PAIRING), so admission never passes a launch the deployment would revert with PairedNotAllowed().
+ * Returns the currencies dropped; a chain that cannot be read leaves the policies as configured.
+ */
+export async function syncPairingsWithFactory(app: App): Promise<Address[]> {
+  const cfg = app.cfg;
+  if (!app.chain.configured || !cfg.projectFactory) return [];
+  const col = app.store.c<PolicyRecord>("policies");
+  const rows = col.filter((p) => p.params.chainId === cfg.chainId && (p.params.pairedCurrencyAllowlist?.length ?? 0) > 0);
+  const currencies = [...new Set(rows.flatMap((p) => p.params.pairedCurrencyAllowlist.map((a) => a.toLowerCase() as Address)))];
+  const refused: Address[] = [];
+  for (const a of currencies) {
+    try {
+      const c = await app.chain.readContract<readonly unknown[] | { allowed: boolean }>(cfg.projectFactory, projectFactoryAbi as Abi, "pairedConfig", [a]);
+      const allowed = Array.isArray(c) ? c[0] === true : (c as { allowed: boolean }).allowed === true;
+      if (!allowed) refused.push(a);
+    } catch (e) {
+      console.warn(`[launches] ProjectFactory.pairedConfig(${a}) unreadable (${(e as Error).message.split("\n")[0].slice(0, 120)}); keeping the configured pairing`);
+    }
+  }
+  if (!refused.length) return [];
+  for (const p of rows) {
+    const keep = p.params.pairedCurrencyAllowlist.filter((a) => !refused.includes(a.toLowerCase() as Address));
+    if (keep.length === p.params.pairedCurrencyAllowlist.length) continue;
+    p.params.pairedCurrencyAllowlist = keep.length ? keep : p.params.pairedCurrencyAllowlist; // never leave a kind unlaunchable by accident
+    if (keep.length) {
+      if (p.params.initialMarketCaps) p.params.initialMarketCaps = Object.fromEntries(Object.entries(p.params.initialMarketCaps).filter(([k]) => keep.includes(k as Address)));
+      if (p.params.initialMarketCapRanges) p.params.initialMarketCapRanges = Object.fromEntries(Object.entries(p.params.initialMarketCapRanges).filter(([k]) => keep.includes(k as Address)));
+      p.note = p.note.replace(/paired with [^;]+;/, `paired with ${keep.map((a) => (a === zeroAddress ? "ETH" : "$COMD")).join(" or ")};`);
+    }
+    col.save(p);
+  }
+  console.log(`[launches] ProjectFactory ${cfg.projectFactory} refuses ${refused.map((a) => (a === zeroAddress ? "ETH" : a)).join(", ")} as a launch pairing; removed from the chain ${cfg.chainId} policies`);
+  return refused;
 }
 
 export class Launches {
@@ -79,13 +126,24 @@ export class Launches {
     return KINDS.filter((k) => this.policy(k, chainId));
   }
 
+  /**
+   * Paired currencies a launch on `chainId` may choose, default first: $COMD whenever the policy allowlists the
+   * configured COMD token (swarm launches pair with $COMD by default), then ETH (selectable while the factory /
+   * policy allowlist it).
+   */
   pairingsFor(chainId: number): string[] {
     const p = this.policy("evm_project", chainId) ?? this.policy("custom_token", chainId);
     if (!p) return ["eth"];
-    const out = ["eth"];
     const allow = p.params.pairedCurrencyAllowlist.map((a) => a.toLowerCase());
+    const out: string[] = [];
     if (!/^0x0{40}$/i.test(this.app.cfg.comd) && allow.includes(this.app.cfg.comd.toLowerCase())) out.push("comd");
+    if (allow.includes(zeroAddress) || out.length === 0) out.push("eth");
     return out;
+  }
+
+  /** The pairing used when a launch body omits `pairWith`: COMD when available on that chain, else ETH. */
+  defaultPairing(chainId: number): "comd" | "eth" {
+    return this.pairingsFor(chainId)[0] === "comd" ? "comd" : "eth";
   }
 
   /**
@@ -121,7 +179,7 @@ export class Launches {
       sourceRepoUrl: job.delivery?.repoUrl ?? null,
       sourceCommit: job.delivery?.commit ?? null,
       parkedReason: null,
-      economics: { poolBps, payerBps: 9000 - poolBps, pairWith: job.input.pairWith ?? "eth", initialMarketCapWei: econ.initialMarketCapWei ?? null, remainderTo: (econ.remainderTo as Address) ?? null },
+      economics: { poolBps, payerBps: 9000 - poolBps, pairWith: job.input.pairWith ?? this.defaultPairing(chainId), initialMarketCapWei: econ.initialMarketCapWei ?? null, remainderTo: (econ.remainderTo as Address) ?? null },
       admission: null,
       attestation: null,
       artifacts: [],

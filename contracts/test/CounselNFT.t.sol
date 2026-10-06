@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {CounselNFT} from "../src/CounselNFT.sol";
+import {CounselFixture} from "./utils/CounselFixture.sol";
 import {MerkleHelper} from "./utils/MerkleHelper.sol";
 
 contract CounselNFTTest is Test, MerkleHelper {
@@ -15,7 +16,7 @@ contract CounselNFTTest is Test, MerkleHelper {
     bytes32[] leaves;
 
     function setUp() public {
-        n = new CounselNFT(admin, treasury, "https://api.example/agents/by-token/");
+        n = CounselFixture.deploy(admin, treasury, "https://api.example/agents/by-token/");
         leaves.push(_allowLeaf(alice));
         leaves.push(_allowLeaf(bob));
         leaves.push(_allowLeaf(makeAddr("x")));
@@ -24,7 +25,7 @@ contract CounselNFTTest is Test, MerkleHelper {
     }
 
     function test_defaults() public view {
-        assertEq(n.name(), "Company.md Counsel");
+        assertEq(n.name(), "Counsel");
         assertEq(n.symbol(), "COUNSEL");
         assertEq(n.MAX_SUPPLY(), 2000);
         assertEq(n.phase(), 0);

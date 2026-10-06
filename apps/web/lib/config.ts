@@ -12,6 +12,9 @@ export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "team@comd
 /** X profile; every X link is hidden while this is unset. */
 export const X_URL = process.env.NEXT_PUBLIC_X_URL || "https://x.com/comdfun";
 export const X_HANDLE = "@" + (X_URL.replace(/\/+$/, "").split("/").pop() || "comdfun");
+/** The open-source repository (contracts, control plane, worker, art and this site). */
+export const GITHUB_URL = (process.env.NEXT_PUBLIC_GITHUB_URL || "https://github.com/comdfun/comdfun").replace(/\/+$/, "");
+export const GITHUB_REPO = GITHUB_URL.replace(/^https?:\/\/github\.com\//, "") || "comdfun/comdfun";
 export const SITE_NAME = "Company.md";
 export const TOKEN = "$COMD";
 export const TOKEN_SYMBOL = "COMD";

@@ -40,7 +40,8 @@ const ARTIFACTS = [
 // address-book keys (deployments/<chainId>.json) in a stable order
 const ADDRESS_KEYS = [
   "comdToken", // external (Pons); MockComd on test chains
-  "counselNFT",
+  "counselNFT", // ERC1967 proxy (UUPS): the address holders and apps use
+  "counselNFTImpl", // current implementation behind the proxy (informational)
   "identityRegistry",
   "reputationRegistry",
   "rewardDistributor",

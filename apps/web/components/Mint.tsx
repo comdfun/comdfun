@@ -49,9 +49,9 @@ export function Mint() {
   const free = price.value === 0n || price.value == null;
 
   return (
-    <div className="folder c-lime" data-tab="Seat No. 1 of 2,000" style={{ display: "grid", gap: 16 }}>
+    <div className="folder c-lime" data-tab="Counsel · 2,000 in all" style={{ display: "grid", gap: 16 }}>
       {!nft.address && !MOCK && <NotDeployed name="CounselNFT" />}
-      <div className="mint-price">{free ? "Free mint" : `${units(price.value, 18, 4)} ETH`}<small>{free ? "Price 0 · you pay gas only" : "per seat, plus gas"}<MockTag on={price.mock} /></small></div>
+      <div className="mint-price">{free ? "Free mint" : `${units(price.value, 18, 4)} ETH`}<small>{free ? "Price 0 · you pay gas only" : "per Counsel, plus gas"}<MockTag on={price.mock} /></small></div>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <span className="label">Phase<MockTag on={phase.mock} /></span>
         <span className={`badge fill ${p === 2 ? "ok" : p === 1 ? "brass" : ""} ${p ? "live" : ""}`}>{PHASES[p] ?? "—"}</span>
@@ -59,7 +59,7 @@ export function Mint() {
       <div>
         <div className="row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
           <span className="num" style={{ fontSize: 34, color: "var(--lime)", lineHeight: 1 }}>{fmtNum(supply.value)} <span className="muted">/ {fmtNum(max.value)}</span></span>
-          <span className="small muted">seats minted</span>
+          <span className="small muted">Counsel minted</span>
         </div>
         <div className="meter rv c-lime"><span style={{ width: `${pct * 100}%` }} /></div>
       </div>
@@ -81,7 +81,7 @@ export function Mint() {
         <p className="small" role="status">{!ALLOWLIST_URL ? "Allowlist proofs are not published yet." : proof === undefined ? "Checking the allowlist…" : proof ? <span className="ok">This wallet is on the allowlist.</span> : <span className="err-text">This wallet is not on the allowlist. Wait for the public phase.</span>}</p>
       )}
       <TxButton
-        label={soldOut ? "Sold out" : p === 0 ? "Minting closed" : left <= 0 ? "Wallet limit reached" : free ? `Free mint · ${qty} seat${qty > 1 ? "s" : ""}` : `Mint ${qty} seat${qty > 1 ? "s" : ""}`}
+        label={soldOut ? "Sold out" : p === 0 ? "Minting closed" : left <= 0 ? "Wallet limit reached" : free ? `Free mint · ${qty} Counsel` : `Mint ${qty} Counsel`}
         disabled={!canMint}
         run={() =>
           p === 1

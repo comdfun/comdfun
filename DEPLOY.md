@@ -102,7 +102,7 @@ candidates once `SWEEP_LISTINGS_URL` points at a listing feed.
 
 | Task | When |
 |---|---|
-| `Flywheel.buyback(minOut)` | swapper configured and buyback bucket ≥ `KEEPER_BUYBACK_MIN_WEI`; simulated first, `KEEPER_BUYBACK_SLIPPAGE_BPS` |
+| `Flywheel.buyback(minOut)` | **manual by default**: Admin calls it on Blockscout when it wants to (owner or keeper may call). Automatic only with `KEEPER_BUYBACK_AUTO=true`: swapper configured and bucket ≥ `KEEPER_BUYBACK_MIN_WEI`, simulated first, `KEEPER_BUYBACK_SLIPPAGE_BPS` |
 | `RevenueRouter.distribute()` | undistributed job revenue ≥ `KEEPER_DISTRIBUTE_MIN_COMD` (80% Counsel rewards / 20% treasury) |
 
 Status: `GET /services` (Keeper row) and `GET /health` (`keeper_off`, `keeper_low_gas`).

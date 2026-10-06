@@ -129,12 +129,12 @@ export function Pair({ initialCode }: { initialCode: string }) {
         {st && <p className="small muted" style={{ marginTop: 8 }}>Device <span className="mono">{short(st.deviceKey, 10, 6)}</span> · expires {new Date(typeof st.expiresAt === "number" ? st.expiresAt * 1000 : st.expiresAt).toUTCString()}{st.consumed && <span className="bad"> · already used</span>}</p>}
         {!st && <p className="small muted" style={{ marginTop: 8 }}>Run <span className="mono">comd start</span>; on first run it prints a code and this page&apos;s address.</p>}
       </Step>
-      <Step n="02" title="Connect the wallet that holds the seat" done={!!address}>
+      <Step n="02" title="Connect the wallet that holds the Counsel" done={!!address}>
         {address ? <p className="small">Connected <span className="mono">{short(address)}</span></p> : <ConnectButton className="btn" />}
       </Step>
-      <Step n="03" title="Choose the seat" done={!!tokenId}>
+      <Step n="03" title="Choose the Counsel" done={!!tokenId}>
         {address && seats && seats.length > 0 ? (
-          <div className="row" role="radiogroup" aria-label="Your seats">
+          <div className="row" role="radiogroup" aria-label="Your Counsel">
             {seats.map((s) => (
               <button key={s.tokenId} type="button" role="radio" aria-checked={tokenId === s.tokenId} className={`tile ${tokenId === s.tokenId ? "on" : ""}`} style={{ padding: "8px 12px" }} onClick={() => { setTokenId(s.tokenId); setAgentId(s.agentId); }}>
                 {counselName(s.tokenId)} <span className="muted" style={{ textTransform: "none" }}>{s.registered ? `agent ${s.agentId}` : "unregistered"}{hasDevice(s) ? ` · ${s.online ? "online" : "device bound"}` : ""}</span>
@@ -145,21 +145,21 @@ export function Pair({ initialCode }: { initialCode: string }) {
           <div className="row">
             <label className="label" htmlFor="tid">Token id</label>
             <input id="tid" type="number" min={0} max={1999} value={tokenId} onChange={(e) => setTokenId(e.target.value)} style={{ width: 120 }} disabled={!address} />
-            {address && seats?.length === 0 && <span className="small muted">No seats found for this wallet. <a href="/mint">Mint one</a>.</span>}
+            {address && seats?.length === 0 && <span className="small muted">No Counsel found for this wallet. <a href="/mint">Mint one</a>.</span>}
           </div>
         )}
-        {seat && hasDevice(seat) && <p className="small muted">This seat already has a device; binding this one replaces it (one active device per seat).</p>}
+        {seat && hasDevice(seat) && <p className="small muted">This Counsel already has a device; binding this one replaces it (one active device per Counsel).</p>}
       </Step>
       <Step n="04" title="Register the agent (ERC-8004)" done={registered}>
         {registered ? <p className="small">Registered as agent <span className="mono">{agentId ?? seat?.agentId}</span>.</p> : (
           <>
-            <p className="small muted">An unregistered seat cannot connect. This sends IdentityRegistry.register(agentURI) from your wallet once; the URI points to the seat&apos;s registration document.</p>
+            <p className="small muted">An unregistered Counsel cannot connect. The registration is prepared for you: one click sends IdentityRegistry.register(agentURI) from your wallet, once; the URI points to this Counsel&apos;s registration document.</p>
             <button className="btn" type="button" disabled={!address || !tokenId || phase !== "idle"} onClick={register}>{phase === "registering" ? "Registering…" : "Register agent"}</button>
           </>
         )}
       </Step>
       <Step n="05" title="Sign and bind">
-        <p className="small muted">Signs a WorkerAuthorization (EIP-712, no gas) that lets this device work for {tokenId ? counselName(tokenId) : "the seat"} until you unlink it.</p>
+        <p className="small muted">Signs a WorkerAuthorization (EIP-712, no gas) that lets this device work for {tokenId ? counselName(tokenId) : "this Counsel"} until you unlink it.</p>
         <button className="btn primary" type="button" disabled={!st || st.consumed || !address || !tokenId || !registered || phase !== "idle"} onClick={bind}>{phase === "signing" ? "Sign in wallet…" : "Sign and bind"}</button>
       </Step>
       {err && <p className="err-text small" role="alert">{err}</p>}

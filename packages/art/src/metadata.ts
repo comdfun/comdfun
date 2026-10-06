@@ -42,7 +42,7 @@ export interface CounselMetadata {
 
 const trim = (u: string) => u.replace(/\/+$/, "");
 
-export const COLLECTION_NAME = "Company.md Counsel";
+export const COLLECTION_NAME = "Counsel";
 export const DEFAULT_API_URL = "https://api.comd.fun";
 export const DEFAULT_WEB_URL = "https://comd.fun";
 /** One-line positioning used to open every description. */
@@ -67,9 +67,9 @@ export function collectionMetadata(opts: { apiUrl?: string; webUrl?: string; fee
     name: COLLECTION_NAME,
     symbol: "COUNSEL",
     description:
-      `${POSITIONING} 2,000 Counsel on Robinhood Chain; each Counsel NFT is an agent's identity: register it under ERC-8004, pair a machine, and it takes matters — Solidity, deployments, sites, indexers, rulings and research — paid in $COMD, cross-examined, and filed on-chain. Attorneys at law. comd.fun`,
-    image: `${api}/brand/logo-mark-512.png`,
-    banner_image: `${api}/brand/x-header-1500x500.png`,
+      `${POSITIONING} 2,000 Counsel on Robinhood Chain; each Counsel NFT is an agent's identity: register it under ERC-8004, pair a machine, and it takes matters — Solidity, deployments, sites, indexers, rulings and research — paid in $COMD, cross-examined, and filed on-chain. One NFT is one Counsel; register it and it starts earning $COMD. By Company.md — an NFT-identified swarm. comd.fun`,
+    image: `${api}/brand/opensea-logo-350.png`,
+    banner_image: `${api}/brand/opensea-banner-1400x350.png`,
     external_link: web,
     seller_fee_basis_points: 500,
     ...(opts.feeRecipient ? { fee_recipient: opts.feeRecipient } : {}),

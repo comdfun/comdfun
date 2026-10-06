@@ -2,7 +2,7 @@
 
 export type Address = `0x${string}`;
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-export type ContractName = "comdToken" | "counselNFT" | "identityRegistry" | "reputationRegistry" | "rewardDistributor" | "revenueRouter" | "flywheel" | "swapper" | "incorporations" | "projectFactory" | "contributorDistributor" | "launchGuardHook" | "create2Deployer" | "mockMarketplace" | "seaportAdapter" | "poolManager" | "weth" | "permit2" | "admin" | "treasury" | "keeper" | "settler" | "registrar";
+export type ContractName = "comdToken" | "counselNFT" | "counselNFTImpl" | "identityRegistry" | "reputationRegistry" | "rewardDistributor" | "revenueRouter" | "flywheel" | "swapper" | "incorporations" | "projectFactory" | "contributorDistributor" | "launchGuardHook" | "create2Deployer" | "mockMarketplace" | "seaportAdapter" | "poolManager" | "weth" | "permit2" | "admin" | "treasury" | "keeper" | "settler" | "registrar";
 export type AddressBook = Record<ContractName, Address> & { chainId: number; deployed: boolean; deployedAtBlock: number };
 
 /** Per-chain address book. Missing contracts are the zero address (deployed: false). */
@@ -13,6 +13,7 @@ export const addresses: Record<number, AddressBook> = {
     deployedAtBlock: 0,
     comdToken: "0x0000000000000000000000000000000000000000",
     counselNFT: "0x0000000000000000000000000000000000000000",
+    counselNFTImpl: "0x0000000000000000000000000000000000000000",
     identityRegistry: "0x0000000000000000000000000000000000000000",
     reputationRegistry: "0x0000000000000000000000000000000000000000",
     rewardDistributor: "0x0000000000000000000000000000000000000000",
@@ -41,6 +42,7 @@ export const addresses: Record<number, AddressBook> = {
     deployedAtBlock: 0,
     comdToken: "0x0000000000000000000000000000000000000000",
     counselNFT: "0x0000000000000000000000000000000000000000",
+    counselNFTImpl: "0x0000000000000000000000000000000000000000",
     identityRegistry: "0x0000000000000000000000000000000000000000",
     reputationRegistry: "0x0000000000000000000000000000000000000000",
     rewardDistributor: "0x0000000000000000000000000000000000000000",

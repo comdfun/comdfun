@@ -80,8 +80,7 @@ contract IntegrationTest is Test, MerkleHelper {
         contributors = ContributorDistributor(d.contributorDistributor);
         inc = Incorporations(payable(d.incorporations));
         market = MockMarketplace(d.mockMarketplace);
-        vm.prank(c.admin);
-        flywheel.acceptOwnership();
+        assertEq(flywheel.owner(), c.admin, "ADMIN owns the Flywheel from the start");
         // the mock token was minted to the deployer (the script); this test acts as "Pons + the market"
         uint256 supply = comd.totalSupply();
         vm.prank(address(script));

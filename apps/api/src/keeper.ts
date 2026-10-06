@@ -38,6 +38,9 @@ export interface KeeperConfig {
   /** RevenueRouter.distribute() when its COMD balance ≥ this (atomic) */
   distributeMinComd: bigint;
   distributeEverySeconds: number;
+  /** automatic buybacks (KEEPER_BUYBACK_AUTO=true). Default false: the owner times buybacks by calling
+   *  Flywheel.buyback(minOut) from the Admin wallet (the contract allows keeper or owner). */
+  buybackAuto: boolean;
   /** Flywheel.buyback when the buyback bucket ≥ this (wei) */
   buybackMinWei: bigint;
   buybackEverySeconds: number;
@@ -150,7 +153,7 @@ export class Keeper {
       },
       contracts: { revenueRouter: cfg.revenueRouter, flywheel: cfg.flywheel },
       tasks: {
-        buyback: task(enabled && !!cfg.flywheel),
+        buyback: task(enabled && !!cfg.flywheel && cfg.buybackAuto),
         distribute: task(enabled && !!cfg.revenueRouter),
       },
     };
@@ -309,6 +312,7 @@ export function keeperConfig(env: Record<string, string | undefined>, addrs: { r
     intervalSeconds: Math.max(1, num(env.KEEPER_INTERVAL_SECONDS, 60)),
     distributeMinComd: big(env.KEEPER_DISTRIBUTE_MIN_COMD, 1_000n * 10n ** 18n),
     distributeEverySeconds: num(env.KEEPER_DISTRIBUTE_EVERY_SECONDS, 3600),
+    buybackAuto: /^(1|true|yes)$/i.test(String(env.KEEPER_BUYBACK_AUTO ?? "")),
     buybackMinWei: big(env.KEEPER_BUYBACK_MIN_WEI, 50_000_000_000_000_000n),
     buybackEverySeconds: num(env.KEEPER_BUYBACK_EVERY_SECONDS, 900),
     buybackSlippageBps: Math.min(5000, Math.max(0, num(env.KEEPER_BUYBACK_SLIPPAGE_BPS, 300))),

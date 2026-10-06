@@ -58,7 +58,9 @@ function rects(px: Px[], k: string) {
 
 const deg = (d: number) => (d * Math.PI) / 180;
 // four spokes, alternating: buyback & burn (crimson) / floor sweep (violet), the 50/50 default
-const MAIN = gear(58, 60, 36, 14, { rim: 6, hub: 9, spokes: [{ a: deg(-90), c: C.crim, d: C.crimDk }, { a: deg(0), c: C.vio, d: C.vioDk }, { a: deg(90), c: C.crim, d: C.crimDk }, { a: deg(180), c: C.vio, d: C.vioDk }] });
+// the hub is wide enough (radius 13 of 128) for the "5% TAX" badge that TaxStage lays over it
+export const HUB = { cx: 58, cy: 60, r: 13, w: 128, h: 112 } as const;
+const MAIN = gear(HUB.cx, HUB.cy, 36, 14, { rim: 6, hub: HUB.r, spokes: [{ a: deg(-90), c: C.crim, d: C.crimDk }, { a: deg(0), c: C.vio, d: C.vioDk }, { a: deg(90), c: C.crim, d: C.crimDk }, { a: deg(180), c: C.vio, d: C.vioDk }] });
 const SAT1 = gear(112, 20, 11, 8, { rim: 3, hub: 3, tooth: 4 });
 const SAT2 = gear(110, 98, 8, 6, { rim: 3, hub: 2, tooth: 3 });
 
@@ -90,8 +92,17 @@ const pctVol = (bps: number, taxBps: number) => {
 export function TaxStage({ s, labels = "short" }: { s: FlywheelStats; labels?: "short" | "long" }) {
   return (
     <div className="fw-stage rv">
-      <WheelSvg />
-      <div className="fw-hub" aria-hidden="true"><b>{(s.taxBps / 100).toFixed(0)}%</b><span>tax</span></div>
+      <div className="fw-wheel">
+        <WheelSvg />
+        {/* the badge sits exactly on the gear's hub; its size and type scale with the wheel (container units) */}
+        <div
+          className="fw-hub"
+          aria-hidden="true"
+          style={{ left: `${(HUB.cx / HUB.w) * 100}%`, top: `${(HUB.cy / HUB.h) * 100}%`, width: `${((HUB.r * 2) / HUB.w) * 100}%` }}
+        >
+          <b>{(s.taxBps / 100).toFixed(0)}%</b><span>tax</span>
+        </div>
+      </div>
       <span className="fw-tag t-in">{labels === "long" ? "ETH in from Pons · every trade" : "Every buy & sell · ETH in"}</span>
       <span className="fw-tag t-burn c-crimson">Buyback &amp; burn · {pctVol(s.bps.buyback, s.taxBps)}%</span>
       <span className="fw-tag t-sweep c-violet">Floor sweeps · {pctVol(s.bps.sweep, s.taxBps)}%</span>
@@ -130,7 +141,7 @@ export function FlywheelSection({ s }: { s: FlywheelStats }) {
       <TaxStage s={s} />
       <div className="fw-copy">
         <p className="lede rv" style={{ marginTop: 0 }}>
-          <strong>$COMD launched on Pons: 1,000,000,000 supply, liquidity locked by Pons at graduation.</strong> Every buy and sell pays a <strong>{(s.taxBps / 100).toFixed(0)}% tax in ETH</strong> that Pons sends to the Flywheel, which spends all of it: half buys $COMD back and burns it to the dead address, half sweeps the Counsel NFT floor into the firm&apos;s vault. Work closes the loop: jobs are paid in $COMD, and {rr ? rr.rewards / 100 : 80}% of every payment goes to the counsel who did it.
+          <strong>$COMD launched on Pons: 1,000,000,000 supply, liquidity locked by Pons at graduation.</strong> Every buy and sell pays a <strong>{(s.taxBps / 100).toFixed(0)}% tax in ETH</strong> that Pons sends to the Flywheel, which spends all of it: half buys $COMD back and burns it to the dead address, half sweeps the Counsel NFT floor into the firm&apos;s vault. Work closes the loop: jobs are paid in $COMD, {rr ? rr.rewards / 100 : 80}% of every payment to the Counsel who did it and {rr ? rr.treasury / 100 : 20}% to the firm treasury.
         </p>
         <FlywheelStatsGrid s={s} compact />
         {!s.configured && <p className="small muted" style={{ marginTop: 10 }}>{s.reason} Totals start at zero on deployment.</p>}
