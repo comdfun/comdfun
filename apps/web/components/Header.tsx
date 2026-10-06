@@ -3,6 +3,7 @@ import { logo } from "@/lib/art";
 import { Svg } from "./Svg";
 import { NavLinks } from "./NavLinks";
 import { ConnectButton } from "./ConnectButton";
+import { OpenSeaLink } from "./OpenSeaLink";
 import { XLink } from "./XLink";
 import { GitHubLink } from "./GitHubLink";
 import { WhatIsThisLink } from "./WhatIsThisLink";
@@ -44,6 +45,7 @@ export function Header() {
           <WhatIsThisLink className="hdr-what" />
           <XLink className="hdr-x" />
           <GitHubLink className="hdr-x hdr-gh" />
+          <OpenSeaLink className="hdr-x hdr-os" />
           <ConnectButton className="btn sm primary" />
         </div>
       </div>

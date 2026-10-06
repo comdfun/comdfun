@@ -448,7 +448,7 @@ export async function startApi(port: number, extraEnv: Record<string, string | u
     HEARTBEAT_MS: "3000", READS_PER_MINUTE: "100000", REQUESTS_PER_MINUTE: "100000", QUOTES_PER_MINUTE: "1000", SETTLE_WAIT_MS: "30000", FLYWHEEL_CACHE_SECONDS: "0",
     // keeper: both tasks on, small thresholds and spacing for a test chain
     KEEPER_PRIVATE_KEY: pk(11), KEEPER_INTERVAL_SECONDS: "2", KEEPER_DISTRIBUTE_MIN_COMD: "1", KEEPER_DISTRIBUTE_EVERY_SECONDS: "1",
-    KEEPER_BUYBACK_MIN_WEI: "1000000000000", KEEPER_BUYBACK_EVERY_SECONDS: "1",
+    KEEPER_BUYBACK_AUTO: "true", KEEPER_BUYBACK_MIN_WEI: "1000000000000", KEEPER_BUYBACK_EVERY_SECONDS: "1", // auto buybacks are opt-in in production (the owner times them); the e2e exercises the path
     // real chain payments (no PAYMENTS_MODE=mock); Records Office stays dry-run: never hand the sandbox's GitHub
     // credentials to the api; no model API key: the Managing Partner plans deterministically
     PAYMENTS_MODE: undefined, DATABASE_URL: undefined, GITHUB_TOKEN: undefined, GH_TOKEN: undefined, PAYTO_ADDRESS: undefined, ANTHROPIC_API_KEY: undefined, OPENAI_API_KEY: undefined, SERVICES_MODE: undefined,
@@ -786,7 +786,7 @@ async function oracleOnChain() {
   assert(att.domain.name === "Company.md Oracle" && att.domain.verifyingContract === undefined, "domain Company.md Oracle without verifyingContract (OracleAttestationVerifier)");
   // deploy the example consumer trusting our attester, then submit the attestation in a transaction
   const art = artifact("OracleConsumerExample.sol", "OracleConsumerExample");
-  const hash = await wallet(0).deployContract({ abi: oracleConsumerExampleAbi, bytecode: art.bytecode.object, args: [ATTESTER.address], account: ADMIN, chain: chain() });
+  const hash = await wallet(0).deployContract({ abi: oracleConsumerExampleAbi, bytecode: art.bytecode.object, args: [ATTESTER.address, ADMIN.address ?? ADMIN], account: ADMIN, chain: chain() });
   const consumer = (await pub.waitForTransactionReceipt({ hash })).contractAddress!;
   const t = att.tuple;
   const a = { requestId: t[0], chainId: BigInt(t[1]), questionHash: t[2], answerType: t[3], answer: t[4], figure: BigInt(t[5]), fromBlock: BigInt(t[6]), toBlock: BigInt(t[7]), blockHash: t[8], panelJobId: t[9], issuedAt: BigInt(t[10]), expiresAt: BigInt(t[11]) };

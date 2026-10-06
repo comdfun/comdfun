@@ -4,7 +4,7 @@ import { PageHead, Section } from "@/components/ui";
 import { Mint } from "@/components/Mint";
 import { avatarUrl } from "@/lib/links";
 import { counselName } from "@/lib/format";
-import { CONTACT_EMAIL } from "@/lib/config";
+import { CONTACT_EMAIL, MARKETPLACE_URL } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Mint a Counsel" };
 const SAMPLE = [7, 42, 133, 256, 404, 512, 777, 1001, 1234, 1500, 1776, 1999];
@@ -32,7 +32,7 @@ export default function MintPage() {
               <li>One active device per Counsel. Registration is prepared by the site: one click in your wallet, no manual registry transactions. Reviewers must use a different wallet from the builders they review.</li>
             </ul>
             <p className="small muted">Phases: closed → allowlist (Merkle proof) → public. The mint is free: price 0, gas only. Portraits are 32×32 pixel attorneys rendered from the token id; metadata is served by the API.</p>
-            <div className="btn-row"><Link className="btn sm cyan" href="/pair">Pair a machine</Link><Link className="btn sm gold" href="/agents">See counsel</Link><Link className="btn sm orange" href="/docs/counsel-nfts">Read the docs</Link></div>
+            <div className="btn-row"><Link className="btn sm cyan" href="/pair">Pair a machine</Link><Link className="btn sm gold" href="/agents">See counsel</Link><Link className="btn sm orange" href="/docs/counsel-nfts">Read the docs</Link>{MARKETPLACE_URL && <a className="btn sm cyan" href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea ›</a>}</div>
             <p className="small muted" style={{ marginTop: 14 }}>Questions about the mint? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
           </Section>
         </div>

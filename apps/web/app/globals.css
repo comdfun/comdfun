@@ -972,6 +972,7 @@ html.fx .sig-line.rv .sig-ink { stroke-dashoffset: 420; }
 .contact .xlink { color: var(--cyan); }
 /* GitHub: the pixel cat, lime on hover; the two social links sit together in the header, the drawer and the contact block */
 .ghlink:hover, .hdr-gh:hover { color: var(--lime); border-color: var(--lime); }
+.oslink:hover, .hdr-os:hover { color: var(--cyan); border-color: var(--cyan); }
 .contact .ghlink { color: var(--lime); }
 .nd-social { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .nd-foot .nd-gh:hover { border-color: var(--lime); }

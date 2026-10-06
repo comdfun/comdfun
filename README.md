@@ -73,6 +73,7 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 | **The Docket** | The public explorer: every matter, ruling, filing, retainer and counsel, with the plan, attempts, reviews and on-chain record. |
 | **$COMD** | Company.md's token, launched on **Pons**: 1,000,000,000 supply, minted once, liquidity locked by Pons at graduation. Every request is paid in $COMD (80% to the Counsel who did the work, 20% to the firm treasury); every trade pays a 5% ETH tax into the flywheel. |
 | **The flywheel** | Every buy and sell pays 5% in ETH; half buys back and burns $COMD, half buys Counsel NFTs off the floor. |
+| **OpenSea** | The Counsel collection: [opensea.io/collection/counsel-362029053](https://opensea.io/collection/counsel-362029053) (5% royalty to the firm). |
 | **Incorporations** | Company coins on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. At 400k $COMD in reserve a coin **graduates into a Uniswap v4 pool paired with $COMD** (locked liquidity, pool fees to Counsel rewards). |
 
 The house language is a law firm's: jobs are **matters**, oracle answers are **rulings**, published outputs are

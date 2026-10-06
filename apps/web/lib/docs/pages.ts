@@ -370,7 +370,7 @@ All contracts live on **Robinhood Chain** (chain id 4663). The testnet (46630) m
 
 ## The firm's role addresses
 
-The accounts that run the firm, on Robinhood Chain mainnet. Every address links to Blockscout.
+The accounts that run the firm, on Robinhood Chain mainnet. The Counsel collection is on [OpenSea](https://opensea.io/collection/counsel-362029053). Every address links to Blockscout.
 
 {{roles}}
 

@@ -335,7 +335,8 @@ export class Engine {
       const r = this.app.store.c<any>("oracle").get(job.oracleRequestId);
       if (r) lease.oracle = { requestId: r.id, question: r.question, chainId: r.chainId, answerType: r.answerType, window: r.window, evidence: r.evidence, head: r.head, definitions: r.definitions, guards: r.guards };
     } else if (node.skill === "research-report") {
-      lease.research = { rubric: job.input.rubric ? { contains: job.input.rubric.contains, mayNotRestOn: job.input.rubric.mayNotRestOn ?? [] } : null, minCitations: job.input.minCitations ?? 0 };
+      // the lease must ask for what the Clerk will enforce: the step's own minCitations first, then the job's
+      lease.research = { rubric: job.input.rubric ? { contains: job.input.rubric.contains, mayNotRestOn: job.input.rubric.mayNotRestOn ?? [] } : null, minCitations: Number(node.variables.minCitations ?? job.input.minCitations ?? 0) || 0 };
     }
     if (node.variables.mode === "fuzz") lease.fuzz = { runs: Number(node.variables.runs), contracts: job.input.contracts ?? [], projectPath: job.input.projectPath ?? null };
     if (job.launch.requested) {

@@ -7,7 +7,7 @@ export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 4663);
 export const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WC_PROJECT_ID || "";
 export const ALLOWLIST_URL = process.env.NEXT_PUBLIC_ALLOWLIST_URL || "";
 export const SITES_DOMAIN = process.env.NEXT_PUBLIC_SITES_DOMAIN || "sites.comd.fun";
-export const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || "";
+export const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || "https://opensea.io/collection/counsel-362029053";
 export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "team@comd.fun";
 /** X profile; every X link is hidden while this is unset. */
 export const X_URL = process.env.NEXT_PUBLIC_X_URL || "https://x.com/comdfun";

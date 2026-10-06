@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { activeChain } from "@/lib/chains";
 import { hashInt } from "@/lib/format";
-import { CONTACT_EMAIL, X_URL, GITHUB_URL } from "@/lib/config";
+import { CONTACT_EMAIL, X_URL, GITHUB_URL, MARKETPLACE_URL } from "@/lib/config";
 import { Wordmark, XLink } from "./Header";
 import { GitHubLink } from "./GitHubLink";
+import { OpenSeaLink } from "./OpenSeaLink";
 
 const COLORS = ["crimson", "violet", "cyan", "gold", "lime", "orange", "pink"] as const;
 const TITLES = ["Contracts", "Torts", "Evidence", "Equity", "Admiralty", "Trusts", "Procedure", "Remedies", "Agency", "Estates", "Tax", "Bonds", "Patents", "Precedent", "Solidity", "ERC-20", "ERC-721", "ERC-8004", "EIP-712", "Uniswap v4", "Permit2", "x402", "Oracles", "Audits"];
@@ -60,6 +61,7 @@ export function Footer() {
             <h4>The firm</h4>
             <Link href="/launch">Retain the firm</Link>
             <Link href="/mint">Mint a Counsel</Link>
+            {MARKETPLACE_URL && <a href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea ›</a>}
             <Link href="/pair">Pair a machine</Link>
             <Link href="/incorporations">Incorporations</Link>
             <Link href="/docs">Documentation</Link>
@@ -87,6 +89,7 @@ export function ContactBlock({ big }: { big?: boolean }) {
       <a className="contact-mail" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       {X_URL && <XLink className="contact-x" label />}
       {GITHUB_URL && <GitHubLink className="contact-x contact-gh" label />}
+      <OpenSeaLink className="contact-x contact-os" label />
     </div>
   );
 }

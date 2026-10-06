@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectButton } from "./ConnectButton";
 import { XLink } from "./XLink";
 import { GitHubLink } from "./GitHubLink";
+import { OpenSeaLink } from "./OpenSeaLink";
 import { WhatIsThisLink } from "./WhatIsThisLink";
 
 type Sub = { href: string; label: string; hint?: string };
@@ -106,6 +107,7 @@ export function NavLinks({ items }: { items: Item[] }) {
           <div className="nd-social">
             <XLink label className="nd-x" />
             <GitHubLink label text="GitHub" className="nd-x nd-gh" />
+            <OpenSeaLink label className="nd-x nd-os" />
           </div>
         </div>
       </div>

@@ -1,0 +1,122 @@
+name: verify-contracts
+# Publish the source of the deployed contracts on the explorers (Blockscout, and Etherscan's Robinhood Chain
+# explorer when ETHERSCAN_API_KEY is set), so "Read/Write contract" works there and the code is public.
+# Addresses come from contracts/deployments/<chainId>.json (written by deploy-contracts). Re-runnable: already
+# verified contracts are reported and skipped by the explorers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Chain"
+        type: choice
+        options: [testnet, mainnet]
+        default: mainnet
+
+env:
+  FOUNDRY_VERSION: v1.7.1
+  NODE_VERSION: 22
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify (${{ inputs.network }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Resolve network
+        id: net
+        env:
+          NETWORK: ${{ inputs.network }}
+          RPC_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+          RPC_TESTNET: ${{ secrets.RPC_URL_TESTNET }}
+        run: |
+          if [ "$NETWORK" = mainnet ]; then
+            { echo "chain=4663"; echo "rpc=${RPC_MAINNET:-https://rpc.mainnet.chain.robinhood.com}"; echo "blockscout=https://robinhoodchain.blockscout.com/api/"; } >> "$GITHUB_OUTPUT"
+          else
+            { echo "chain=46630"; echo "rpc=${RPC_TESTNET:-https://rpc.testnet.chain.robinhood.com}"; echo "blockscout=https://robinhoodchain-testnet.blockscout.com/api/"; } >> "$GITHUB_OUTPUT"
+          fi
+          test -f "contracts/deployments/$([ "$NETWORK" = mainnet ] && echo 4663 || echo 46630).json" || { echo "::error::no deployment file for $NETWORK"; exit 1; }
+
+      - uses: actions/cache@v4
+        with:
+          path: contracts/lib
+          key: contract-libs-${{ hashFiles('scripts/install-contract-libs.sh') }}
+      - run: bash scripts/install-contract-libs.sh
+
+      - name: Pre-fetch solc 0.8.26 (svm layout)
+        run: |
+          mkdir -p ~/.svm/0.8.26
+          curl -fsSL -o ~/.svm/0.8.26/solc-0.8.26 https://github.com/ethereum/solidity/releases/download/v0.8.26/solc-static-linux
+          chmod +x ~/.svm/0.8.26/solc-0.8.26
+
+      - name: forge build
+        working-directory: contracts
+        run: forge build
+
+      - name: Verify on the explorers
+        working-directory: contracts
+        env:
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+          CHAIN: ${{ steps.net.outputs.chain }}
+          BLOCKSCOUT: ${{ steps.net.outputs.blockscout }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          d="deployments/$CHAIN.json"
+          impl_of() { cast storage "$1" 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc --rpc-url "$RPC_URL" | sed 's/^0x0\{24\}/0x/'; }
+          zero=0x0000000000000000000000000000000000000000
+          # name|address|artifact — proxies and registries are resolved from the chain
+          list=()
+          nft="$(jq -r .counselNFT "$d")"
+          [ "$nft" != "$zero" ] && list+=("CounselNFT impl|$(jq -r .counselNFTImpl "$d")|src/CounselNFT.sol:CounselNFT" "CounselNFT proxy|$nft|lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy")
+          for key in identityRegistry reputationRegistry; do
+            p="$(jq -r .$key "$d")"; [ "$p" = "$zero" ] && continue
+            i="$(impl_of "$p")"
+            case "$key" in
+              identityRegistry) art="lib/erc-8004-contracts/contracts/IdentityRegistryUpgradeable.sol:IdentityRegistryUpgradeable" ;;
+              reputationRegistry) art="lib/erc-8004-contracts/contracts/ReputationRegistryUpgradeable.sol:ReputationRegistryUpgradeable" ;;
+            esac
+            list+=("$key impl|$i|$art" "$key proxy|$p|lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy")
+          done
+          for pair in "rewardDistributor|src/RewardDistributor.sol:RewardDistributor" "revenueRouter|src/RevenueRouter.sol:RevenueRouter" \
+                      "flywheel|src/Flywheel.sol:Flywheel" "swapper|src/swap/UniswapV4PoolSwapper.sol:UniswapV4PoolSwapper" \
+                      "incorporations|src/Incorporations.sol:Incorporations" "incorporationsHook|src/launch/LaunchGuardHook.sol:LaunchGuardHook" \
+                      "projectFactory|src/launch/ProjectFactory.sol:ProjectFactory" "contributorDistributor|src/launch/ContributorDistributor.sol:ContributorDistributor" \
+                      "launchGuardHook|src/launch/LaunchGuardHook.sol:LaunchGuardHook" "create2Deployer|src/utils/Create2Deployer.sol:Create2Deployer" \
+                      "seaportAdapter|src/marketplace/SeaportAdapter.sol:SeaportAdapter"; do
+            key="${pair%%|*}"; art="${pair#*|}"; a="$(jq -r ".$key // empty" "$d")"
+            [ -n "$a" ] && [ "$a" != "$zero" ] && list+=("$key|$a|$art")
+          done
+          # the Incorporations library is linked: the explorers need its address to match the bytecode
+          inc="$(jq -r '.incorporations // empty' "$d")"
+          libflag=""
+          if [ -n "$inc" ] && [ "$inc" != "$zero" ]; then
+            # forge records linked library addresses in broadcast files; without them, derive from the deploy artifact
+            if [ -f "broadcast/Deploy.s.sol/$CHAIN/run-latest.json" ]; then
+              lib="$(jq -r '.libraries[0] // empty' "broadcast/Deploy.s.sol/$CHAIN/run-latest.json")"
+              [ -n "$lib" ] && libflag="--libraries $lib"
+            fi
+            [ -z "$libflag" ] && echo "::warning::Incorporations is linked against GraduationLib; pass its address via the broadcast file for an exact match"
+          fi
+          { echo "## Verification ($CHAIN)"; echo; echo "| Contract | Address | Blockscout | Etherscan |"; echo "|---|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+          for entry in "${list[@]}"; do
+            IFS='|' read -r name addr art <<<"$entry"
+            extra=""; case "$name" in *Incorporations*|incorporations) extra="$libflag" ;; esac
+            echo "== $name $addr ($art)"
+            if forge verify-contract "$addr" "$art" --verifier blockscout --verifier-url "$BLOCKSCOUT" --rpc-url "$RPC_URL" --guess-constructor-args --watch $extra 2>&1 | tee /tmp/bs.log | tail -n 3; then bs="ok"; else bs="$(grep -ioE 'already verified|error[^\n]{0,80}' /tmp/bs.log | head -1)"; bs="${bs:-failed}"; fi
+            es="skipped (no ETHERSCAN_API_KEY)"
+            if [ -n "$ETHERSCAN_API_KEY" ]; then
+              if forge verify-contract "$addr" "$art" --verifier etherscan --verifier-url "https://api.etherscan.io/v2/api?chainid=$CHAIN" --etherscan-api-key "$ETHERSCAN_API_KEY" --rpc-url "$RPC_URL" --guess-constructor-args --watch $extra 2>&1 | tee /tmp/es.log | tail -n 3; then es="ok"; else es="$(grep -ioE 'already verified|error[^\n]{0,80}' /tmp/es.log | head -1)"; es="${es:-failed}"; fi
+            fi
+            echo "| $name | \`$addr\` | $bs | $es |" >> "$GITHUB_STEP_SUMMARY"
+          done
