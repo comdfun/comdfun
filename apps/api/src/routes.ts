@@ -33,6 +33,9 @@ export function buildRouter(app: App): Router {
     return j;
   };
   const read: RouteOpts = { cors: "public", bucket: "read" };
+  // token metadata, portraits and brand files: no per-IP limit — marketplace indexers (OpenSea, Blockscout) fetch the
+  // whole collection from a handful of addresses in one burst; the responses are deterministic and cached
+  const pub: RouteOpts = { cors: "public", bucket: "none" };
   const paid: RouteOpts = { cors: "paid", bucket: "paid", limit: LIMITS.paidBodyBytes };
 
   // ------------------------------------------------------------------------------------------ basics
@@ -482,16 +485,16 @@ export function buildRouter(app: App): Router {
   const artId = (t: string) => { const id = Number(tokenParam(t)); if (!validTokenId(id)) throw E.notFound("Counsel token ids are 1–2000"); return id; };
   // Collection-level metadata (CounselNFT.contractURI → baseURI + "collection.json"): OpenSea reads name, image,
   // banner, description, links and royalties from here.
-  r.get("/agents/by-token/collection.json", async () => json(200, await collectionDoc(app), { "access-control-allow-origin": "*", "cache-control": "public, max-age=300" }), read);
+  r.get("/agents/by-token/collection.json", async () => json(200, await collectionDoc(app), { "access-control-allow-origin": "*", "cache-control": "public, max-age=300" }), pub);
   // Brand PNGs/SVGs committed in packages/art/out/brand (logo, banners, favicons) for marketplaces and the metadata.
   r.get("/brand/:file", async (q): Promise<Res> => {
     const b = await brandFile(q.params.file);
     if (!b) return json(404, { error: "unknown_brand_file" });
     return { status: 200, raw: b.bytes, headers: { "content-type": b.type, "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } };
-  }, read);
-  r.get("/agents/by-token/:tokenId.json", async (q) => json(200, await app.pairing.registration(artId(q.params.tokenId)), { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }), read);
+  }, pub);
+  r.get("/agents/by-token/:tokenId.json", async (q) => json(200, await app.pairing.registration(artId(q.params.tokenId)), { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }), pub);
   // .svg = the bar card (portrait + nameplate) as SVG; ?portrait=1 for the bare 32×32 portrait
-  r.get("/agents/by-token/:tokenId.svg", async (q) => ({ status: 200, raw: q.query.get("portrait") === "1" ? await counselPortraitSvg(artId(q.params.tokenId)) : await counselCardSvg(artId(q.params.tokenId)), headers: { "content-type": "image/svg+xml", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } }), read);
+  r.get("/agents/by-token/:tokenId.svg", async (q) => ({ status: 200, raw: q.query.get("portrait") === "1" ? await counselPortraitSvg(artId(q.params.tokenId)) : await counselCardSvg(artId(q.params.tokenId)), headers: { "content-type": "image/svg+xml", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } }), pub);
   // .png = the bar card (renderCardPNG) — the metadata `image`
   r.get("/agents/by-token/:tokenId.png", async (q): Promise<Res> => {
     const scale = Math.max(1, Math.min(16, Number(q.query.get("scale") ?? 8) || 8));
@@ -499,7 +502,7 @@ export function buildRouter(app: App): Router {
     const png = await counselCardPng(id, scale);
     if (!png) return { status: 302, headers: { location: `/agents/by-token/${id}.svg` } };
     return { status: 200, raw: png, headers: { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } };
-  }, read);
+  }, pub);
 
   // ------------------------------------------------------------------------------------------ bundles, artifacts, fuzz
 

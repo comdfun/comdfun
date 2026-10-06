@@ -242,3 +242,34 @@
 .af-reg .af-loop.on .fs-type { animation: fs-type 1.1s steps(10, end) 3.8s both; }
 .af-reg .af-loop.on .fs-out { animation: fs-in 0.3s steps(4, end) 5.4s both; }
 .af-reg .af-loop.on .af-card { animation: fs-in 0.45s steps(8, end) calc(0.5s + var(--i) * 1.4s) both; }
+
+/* "tasks" and "steps" explainers */
+.af-taskgrid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 60px; align-items: start; width: 100%; }
+.af-taskside { display: grid; gap: 18px; justify-items: center; }
+.af-hero-sm { width: 220px; height: 220px; border-width: 6px; }
+.af-hero-xs { width: 150px; height: 150px; border-width: 5px; }
+.af-reg .af-task.on .af-hero { animation: fs-pop 0.5s steps(7, end) 0.3s both, sc-bob 1.4s steps(1, end) 1.2s infinite; }
+.af-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.af-tags .fs-pill { font-size: 13px; padding: 9px 12px 8px; text-transform: none; letter-spacing: 0; font-family: var(--font-mono); opacity: 0; }
+.af-reg .af-task.on .af-tags .fs-pill { animation: fs-in 0.4s steps(6, end) calc(1.2s + var(--i) * 0.5s) both; }
+.af-taskside > .fs-pill { opacity: 0; font-size: 16px; }
+.af-reg .af-task.on .af-taskside > .fs-pill { animation: fs-in 0.4s steps(6, end) 1.4s both; }
+.af-jury-sm { display: flex; gap: 16px; }
+.af-jury-sm .af-hero { opacity: 0; }
+.af-rtitle.on .af-jury-sm .af-hero { animation: fs-pop 0.45s steps(6, end) calc(0.1s + var(--i) * 0.14s) both, sc-bob 1.2s steps(1, end) calc(1.5s + var(--i) * 0.17s) infinite; }
+.af-rtitle .fs-coin { font-size: 34px; padding: 16px 24px 14px; opacity: 0; }
+.af-rtitle.on .fs-coin { animation: fs-pop 0.5s steps(7, end) 0.1s both; }
+.af-progress { list-style: none; margin: 10px 0 0; padding: 0; display: flex; gap: 0; width: 100%; max-width: 1500px; position: relative; }
+.af-progress li { flex: 1; display: grid; justify-items: center; gap: 10px; font-family: var(--font-px); font-size: 13px; color: var(--muted); letter-spacing: 0.04em; position: relative; }
+.af-progress li::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 4px; background: var(--rule-2); }
+.af-progress li:first-child::before { left: 50%; } .af-progress li:last-child::before { right: 50%; }
+.af-progress li i { width: 26px; height: 26px; border: 4px solid var(--rule-2); background: #050409; position: relative; z-index: 1; }
+.af-progress li.done i, .af-progress li.done::before { background: var(--c); border-color: var(--c); }
+.af-progress li.done { color: var(--parch); }
+.af-progress li.now i { border-color: var(--c); background: var(--c); box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 30%, transparent); }
+.af-progress li.now { color: var(--c); }
+.af-progress li.now::before { background: linear-gradient(90deg, var(--c) 50%, var(--rule-2) 50%); }
+
+.af-cards-3x2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.af-reg .af-task.on .af-cards .af-card { animation: fs-in 0.45s steps(8, end) calc(0.4s + var(--i) * 0.7s) both; }
+.af-reg .af-task.on .fs-steps li { animation: fs-in 0.45s steps(8, end) calc(0.4s + var(--i) * 1.1s) both; }
