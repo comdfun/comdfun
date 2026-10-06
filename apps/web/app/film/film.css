@@ -119,3 +119,62 @@
 @keyframes fs-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 @keyframes fs-light { from { background: #050409; } to { background: var(--c); box-shadow: 8px 8px 0 #000, 0 0 0 10px color-mix(in srgb, var(--c) 25%, transparent); } }
 @keyframes fs-grow { from { width: 0; } to { width: var(--w); } }
+
+/* ── "Mint live" (components/fx/MintFilm.tsx) ───────────────────────────────────────────────────────────────── */
+.mf-s { position: absolute; inset: 0; display: none; align-content: center; justify-items: center; gap: 30px; padding: 90px 140px; text-align: center; }
+.mf-s.on { display: grid; }
+.mf-wall { align-content: start; padding-top: 110px; }
+.mf-grid { display: grid; grid-template-columns: repeat(var(--cols), 150px); gap: 18px; }
+.mf-tile { width: 150px; height: 150px; border: 5px solid var(--c); background: #000; image-rendering: pixelated; box-shadow: 8px 8px 0 #000; opacity: 0; }
+.mf-wall.on .mf-tile { animation: mf-flip 0.5s steps(7, end) var(--d) both, sc-bob 1.3s steps(1, end) calc(2s + var(--i) * 0.05s) infinite; }
+.mf-wall.dim .mf-grid { animation: mf-dim 0.4s steps(4, end) both; }
+.mf-head { display: flex; align-items: center; gap: 22px; margin-top: 10px; opacity: 0; }
+.mf-wall.on .mf-head { animation: fs-in 0.4s steps(6, end) 1.9s both; }
+.mf-logo { width: 72px; height: 72px; filter: drop-shadow(4px 4px 0 #000); }
+.mf-logo svg { width: 100%; height: 100%; display: block; }
+.mf-word { font-family: var(--font-px); font-size: 40px; color: var(--parch); text-shadow: 4px 4px 0 #000; letter-spacing: 0.04em; }
+.mf-word b { color: var(--gold); font-weight: 400; }
+
+.mf-stamp { gap: 44px; }
+.mf-stamp-box { display: grid; gap: 0; padding: 26px 70px 18px; border: 14px solid var(--crimson); color: var(--crimson); background: rgba(0, 0, 0, 0.78); font-family: var(--font-px); font-size: 170px; line-height: 0.95; letter-spacing: 0.04em; text-shadow: 10px 10px 0 #000; box-shadow: 14px 14px 0 #000, inset 0 0 0 6px #000, inset 0 0 0 10px var(--crimson); transform: rotate(-6deg); opacity: 0; }
+.mf-stamp.on .mf-stamp-box { animation: mf-slam 0.5s steps(5, end) 0.15s both, mf-shake 0.35s steps(6, end) 0.65s 1; }
+.mf-sub { font-family: var(--font-px); font-size: 30px; color: var(--parch); text-shadow: 4px 4px 0 #000; letter-spacing: 0.06em; opacity: 0; }
+.mf-sub b { color: var(--lime); font-weight: 400; }
+.mf-stamp.on .mf-sub { animation: fs-in 0.4s steps(6, end) 1.3s both; }
+
+.mf-why { gap: 22px; padding: 70px 0; grid-template-columns: 100%; justify-items: stretch; overflow: hidden; }
+.mf-rows { display: grid; gap: 16px; width: 100%; overflow: hidden; }
+.mf-row { display: flex; gap: 16px; width: max-content; opacity: 0; }
+.mf-tile.sm { width: 108px; height: 108px; border-width: 4px; box-shadow: 6px 6px 0 #000; opacity: 1; }
+.mf-why.on .mf-row { animation: fs-in 0.4s steps(6, end) calc(var(--r) * 0.2s) both, mf-marquee 24s linear calc(var(--r) * -3s) infinite; }
+.mf-why.on .mf-row.rev { animation-name: fs-in, mf-marquee-rev; }
+.mf-lines { display: grid; gap: 14px; margin: 26px auto 0; width: 100%; max-width: 1640px; padding: 0 40px; text-align: center; }
+.mf-lines p { margin: 0; font-size: 36px; line-height: 1.4; color: #d8d0ba; text-shadow: 3px 3px 0 #000; opacity: 0; }
+.mf-lines p b { color: var(--parch); font-weight: 500; background: linear-gradient(transparent 60%, color-mix(in srgb, var(--gold) 40%, transparent) 60%); }
+.mf-why.on .mf-lines p { animation: fs-in 0.45s steps(6, end) calc(0.9s + var(--i) * 1.2s) both; }
+
+.mf-go { gap: 40px; }
+.mf-url { font-family: var(--font-px); font-size: 150px; line-height: 1; color: var(--parch); text-shadow: 10px 10px 0 #000, 10px 10px 0 5px var(--gold-sh); letter-spacing: 0.02em; opacity: 0; }
+.mf-url span { color: var(--gold); }
+.mf-go.on .mf-url { animation: fs-pop 0.55s steps(7, end) 0.2s both; }
+.mf-cursor { width: 34px; height: 46px; background: var(--parch); clip-path: polygon(0 0, 100% 62%, 58% 66%, 74% 100%, 60% 100%, 44% 70%, 0 92%); filter: drop-shadow(4px 4px 0 #000); position: absolute; left: 50%; top: 50%; opacity: 0; }
+.mf-go.on .mf-cursor { animation: mf-cursor 1.6s steps(12, end) 1.0s both; }
+.mf-chips { display: flex; gap: 20px; opacity: 0; }
+.mf-chips span { font-family: var(--font-px); font-size: 22px; color: var(--c); border: 3px solid var(--c); padding: 14px 20px 12px; background: #050409; box-shadow: 6px 6px 0 #000; }
+.mf-go.on .mf-chips { animation: fs-in 0.45s steps(6, end) 2.4s both; }
+
+.mf-end { gap: 30px; }
+.mf-end.on .ft-logo { animation: fs-pop 0.5s steps(7, end) 0.1s both, sc-bob 1.6s steps(2, end) 1.2s infinite; }
+.mf-end.on .ft-word { animation: fs-in 0.45s steps(6, end) 0.6s both; }
+.mf-tag { font-family: var(--font-px); font-size: 30px; color: var(--parch); text-shadow: 4px 4px 0 #000; opacity: 0; }
+.mf-tag b { color: var(--crimson); font-weight: 400; }
+.mf-end.on .mf-tag { animation: fs-in 0.45s steps(6, end) 1.3s both; }
+.mf-end.on .fo-foot { animation: fs-in 0.45s steps(6, end) 1.9s both; }
+
+@keyframes mf-flip { from { opacity: 0; transform: rotateY(90deg) scale(0.6); } 60% { opacity: 1; transform: rotateY(-20deg) scale(1.05); } to { opacity: 1; transform: none; } }
+@keyframes mf-dim { to { opacity: 0.22; filter: saturate(0.4); } }
+@keyframes mf-slam { from { opacity: 0; transform: rotate(-6deg) scale(3.2); } 70% { opacity: 1; transform: rotate(-6deg) scale(0.92); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+@keyframes mf-shake { 0%, 100% { transform: rotate(-6deg) translate(0, 0); } 25% { transform: rotate(-6deg) translate(-8px, 4px); } 50% { transform: rotate(-6deg) translate(6px, -4px); } 75% { transform: rotate(-6deg) translate(-4px, 2px); } }
+@keyframes mf-marquee { from { translate: 0 0; } to { translate: -50% 0; } }
+@keyframes mf-marquee-rev { from { translate: -50% 0; } to { translate: 0 0; } }
+@keyframes mf-cursor { 0% { opacity: 0; transform: translate(420px, 260px); } 20% { opacity: 1; } 70% { transform: translate(120px, 40px) scale(1); } 80% { transform: translate(120px, 40px) scale(0.8); } 90% { transform: translate(120px, 40px) scale(1); } 100% { opacity: 1; transform: translate(120px, 40px); } }
