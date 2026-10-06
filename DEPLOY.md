@@ -37,10 +37,15 @@ read/write on `comdfun/worker` and repo creation in the `comdfun` org (api `GITH
 
 ## 2. Railway
 
-1. New project → Deploy from GitHub repo `comdfun/comdfun`. Add two services from it:
-   - `api`: Settings → Config file path `infra/railway/api.json`; Volume mounted at `/data`; custom domains
-     `api.comd.fun` and `*.sites.comd.fun`.
-   - `web`: Config file path `infra/railway/web.json`; custom domains `comd.fun` and `www.comd.fun`.
+1. New project → Deploy from GitHub repo `comdfun/comdfun`. Add two services from it. Railway's "Config as Code"
+   is deprecated (new services cannot opt in), so set the builder with a variable and the rest in Settings:
+   - `api`: Variables → `RAILWAY_DOCKERFILE_PATH=infra/docker/api.Dockerfile`; Settings → Deploy → Healthcheck Path
+     `/health`, Healthcheck Timeout 300, Restart Policy On Failure (10), 1 replica; Volume mounted at `/data`;
+     custom domains `api.comd.fun` and `*.sites.comd.fun`.
+   - `web`: Variables → `RAILWAY_DOCKERFILE_PATH=infra/docker/web.Dockerfile`; Healthcheck Path `/`; custom
+     domains `comd.fun` and `www.comd.fun`.
+   - Root Directory stays empty on both. `infra/railway/*.json` document the same settings (watch patterns included)
+     for accounts that still have Config as Code.
 2. Add a PostgreSQL database; on `api` set `DATABASE_URL = ${{Postgres.DATABASE_URL}}`.
 3. DNS: add the CNAME records Railway shows for each domain (the wildcard also needs its `_acme-challenge` record).
    Add your mail provider's MX records for `team@comd.fun`.
