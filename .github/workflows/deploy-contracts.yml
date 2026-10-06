@@ -26,8 +26,13 @@ on:
         type: choice
         options: [testnet, mainnet]
         default: testnet
+      stage:
+        description: "mint = Counsel NFT + ERC-8004 registries only (open the free mint before the Pons launch); full = everything (reuses the mint-stage addresses when the COUNSEL_NFT / IDENTITY_REGISTRY / REPUTATION_REGISTRY variables are set)"
+        type: choice
+        options: [full, mint]
+        default: full
       comd_token:
-        description: "$COMD token address from Pons (required on mainnet; empty on testnet deploys MockComd)"
+        description: "$COMD token address from Pons (full stage: required on mainnet; empty on testnet deploys MockComd)"
         type: string
         default: ""
       dry_run:
@@ -76,6 +81,7 @@ jobs:
           RPC_TESTNET: ${{ secrets.RPC_URL_TESTNET }}
           CONFIRM: ${{ inputs.confirm }}
           COMD_TOKEN: ${{ inputs.comd_token }}
+          STAGE: ${{ inputs.stage }}
         run: |
           if [ "$NETWORK" = mainnet ]; then
             chain=4663; rpc="${RPC_MAINNET:-https://rpc.mainnet.chain.robinhood.com}"
@@ -93,8 +99,10 @@ jobs:
             code="$(cast code "$COMD_TOKEN" --rpc-url "$rpc")"
             [ "$code" != "0x" ] || { echo "::error::comd_token has no code on chain $chain"; exit 1; }
             echo "COMD $COMD_TOKEN decimals $(cast call "$COMD_TOKEN" 'decimals()(uint8)' --rpc-url "$rpc") supply $(cast call "$COMD_TOKEN" 'totalSupply()(uint256)' --rpc-url "$rpc")"
-          elif [ "$NETWORK" = mainnet ]; then
-            echo "::error::mainnet needs comd_token (the $COMD address from Pons)"; exit 1
+          elif [ "$NETWORK" = mainnet ] && [ "$STAGE" = full ]; then
+            echo "::error::mainnet full stage needs comd_token (the $COMD address from Pons)"; exit 1
+          elif [ "$STAGE" = mint ]; then
+            echo "mint stage: Counsel NFT + ERC-8004 registries only, no token needed"
           else
             echo "testnet without comd_token: Deploy.s.sol deploys a MockComd stand-in"
           fi
@@ -134,8 +142,8 @@ jobs:
             echo "::error::mainnet: ADMIN must be a separate wallet (multisig or hardware), not the deployer"; exit 1
           fi
 
-      - name: External address checklist (mainnet)
-        if: inputs.network == 'mainnet'
+      - name: External address checklist (mainnet, full stage)
+        if: inputs.network == 'mainnet' && inputs.stage == 'full'
         env:
           RPC_URL: ${{ steps.net.outputs.rpc }}
           SEAPORT: ${{ vars.SEAPORT }}
@@ -168,7 +176,11 @@ jobs:
           CHAIN: ${{ steps.net.outputs.chain }}
           DRY_RUN: ${{ inputs.dry_run }}
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          STAGE: ${{ inputs.stage }}
           COMD_TOKEN: ${{ inputs.comd_token }}
+          COUNSEL_NFT: ${{ vars.COUNSEL_NFT }}
+          IDENTITY_REGISTRY: ${{ vars.IDENTITY_REGISTRY }}
+          REPUTATION_REGISTRY: ${{ vars.REPUTATION_REGISTRY }}
           ADMIN: ${{ vars.ADMIN }}
           TREASURY: ${{ vars.TREASURY }}
           KEEPER: ${{ vars.KEEPER }}
@@ -179,7 +191,7 @@ jobs:
           COUNSEL_BASE_URI: ${{ vars.COUNSEL_BASE_URI }}
         run: |
           # unset optional variables must not reach vm.envOr as empty strings
-          for v in COMD_TOKEN ADMIN TREASURY KEEPER SETTLER REGISTRAR MAX_SWEEP_PRICE SEAPORT COUNSEL_BASE_URI; do
+          for v in COMD_TOKEN COUNSEL_NFT IDENTITY_REGISTRY REPUTATION_REGISTRY ADMIN TREASURY KEEPER SETTLER REGISTRAR MAX_SWEEP_PRICE SEAPORT COUNSEL_BASE_URI; do
             [ -n "${!v}" ] || unset "$v"
           done
           broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
@@ -196,8 +208,15 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           RPC_URL: ${{ steps.net.outputs.rpc }}
+          STAGE: ${{ inputs.stage }}
+          ADMIN: ${{ vars.ADMIN }}
         run: |
           d=.deploy/deployment.json
+          nft="$(jq -r .counselNFT "$d")"
+          [ "$(cast call "$nft" 'MAX_SUPPLY()(uint256)' --rpc-url "$RPC_URL" | awk '{print $1}')" = "2000" ] || { echo "::error::CounselNFT MAX_SUPPLY != 2000"; exit 1; }
+          [ -z "$ADMIN" ] || [ "$(cast call "$nft" 'owner()(address)' --rpc-url "$RPC_URL" | tr 'A-F' 'a-f')" = "$(echo "$ADMIN" | tr 'A-F' 'a-f')" ] || { echo "::error::CounselNFT owner is not ADMIN"; exit 1; }
+          echo "CounselNFT $nft: 2,000 seats, owner ok, contractURI $(cast call "$nft" 'contractURI()(string)' --rpc-url "$RPC_URL")"
+          if [ "$STAGE" = mint ]; then echo "mint stage: done"; exit 0; fi
           guard="$(jq -r .launchGuardHook "$d")"
           # v4 hook permissions are the address's low 14 bits (last 4 hex digits suffice)
           [ $(( 0x${guard: -4} & 0x3fff )) -eq $(( 0x2000 )) ] || { echo "::error::LaunchGuardHook flags wrong: $guard"; exit 1; }
@@ -209,6 +228,7 @@ jobs:
       - name: Environment for Railway (api + web)
         if: ${{ !inputs.dry_run }}
         env:
+          STAGE: ${{ inputs.stage }}
           CHAIN: ${{ steps.net.outputs.chain }}
           ATTESTER: ${{ vars.ATTESTER }}
         run: |
@@ -227,9 +247,15 @@ jobs:
             echo '```'
             [ -n "$ATTESTER" ] && echo "Attester address to publish: \`$ATTESTER\` (api ATTESTER_PRIVATE_KEY)"
             echo
-            echo "Next: ADMIN calls acceptOwnership() on Flywheel; commit contracts/deployments/$CHAIN.json and run"
-            echo "\`npm run contracts:abi\`; set the variables above on Railway; open the Counsel mint; after the Pons"
-            echo "graduation call setPoolKey(fee, tickSpacing, hooks) on the swapper (DEPLOY.md)."
+            if [ "$STAGE" = mint ]; then
+              echo "Next: set the variables above on Railway (api + web); ADMIN calls setPhase(2) on the Counsel NFT to open"
+              echo "the free mint; add repository variables COUNSEL_NFT, IDENTITY_REGISTRY, REPUTATION_REGISTRY with the"
+              echo "addresses above so the later full stage reuses them (DEPLOY.md)."
+            else
+              echo "Next: ADMIN calls acceptOwnership() on Flywheel; commit contracts/deployments/$CHAIN.json and run"
+              echo "\`npm run contracts:abi\`; set the variables above on Railway; after the Pons graduation call"
+              echo "setPoolKey(fee, tickSpacing, hooks) on the swapper (DEPLOY.md)."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4

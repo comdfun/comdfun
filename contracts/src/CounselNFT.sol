@@ -170,6 +170,11 @@ contract CounselNFT is ERC721, ERC2981, Ownable2Step {
         return _baseTokenURI;
     }
 
+    /// @notice Collection-level metadata (ERC-7572 / OpenSea `contractURI`): baseURI + "collection.json".
+    function contractURI() external view returns (string memory) {
+        return string.concat(_baseTokenURI, "collection.json");
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
         return string.concat(_baseTokenURI, tokenId.toString(), ".json");

@@ -12,7 +12,7 @@ import { Router, bearerOf, clientIp, errorRes, json, parseBefore, parseLimit, pa
 import type { JobX } from "./engine.ts";
 import type { AssuranceRecord, DocumentRecord, FeedbackBatch, LaunchRecord, OracleRecord, OrderRecord, PolicyRecord, RewardEpoch, ScheduleRecord, SeatRecord, SiteRecord, WorkflowRecord } from "./records.ts";
 import { iso } from "./store.ts";
-import { artStatus, counselCardPng, counselCardSvg, counselPortraitSvg, validTokenId } from "./art.ts";
+import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselPortraitSvg, validTokenId } from "./art.ts";
 import { ARTIFACT_LIMIT, BUNDLE_LIMIT } from "./device.ts";
 import { pairPage } from "./pairpage.ts";
 
@@ -480,6 +480,15 @@ export function buildRouter(app: App): Router {
   r.get("/agents/register-intent", (q) => json(200, app.pairing.registerIntent(q.query.get("tokenId"))), read);
   r.post("/agents/bind", async (q) => { const x = await app.pairing.bind(q.json()); return json(x.status, x.body); }, { cors: "public", bucket: "paid" });
   const artId = (t: string) => { const id = Number(tokenParam(t)); if (!validTokenId(id)) throw E.notFound("Counsel token ids are 1–2000"); return id; };
+  // Collection-level metadata (CounselNFT.contractURI → baseURI + "collection.json"): OpenSea reads name, image,
+  // banner, description, links and royalties from here.
+  r.get("/agents/by-token/collection.json", async () => json(200, await collectionDoc(app), { "access-control-allow-origin": "*", "cache-control": "public, max-age=300" }), read);
+  // Brand PNGs/SVGs committed in packages/art/out/brand (logo, banners, favicons) for marketplaces and the metadata.
+  r.get("/brand/:file", async (q): Promise<Res> => {
+    const b = await brandFile(q.params.file);
+    if (!b) return json(404, { error: "unknown_brand_file" });
+    return { status: 200, raw: b.bytes, headers: { "content-type": b.type, "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } };
+  }, read);
   r.get("/agents/by-token/:tokenId.json", async (q) => json(200, await app.pairing.registration(artId(q.params.tokenId)), { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }), read);
   // .svg = the bar card (portrait + nameplate) as SVG; ?portrait=1 for the bare 32×32 portrait
   r.get("/agents/by-token/:tokenId.svg", async (q) => ({ status: 200, raw: q.query.get("portrait") === "1" ? await counselPortraitSvg(artId(q.params.tokenId)) : await counselCardSvg(artId(q.params.tokenId)), headers: { "content-type": "image/svg+xml", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } }), read);

@@ -66,7 +66,8 @@ const web = {
   NEXT_PUBLIC_REWARD_DISTRIBUTOR: d.rewardDistributor,
   NEXT_PUBLIC_CONTRIBUTOR_DISTRIBUTOR: d.contributorDistributor,
 };
-const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+// zero addresses (e.g. everything but the NFT and registries after a "mint"-stage deploy) are left out so an earlier value is not clobbered
+const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "" && !/^0x0{40}$/i.test(String(v))));
 
 if (format === "json") {
   console.log(JSON.stringify(only === "api" ? clean(api) : only === "web" ? clean(web) : { api: clean(api), web: clean(web) }, null, 2));

@@ -35,8 +35,12 @@ import {SeaportAdapter} from "../src/marketplace/SeaportAdapter.sol";
 ///   $COMD is minted by Pons — this script never deploys a token on a real chain.
 ///   Env (all optional unless marked):
 ///   DEPLOYER_PRIVATE_KEY  (required) broadcaster; holds nothing and owns nothing after the run
-///   COMD_TOKEN            (required on mainnet 4663 and any non-test chain) the Pons $COMD address.
+///   STAGE                 "full" (default) or "mint": "mint" deploys only CounselNFT + the ERC-8004 registries so the
+///                         free mint can open before the Pons launch; needs no COMD_TOKEN. The later "full" run reuses
+///                         them when COUNSEL_NFT, IDENTITY_REGISTRY and REPUTATION_REGISTRY are set.
+///   COMD_TOKEN            (required on mainnet 4663 and any non-test chain, STAGE=full) the Pons $COMD address.
 ///                         Test chains (46630, 31337): a MockComd (1B, 18 dec, to the deployer) is deployed if unset.
+///   COUNSEL_NFT, IDENTITY_REGISTRY, REPUTATION_REGISTRY   reuse existing deployments (all three or none)
 ///   ADMIN                 owner/admin of everything (default: deployer). Use a multisig on mainnet. Flywheel is
 ///                         Ownable2Step: ADMIN must call acceptOwnership() on it after the run.
 ///   TREASURY              firm treasury: 20% of COMD job revenue, Counsel royalties (default: ADMIN)
@@ -65,6 +69,10 @@ contract Deploy is Script {
         address keeper;
         address registrar;
         address comd; // 0 = deploy MockComd (test chains only)
+        address counsel; // 0 = deploy CounselNFT, else reuse
+        address identityRegistry; // 0 = deploy the ERC-8004 registries, else reuse (with reputationRegistry)
+        address reputationRegistry;
+        bool mintOnly; // STAGE=mint: CounselNFT + registries only
         address poolManager; // 0 = deploy PoolManager (test chains only)
         address seaport; // 0 = no SeaportAdapter
         uint256 maxSweepPrice;
@@ -118,6 +126,10 @@ contract Deploy is Script {
         c.keeper = vm.envOr("KEEPER", c.admin);
         c.registrar = vm.envOr("REGISTRAR", c.admin);
         c.comd = vm.envOr("COMD_TOKEN", address(0));
+        c.counsel = vm.envOr("COUNSEL_NFT", address(0));
+        c.identityRegistry = vm.envOr("IDENTITY_REGISTRY", address(0));
+        c.reputationRegistry = vm.envOr("REPUTATION_REGISTRY", address(0));
+        c.mintOnly = keccak256(bytes(vm.envOr("STAGE", string("full")))) == keccak256("mint");
         c.poolManager = vm.envOr("POOL_MANAGER", block.chainid == MAINNET ? MAINNET_POOL_MANAGER : address(0));
         c.seaport = vm.envOr("SEAPORT", address(0));
         c.maxSweepPrice = vm.envOr("MAX_SWEEP_PRICE", uint256(0.5 ether));
@@ -130,6 +142,22 @@ contract Deploy is Script {
 
     /// @notice Deploys everything. All calls are made by `c.deployer` (broadcaster, or this script in tests).
     function deploy(Config memory c) public returns (Deployment memory d) {
+        // ---- seats + identity (deployed here, or reused from the "mint" stage)
+        if (c.counsel != address(0)) {
+            require(c.counsel.code.length > 0, "COUNSEL_NFT has no code");
+            d.counsel = c.counsel;
+        } else {
+            d.counsel = address(new CounselNFT(c.admin, c.treasury, c.counselBaseURI));
+        }
+        if (c.identityRegistry != address(0) || c.reputationRegistry != address(0)) {
+            require(c.identityRegistry.code.length > 0 && c.reputationRegistry.code.length > 0, "registries: set both");
+            d.identityRegistry = c.identityRegistry;
+            d.reputationRegistry = c.reputationRegistry;
+        } else {
+            _deployErc8004(c, d);
+        }
+        if (c.mintOnly) return d; // STAGE=mint: the free mint can open before the Pons launch
+
         // ---- externals: the Pons $COMD token and the v4 PoolManager
         if (c.comd == address(0)) {
             require(_isTestChain(), "COMD_TOKEN required on this chain: set it to the Pons $COMD token address");
@@ -150,10 +178,6 @@ contract Deploy is Script {
         d.poolManager = c.poolManager;
         Create2Deployer c2 = new Create2Deployer();
         d.create2Deployer = address(c2);
-
-        // ---- seats + identity
-        d.counsel = address(new CounselNFT(c.admin, c.treasury, c.counselBaseURI));
-        _deployErc8004(c, d);
 
         // ---- rewards + revenue
         RewardDistributor dist = new RewardDistributor(IERC20(d.comd), IERC721(d.counsel), c.deployer);
@@ -264,6 +288,7 @@ contract Deploy is Script {
         string memory k = "deployment";
         vm.serializeUint(k, "chainId", block.chainid);
         vm.serializeUint(k, "deployedAtBlock", block.number);
+        vm.serializeString(k, "stage", c.mintOnly ? "mint" : "full");
         vm.serializeAddress(k, "comdToken", d.comd); // external (Pons); MockComd on test chains
         vm.serializeAddress(k, "counselNFT", d.counsel);
         vm.serializeAddress(k, "identityRegistry", d.identityRegistry);

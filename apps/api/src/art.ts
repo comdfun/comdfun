@@ -9,6 +9,9 @@
  * answering and `/health` reports `art_fallback`.
  */
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import path from "node:path";
 
 export interface MetadataInput { apiUrl: string; webUrl: string; chainId: number; tokenContract: string; agentId: string | number | null; agentRegistry: string | null }
 
@@ -19,6 +22,7 @@ interface ArtModule {
   renderCardPNG(tokenId: number, scale?: number): Buffer;
   renderCounselPNG(tokenId: number, scale?: number): Buffer;
   metadata(tokenId: number, o: MetadataInput): Record<string, unknown> & { attributes: { trait_type: string; value: string }[] };
+  collectionMetadata?(o: { apiUrl?: string; webUrl?: string; feeRecipient?: string }): Record<string, unknown>;
 }
 let mod: ArtModule | null | undefined;
 let loadError: string | null = null;
@@ -89,4 +93,37 @@ function fallbackSvg(tokenId: number): string {
     cells.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="#C9A227"/><rect x="${31 - x}" y="${y}" width="1" height="1" fill="#C9A227"/>`);
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="320" height="320" shape-rendering="crispEdges"><rect width="32" height="32" fill="#000"/>${cells.join("")}</svg>`;
+}
+
+
+/** Collection document for CounselNFT.contractURI (OpenSea / ERC-7572). */
+export async function collectionDoc(app: { cfg: { publicApiUrl: string; publicWebUrl: string; treasury?: string | null } }): Promise<Record<string, unknown>> {
+  const m = await artModule();
+  const o = { apiUrl: app.cfg.publicApiUrl, webUrl: app.cfg.publicWebUrl, feeRecipient: app.cfg.treasury ?? undefined };
+  if (m?.collectionMetadata) return m.collectionMetadata(o);
+  return {
+    name: "Company.md Counsel", symbol: "COUNSEL",
+    description: "Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. 2,000 Counsel on Robinhood Chain.",
+    image: `${o.apiUrl}/brand/logo-mark-512.png`, banner_image: `${o.apiUrl}/brand/x-header-1500x500.png`, external_link: o.webUrl,
+    seller_fee_basis_points: 500, ...(o.feeRecipient ? { fee_recipient: o.feeRecipient } : {}),
+  };
+}
+
+const BRAND_TYPES: Record<string, string> = { ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon" };
+let brandDir: string | null | undefined;
+function resolveBrandDir(): string | null {
+  if (brandDir !== undefined) return brandDir;
+  try {
+    const req = createRequire(import.meta.url);
+    brandDir = path.join(path.dirname(req.resolve("@company/art/package.json")), "out", "brand");
+  } catch { brandDir = null; }
+  return brandDir;
+}
+/** A committed brand asset (packages/art/out/brand/<file>); only plain file names, only png/svg/ico. */
+export async function brandFile(file: string): Promise<{ bytes: Buffer; type: string } | null> {
+  if (!/^[a-z0-9][a-z0-9._-]{0,80}$/i.test(file) || file.includes("..")) return null;
+  const type = BRAND_TYPES[path.extname(file).toLowerCase()];
+  const dir = resolveBrandDir();
+  if (!type || !dir) return null;
+  try { return { bytes: await readFile(path.join(dir, file)), type }; } catch { return null; }
 }

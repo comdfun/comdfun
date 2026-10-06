@@ -8,6 +8,7 @@ import {IERC8004Identity, IERC8004Reputation} from "../src/interfaces/IERC8004.s
 
 import {Deploy} from "../script/Deploy.s.sol";
 import {MockComd} from "../src/mocks/MockComd.sol";
+import {CounselNFT} from "../src/CounselNFT.sol";
 import {Flywheel} from "../src/Flywheel.sol";
 import {UniswapV4PoolSwapper} from "../src/swap/UniswapV4PoolSwapper.sol";
 import {Incorporations} from "../src/Incorporations.sol";
@@ -30,6 +31,40 @@ contract DeployTest is Test {
         c.registrar = makeAddr("registrar");
         c.maxSweepPrice = 0.5 ether;
         c.counselBaseURI = "https://api.comd.fun/agents/by-token/";
+    }
+
+    function test_mintStageThenFullReusesSeatsAndRegistries() public {
+        vm.chainId(46630);
+        c.mintOnly = true;
+        Deploy.Deployment memory m = script.deploy(c);
+        assertTrue(m.counsel != address(0) && m.identityRegistry != address(0) && m.reputationRegistry != address(0));
+        assertEq(m.comd, address(0), "mint stage deploys no token");
+        assertEq(m.flywheel, address(0));
+        assertEq(m.projectFactory, address(0));
+        assertEq(CounselNFT(m.counsel).owner(), c.admin);
+        assertEq(CounselNFT(m.counsel).contractURI(), "https://api.comd.fun/agents/by-token/collection.json");
+        // the full stage later reuses them
+        c.mintOnly = false;
+        c.counsel = m.counsel;
+        c.identityRegistry = m.identityRegistry;
+        c.reputationRegistry = m.reputationRegistry;
+        Deploy.Deployment memory d = script.deploy(c);
+        assertEq(d.counsel, m.counsel);
+        assertEq(d.identityRegistry, m.identityRegistry);
+        assertEq(d.reputationRegistry, m.reputationRegistry);
+        assertTrue(d.flywheel != address(0) && d.comd != address(0));
+        assertEq(address(Flywheel(payable(d.flywheel)).counsel()), m.counsel);
+        string memory json = script.toJson(c, d);
+        assertEq(vm.parseJsonString(json, ".stage"), "full");
+    }
+
+    function test_mintStageNeedsNoComdOnMainnet() public {
+        vm.chainId(4663);
+        c.mintOnly = true;
+        c.poolManager = address(0);
+        Deploy.Deployment memory m = script.deploy(c);
+        assertTrue(m.counsel != address(0));
+        assertEq(m.comd, address(0));
     }
 
     function test_deployTestChainWithMockComd() public {
