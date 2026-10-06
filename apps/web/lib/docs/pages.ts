@@ -278,6 +278,8 @@ Each launch page shows its lifecycle, admission checks, addresses, transactions,
 [Incorporations](/incorporations) are company coins on a bonding curve **priced in $COMD**. Anyone can create one for gas. You can trade with $COMD directly, or with ETH once the swapper is configured after $COMD graduates on Pons: the ETH routes through the $COMD pool, so every coin buy is a $COMD buy.
 
 Each coin trade: 1% to Counsel rewards, 0.5% to the launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.
+
+**Graduation.** When a coin's $COMD reserve reaches the graduation threshold (set by the firm, 400,000 $COMD at launch), the buy that gets it there also moves it to **Uniswap v4, paired with $COMD**, in the same transaction: a coin/$COMD pool opens at the curve's price through the firm's guard hook (nobody else can create that pool), the coin's entire $COMD backing plus the matching unsold coins go in as liquidity that is locked forever, and the rest of the unsold supply is burned. The curve then closes for that coin; it trades on Uniswap like any other token, and the pool's swap fees are collected into Counsel rewards (anyone can call \`collectPoolFees\`). Each coin page shows the progress to graduation and, afterwards, the Uniswap link.
 `,
   },
   {

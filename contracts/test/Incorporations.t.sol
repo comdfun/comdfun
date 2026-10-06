@@ -146,7 +146,7 @@ contract IncorporationsTest is Base {
     }
 
     function test_ethPathsRevertUntilSwapperSet() public {
-        Incorporations i2 = new Incorporations(IERC20(address(comd)), address(distributor), IBuybackSwapper(address(0)), admin);
+        Incorporations i2 = new Incorporations(IERC20(address(comd)), address(distributor), IBuybackSwapper(address(0)), manager, address(this), admin);
         vm.prank(bob);
         address c2 = i2.create("No Venue Yet", "NVY", "");
         vm.deal(bob, 1 ether);

@@ -127,5 +127,6 @@ All owner powers are evented and owner-only; full policy table in `contracts/AUD
 | a curve (Incorporations) bug | `Incorporations.pause()` (stops create + all trades); surplus: `rescueERC20/rescueETH`; backing: `scheduleEmergencyWithdraw()` → 48 h public countdown → `emergencyWithdraw(to)` |
 | job revenue stuck in the router | `RevenueRouter.pause()` then `rescueERC20(COMD, to, amount)`; `unpause()` to resume the 80/20 split |
 | a launch misbehaves | `ProjectFactory.pause()`; `rescueERC20/rescueETH/rescueFromDistributor` for surplus |
+| graduations should pause / threshold is wrong | `Incorporations.setGraduationThreshold(x)` (10k…1B COMD; raising it keeps coins on the curve longer), `setGraduationFee(fee, spacing)` for future pools; `pause()` stops trading and graduation. Graduated liquidity is locked by design and cannot be withdrawn. |
 | NFT metadata or mint bug | `CounselNFT.setPhase(0)` (closes minting) and `setBaseURI(...)`; for a code fix deploy the new implementation and `upgradeToAndCall(newImpl, "")` from Admin — holders, balances, phase and URI survive; test first on testnet with `CounselNFTV2Mock` as the template |
 | the API is down | nothing on chain changes; workers reconnect when it returns; mints and claims keep working through Blockscout |

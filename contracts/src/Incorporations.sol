@@ -8,8 +8,25 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {TickMath} from "v4-core/src/libraries/TickMath.sol";
+import {FullMath} from "v4-core/src/libraries/FullMath.sol";
+import {FixedPoint96} from "v4-core/src/libraries/FixedPoint96.sol";
+import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
+import {Currency} from "v4-core/src/types/Currency.sol";
+import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
+import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
 import {LaunchToken} from "./launch/LaunchToken.sol";
+import {LaunchGuardHook} from "./launch/LaunchGuardHook.sol";
 import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
+import {LiquidityAmountsLib} from "./libraries/LiquidityAmountsLib.sol";
+import {TickAlign} from "./libraries/TickAlign.sol";
 
 /// @title Incorporations — company coins on a $COMD bonding curve (Community Coins equivalent) — Company.md
 /// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
@@ -25,7 +42,16 @@ import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 /// @notice ETH trades route ETH↔COMD through the pluggable `IBuybackSwapper` (owner `setSwapper`, configured after
 ///         the Pons graduation); until then `buyWithETH`/`sellForETH` revert `SwapperNotSet()` and COMD trades work.
 ///         The intermediate leg has no own minimum; the trader's `minOut` on the final asset bounds the whole route.
-/// @notice Graduation (migrating a coin to a v4 COMD pool at a threshold) is NOT implemented (phase 2).
+/// @notice **Graduation.** The buy that lifts a coin's real COMD reserve to `graduationThreshold` (owner-set, default
+///         400,000 COMD) moves the coin to Uniswap v4 in the same transaction: a coin/$COMD pool is initialized at the
+///         curve's spot price (through `graduationHook`, a LaunchGuardHook that lets only this contract initialize, so
+///         nobody can front-run the pool with a bad price), ALL of the coin's COMD backing plus the matching amount
+///         of its unsold supply go in as full-range liquidity owned by this contract forever (no function can remove
+///         it), and the rest of the unsold supply is burned. The curve then refuses trades for that coin
+///         (`CoinGraduated()`); it trades on Uniswap, paired with $COMD, with `graduationFee` (default 1%).
+///         `graduate(coin)` is permissionless for a coin that is already above the threshold (e.g. created before
+///         the hook was set). Pool fees are collected by anyone with `collectPoolFees(coin)`: the $COMD side goes to
+///         Counsel rewards, the coin side is burned.
 /// @notice Owner powers (Ownable2Step, renounceable): set `virtualComd` for coins created afterwards, within bounds;
 ///         set the swapper.
 ///         **Safety nets (V7).** `pause()` stops `create` and all four trade functions (launcher ETH claims stay
@@ -39,8 +65,10 @@ import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 ///            launchers notice, and `unpause()` refuses until the contract is solvent again
 ///            (COMD balance ≥ `totalBacking`, ETH balance ≥ `totalLauncherEthOwed`), so trading cannot resume on an
 ///            emptied curve without the owner first restoring the backing.
-contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
+contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
+    using PoolIdLibrary for PoolKey;
+    using StateLibrary for IPoolManager;
 
     uint256 public constant COIN_SUPPLY = 1_000_000_000e18;
     uint256 public constant BPS = 10_000;
@@ -51,6 +79,10 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     uint256 public constant MAX_VIRTUAL = 10_000_000e18;
     uint256 public constant EMERGENCY_DELAY = 48 hours;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant MIN_GRADUATION = 10_000e18;
+    uint256 public constant MAX_GRADUATION = 1_000_000_000e18;
+    uint8 internal constant OP_SEED = 1;
+    uint8 internal constant OP_COLLECT = 2;
 
     struct Coin {
         address creator;
@@ -61,9 +93,33 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         string metadataURI;
     }
 
+    /// @notice A coin's Uniswap v4 pool after graduation (zeroed while it is still on the curve).
+    struct Graduation {
+        bool done;
+        uint64 at;
+        PoolKey key;
+        int24 tickLower;
+        int24 tickUpper;
+        uint128 liquidity;
+        uint256 comdIn;
+        uint256 coinIn;
+        uint256 coinBurned;
+        uint256 feesComd;
+        uint256 feesCoin;
+    }
+
     IERC20 public immutable comd;
     address public immutable rewardDistributor;
+    IPoolManager public immutable poolManager;
+    /// @notice May set `graduationHook` once (deploy-time wiring; the hook needs this contract's address first).
+    address public immutable installer;
     IBuybackSwapper public swapper;
+    IHooks public graduationHook;
+    uint256 public graduationThreshold = 400_000e18;
+    uint24 public graduationFee = 10_000;
+    int24 public graduationTickSpacing = 200;
+    uint256 public graduatedCount;
+    mapping(address => Graduation) internal _grads;
 
     uint256 public virtualComd = 100_000e18;
     address[] public coins;
@@ -93,6 +149,19 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     event EmergencyWithdrawScheduled(uint256 at);
     event EmergencyWithdrawCancelled();
     event EmergencyWithdrawn(address indexed to, uint256 comdAmount, uint256 ethAmount);
+    event GraduationHookSet(address hook);
+    event GraduationThresholdSet(uint256 threshold);
+    event GraduationFeeSet(uint24 fee, int24 tickSpacing);
+    event Graduated(
+        address indexed coin,
+        bytes32 indexed poolId,
+        uint160 sqrtPriceX96,
+        uint256 comdIn,
+        uint256 coinIn,
+        uint256 coinBurned,
+        uint128 liquidity
+    );
+    event PoolFeesCollected(address indexed coin, uint256 comdToRewards, uint256 coinBurned);
 
     error UnknownCoin();
     error ZeroAmount();
@@ -106,12 +175,34 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     error NotScheduled();
     error TooEarly(uint256 at);
     error Insolvent(uint256 comdBalance, uint256 backing, uint256 ethBalance, uint256 ethOwed);
+    error CoinGraduated();
+    error NotGraduated();
+    error NotEligible(uint256 reserve, uint256 threshold);
+    error HookNotSet();
+    error AlreadySet();
+    error BadHook();
+    error NotPoolManager();
+    error NotInstaller();
+    error BadFee();
 
     /// @param swapper_ may be address(0): ETH paths revert `SwapperNotSet()` until the owner sets one
-    constructor(IERC20 comd_, address rewardDistributor_, IBuybackSwapper swapper_, address owner_) Ownable(owner_) {
-        if (address(comd_) == address(0) || rewardDistributor_ == address(0)) revert ZeroAddress();
+    /// @param poolManager_ Uniswap v4 PoolManager the coins graduate into
+    /// @param installer_ the deployer: may call `setGraduationHook` once (owner can always); no other power
+    constructor(
+        IERC20 comd_,
+        address rewardDistributor_,
+        IBuybackSwapper swapper_,
+        IPoolManager poolManager_,
+        address installer_,
+        address owner_
+    ) Ownable(owner_) {
+        if (address(comd_) == address(0) || rewardDistributor_ == address(0) || address(poolManager_) == address(0)) {
+            revert ZeroAddress();
+        }
         comd = comd_;
         rewardDistributor = rewardDistributor_;
+        poolManager = poolManager_;
+        installer = installer_;
         _setSwapper(address(swapper_));
     }
 
@@ -151,7 +242,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         whenNotPaused
         returns (uint256 out)
     {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         if (comdIn == 0) revert ZeroAmount();
         comd.safeTransferFrom(msg.sender, address(this), comdIn);
         uint256 net = comdIn - _takeFees(coin, c.creator, comdIn, true);
@@ -159,6 +250,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         if (out < minOut) revert Slippage(out, minOut);
         IERC20(coin).safeTransfer(msg.sender, out);
         emit Trade(coin, msg.sender, true, comdIn, out, 0);
+        _maybeGraduate(coin, c);
     }
 
     function sellForComd(address coin, uint256 amountIn, uint256 minComdOut)
@@ -167,7 +259,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         whenNotPaused
         returns (uint256 out)
     {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         if (amountIn == 0) revert ZeroAmount();
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
         uint256 gross = _sell(c, amountIn);
@@ -188,7 +280,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         whenNotPaused
         returns (uint256 out)
     {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         if (address(swapper) == address(0)) revert SwapperNotSet();
         if (msg.value == 0) revert ZeroAmount();
         uint256 launcherEth = (msg.value * LAUNCHER_BPS) / BPS;
@@ -213,6 +305,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         }
         emit Fees(coin, 0, 0, 0, launcherEth);
         emit Trade(coin, msg.sender, true, comdIn, out, msg.value - unused);
+        _maybeGraduate(coin, c);
     }
 
     function sellForETH(address coin, uint256 amountIn, uint256 minEthOut)
@@ -221,7 +314,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
         whenNotPaused
         returns (uint256 ethOut)
     {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         if (address(swapper) == address(0)) revert SwapperNotSet();
         if (amountIn == 0) revert ZeroAmount();
         IERC20(coin).safeTransferFrom(msg.sender, address(this), amountIn);
@@ -256,22 +349,48 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Coins out for a COMD buy of `comdIn` (after the 2% fees).
     function quoteBuy(address coin, uint256 comdIn) external view returns (uint256) {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         uint256 net = comdIn - _feeTotal(comdIn, true);
         return _buyOut(c, net);
     }
 
     /// @notice COMD out (after the 2% fees) for selling `amountIn` coins for COMD.
     function quoteSell(address coin, uint256 amountIn) external view returns (uint256) {
-        Coin storage c = _coin(coin);
+        Coin storage c = _live(coin);
         uint256 gross = _sellOut(c, amountIn);
         return gross - _feeTotal(gross, true);
     }
 
-    /// @notice Spot price: COMD wei per 1e18 coin wei.
+    /// @notice Spot price: COMD wei per 1e18 coin wei — from the curve, or from the Uniswap pool once graduated.
     function spotPrice(address coin) external view returns (uint256) {
         Coin storage c = _coin(coin);
-        return ((c.virtualComd + c.comdReserve) * 1e18) / c.coinReserve;
+        Graduation storage g = _grads[coin];
+        if (!g.done) return ((c.virtualComd + c.comdReserve) * 1e18) / c.coinReserve;
+        (uint160 sqrtP,,,) = poolManager.getSlot0(g.key.toId());
+        uint256 priceX96 = FullMath.mulDiv(sqrtP, sqrtP, FixedPoint96.Q96); // currency1 per currency0, Q96
+        return Currency.unwrap(g.key.currency0) == coin
+            ? FullMath.mulDiv(priceX96, 1e18, FixedPoint96.Q96)
+            : FullMath.mulDiv(FixedPoint96.Q96, 1e18, priceX96);
+    }
+
+    function graduationInfo(address coin) external view returns (Graduation memory) {
+        return _grads[coin];
+    }
+
+    function isGraduated(address coin) external view returns (bool) {
+        return _grads[coin].done;
+    }
+
+    /// @notice The buy amount (COMD, after fees) that would graduate `coin` now; 0 if already eligible or graduated.
+    function comdToGraduate(address coin) external view returns (uint256) {
+        Coin storage c = _coin(coin);
+        if (_grads[coin].done || c.comdReserve >= graduationThreshold) return 0;
+        return graduationThreshold - c.comdReserve;
+    }
+
+    /// @dev Lets the LaunchGuardHook's `rescueERC20` recognise the owner as the "factory admin" (role 0x00).
+    function hasRole(bytes32 role, address account) external view returns (bool) {
+        return role == bytes32(0) && account == owner();
     }
 
     function coinCount() external view returns (uint256) {
@@ -295,8 +414,177 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // =====================================================================================
+    //                                      graduation
+    // =====================================================================================
+
+    /// @notice Move an eligible coin (reserve ≥ threshold) to its Uniswap v4 $COMD pool. Permissionless.
+    function graduate(address coin) external nonReentrant whenNotPaused {
+        Coin storage c = _coin(coin);
+        if (_grads[coin].done) revert CoinGraduated();
+        if (address(graduationHook) == address(0)) revert HookNotSet();
+        if (c.comdReserve < graduationThreshold) revert NotEligible(c.comdReserve, graduationThreshold);
+        _graduate(coin, c);
+    }
+
+    /// @notice Collect the pool's accrued swap fees: $COMD → Counsel rewards, coin → burned. Permissionless.
+    function collectPoolFees(address coin) external nonReentrant returns (uint256 comdToRewards, uint256 coinBurned) {
+        Graduation storage g = _grads[coin];
+        if (!g.done) revert NotGraduated();
+        (uint256 a0, uint256 a1) = abi.decode(poolManager.unlock(abi.encode(OP_COLLECT, coin)), (uint256, uint256));
+        bool coinIs0 = Currency.unwrap(g.key.currency0) == coin;
+        comdToRewards = coinIs0 ? a1 : a0;
+        coinBurned = coinIs0 ? a0 : a1;
+        if (comdToRewards > 0) {
+            comd.safeTransfer(rewardDistributor, comdToRewards);
+            totalToRewards += comdToRewards;
+            g.feesComd += comdToRewards;
+        }
+        if (coinBurned > 0) {
+            IERC20(coin).safeTransfer(DEAD, coinBurned);
+            g.feesCoin += coinBurned;
+        }
+        emit PoolFeesCollected(coin, comdToRewards, coinBurned);
+    }
+
+    /// @inheritdoc IUnlockCallback
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        if (msg.sender != address(poolManager)) revert NotPoolManager();
+        (uint8 op, address coin) = abi.decode(data, (uint8, address));
+        Graduation storage g = _grads[coin];
+        PoolKey memory key = g.key;
+        if (op == OP_SEED) {
+            (BalanceDelta d,) = poolManager.modifyLiquidity(
+                key, ModifyLiquidityParams(g.tickLower, g.tickUpper, int256(uint256(g.liquidity)), bytes32(0)), ""
+            );
+            uint256 owe0 = d.amount0() < 0 ? uint256(uint128(-d.amount0())) : 0;
+            uint256 owe1 = d.amount1() < 0 ? uint256(uint128(-d.amount1())) : 0;
+            _settle(key.currency0, owe0);
+            _settle(key.currency1, owe1);
+            return abi.encode(owe0, owe1);
+        }
+        (BalanceDelta f,) =
+            poolManager.modifyLiquidity(key, ModifyLiquidityParams(g.tickLower, g.tickUpper, 0, bytes32(0)), "");
+        uint256 f0 = f.amount0() > 0 ? uint256(uint128(f.amount0())) : 0;
+        uint256 f1 = f.amount1() > 0 ? uint256(uint128(f.amount1())) : 0;
+        if (f0 > 0) poolManager.take(key.currency0, address(this), f0);
+        if (f1 > 0) poolManager.take(key.currency1, address(this), f1);
+        return abi.encode(f0, f1);
+    }
+
+    function _settle(Currency cur, uint256 amount) internal {
+        if (amount == 0) return;
+        poolManager.sync(cur);
+        IERC20(Currency.unwrap(cur)).safeTransfer(address(poolManager), amount);
+        poolManager.settle();
+    }
+
+    function _maybeGraduate(address coin, Coin storage c) internal {
+        if (address(graduationHook) == address(0)) return;
+        if (c.comdReserve < graduationThreshold) return;
+        _graduate(coin, c);
+    }
+
+    /// @dev Checks-effects first (reserves zeroed, backing released), then the pool. The curve price, which
+    ///      includes the virtual COMD, becomes the pool's opening price, so graduation never moves the price;
+    ///      the real COMD is therefore the binding side and the coins it cannot pair with are burned.
+    function _graduate(address coin, Coin storage c) internal {
+        Graduation storage g = _grads[coin];
+        uint256 comdAmt = c.comdReserve;
+        uint256 coinAmt = c.coinReserve;
+        uint160 sqrtP = _plan(g, coin, c.virtualComd + comdAmt, comdAmt, coinAmt);
+        if (g.liquidity == 0) revert ZeroAmount();
+
+        c.comdReserve = 0;
+        c.coinReserve = 0;
+        totalBacking -= comdAmt;
+        g.done = true;
+        g.at = uint64(block.timestamp);
+        ++graduatedCount;
+
+        poolManager.initialize(g.key, sqrtP);
+        (uint256 used0, uint256 used1) = abi.decode(poolManager.unlock(abi.encode(OP_SEED, coin)), (uint256, uint256));
+        _finish(g, coin, coinAmt, used0, used1, sqrtP);
+    }
+
+    /// @dev Pool key, full-range ticks, opening price and the liquidity the reserves can fund (written into `g`).
+    function _plan(Graduation storage g, address coin, uint256 x, uint256 comdAmt, uint256 coinAmt)
+        internal
+        returns (uint160 sqrtP)
+    {
+        bool coinIs0 = coin < address(comd);
+        int24 spacing = graduationTickSpacing;
+        g.key = coinIs0
+            ? PoolKey(Currency.wrap(coin), Currency.wrap(address(comd)), graduationFee, spacing, graduationHook)
+            : PoolKey(Currency.wrap(address(comd)), Currency.wrap(coin), graduationFee, spacing, graduationHook);
+        // pool price = currency1 per currency0: COMD per coin when the coin is currency0, coins per COMD otherwise
+        sqrtP = _sqrtPriceX96(coinIs0 ? coinAmt : x, coinIs0 ? x : coinAmt);
+        g.tickLower = TickAlign.minUsable(spacing);
+        g.tickUpper = TickAlign.maxUsable(spacing);
+        g.liquidity = LiquidityAmountsLib.forAmounts(
+            sqrtP,
+            TickMath.getSqrtPriceAtTick(g.tickLower),
+            TickMath.getSqrtPriceAtTick(g.tickUpper),
+            coinIs0 ? coinAmt : comdAmt,
+            coinIs0 ? comdAmt : coinAmt
+        );
+    }
+
+    /// @dev Records what the pool took, burns the unsold coins the COMD could not pair with, emits.
+    function _finish(Graduation storage g, address coin, uint256 coinAmt, uint256 used0, uint256 used1, uint160 sqrtP)
+        internal
+    {
+        if (Currency.unwrap(g.key.currency0) == coin) {
+            g.coinIn = used0;
+            g.comdIn = used1;
+        } else {
+            g.coinIn = used1;
+            g.comdIn = used0;
+        }
+        g.coinBurned = coinAmt - g.coinIn;
+        if (g.coinBurned > 0) IERC20(coin).safeTransfer(DEAD, g.coinBurned);
+        // COMD rounding dust (a few wei) stays as surplus
+        emit Graduated(coin, PoolId.unwrap(g.key.toId()), sqrtP, g.comdIn, g.coinIn, g.coinBurned, g.liquidity);
+    }
+
+    /// @dev sqrt(amount1 / amount0) in Q64.96, clamped to the pool manager's bounds.
+    function _sqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
+        uint256 ratioX192 = FullMath.mulDiv(amount1, uint256(1) << 192, amount0);
+        uint256 s = Math.sqrt(ratioX192);
+        if (s < TickMath.MIN_SQRT_PRICE + 1) s = TickMath.MIN_SQRT_PRICE + 1;
+        if (s > TickMath.MAX_SQRT_PRICE - 1) s = TickMath.MAX_SQRT_PRICE - 1;
+        return uint160(s);
+    }
+
+    // =====================================================================================
     //                                        owner
     // =====================================================================================
+
+    /// @notice Set the graduation hook once: a LaunchGuardHook whose `factory()` is this contract. Owner, or the
+    ///         installer (deployer) while unset.
+    function setGraduationHook(IHooks hook) external {
+        if (msg.sender != owner() && msg.sender != installer) revert NotInstaller();
+        if (address(graduationHook) != address(0)) revert AlreadySet();
+        if (address(hook) == address(0)) revert ZeroAddress();
+        if (LaunchGuardHook(address(hook)).factory() != address(this)) revert BadHook();
+        graduationHook = hook;
+        emit GraduationHookSet(address(hook));
+    }
+
+    /// @notice COMD reserve at which a coin graduates (applies to every coin still on the curve).
+    function setGraduationThreshold(uint256 t) external onlyOwner {
+        if (t < MIN_GRADUATION || t > MAX_GRADUATION) revert OutOfBounds();
+        graduationThreshold = t;
+        emit GraduationThresholdSet(t);
+    }
+
+    /// @notice Pool fee tier for future graduations: 500/10, 3000/60 or 10000/200.
+    function setGraduationFee(uint24 fee, int24 spacing) external onlyOwner {
+        bool ok = (fee == 500 && spacing == 10) || (fee == 3_000 && spacing == 60) || (fee == 10_000 && spacing == 200);
+        if (!ok) revert BadFee();
+        graduationFee = fee;
+        graduationTickSpacing = spacing;
+        emit GraduationFeeSet(fee, spacing);
+    }
 
     function setVirtualComd(uint256 v) external onlyOwner {
         if (v < MIN_VIRTUAL || v > MAX_VIRTUAL) revert OutOfBounds();
@@ -397,6 +685,12 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard {
     function _coin(address coin) internal view returns (Coin storage c) {
         c = _coins[coin];
         if (c.creator == address(0)) revert UnknownCoin();
+    }
+
+    /// @dev A known coin that is still on the curve.
+    function _live(address coin) internal view returns (Coin storage c) {
+        c = _coin(coin);
+        if (_grads[coin].done) revert CoinGraduated();
     }
 
     function _oweLauncher(address creator, uint256 amount) internal {

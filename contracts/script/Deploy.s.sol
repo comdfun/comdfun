@@ -102,6 +102,7 @@ contract Deploy is Script {
         address contributorDistributor;
         address launchGuardHook;
         address incorporations;
+        address incorporationsHook;
         address mockMarketplace;
         address seaportAdapter;
         bool deployedPoolManager;
@@ -237,10 +238,23 @@ contract Deploy is Script {
         f.grantRole(f.REGISTRAR_ROLE(), c.registrar);
         _handOver(address(f), c.admin, c.deployer);
 
-        // ---- incorporations (1% fee → Counsel rewards; ETH paths through the same swapper)
-        d.incorporations = address(
-            new Incorporations(IERC20(d.comd), d.rewardDistributor, IBuybackSwapper(d.swapper), c.admin)
+        // ---- incorporations (1% fee → Counsel rewards; ETH paths through the same swapper; coins graduate into
+        //      v4 $COMD pools through their own guard hook, which only this Incorporations may initialize pools with)
+        Incorporations inc = new Incorporations(
+            IERC20(d.comd),
+            d.rewardDistributor,
+            IBuybackSwapper(d.swapper),
+            IPoolManager(c.poolManager),
+            c.deployer,
+            c.admin
         );
+        d.incorporations = address(inc);
+        {
+            bytes memory init =
+                abi.encodePacked(type(LaunchGuardHook).creationCode, abi.encode(c.poolManager, d.incorporations));
+            d.incorporationsHook = c2.deploy(mineSalt(address(c2), keccak256(init), GUARD_FLAGS), init);
+        }
+        inc.setGraduationHook(IHooks(d.incorporationsHook)); // installer's single, one-shot power
     }
 
     /// @dev ERC-8004 v2 registries are UUPS implementations whose initialize() is reinitializer(2) onlyOwner:
@@ -317,6 +331,7 @@ contract Deploy is Script {
         vm.serializeAddress(k, "flywheel", d.flywheel);
         vm.serializeAddress(k, "swapper", d.swapper);
         vm.serializeAddress(k, "incorporations", d.incorporations);
+        vm.serializeAddress(k, "incorporationsHook", d.incorporationsHook);
         vm.serializeAddress(k, "projectFactory", d.projectFactory);
         vm.serializeAddress(k, "contributorDistributor", d.contributorDistributor);
         vm.serializeAddress(k, "launchGuardHook", d.launchGuardHook);
@@ -345,6 +360,7 @@ contract Deploy is Script {
         console2.log("Flywheel              ", d.flywheel);
         console2.log("UniswapV4PoolSwapper  ", d.swapper);
         console2.log("Incorporations        ", d.incorporations);
+        console2.log("IncorporationsHook    ", d.incorporationsHook);
         console2.log("ProjectFactory        ", d.projectFactory);
         console2.log("ContributorDistributor", d.contributorDistributor);
         console2.log("LaunchGuardHook       ", d.launchGuardHook);

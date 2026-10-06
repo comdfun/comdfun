@@ -79,6 +79,25 @@ Flywheel and Incorporations and `setTreasury` on RevenueRouter / CounselNFT. Tes
 - Web docs / art metadata still name the collection "Company.md Counsel" (`apps/web/lib/docs/pages.ts`,
   `packages/art` collection.json); on-chain `name()` is now "Counsel".
 
+## 4b. Graduation (added after the audit pass, same day)
+
+`Incorporations` now graduates coins into Uniswap v4 (owner requirement: "coins need to launch through Uniswap,
+paired with COMD"). Design and checks (`test/IncorporationsGraduation.t.sol`, 9 tests; `Integration.t.sol` 7b):
+- Trigger: the buy (COMD or ETH path) that lifts `comdReserve` to `graduationThreshold` (owner-set, default 400k
+  COMD, bounds 10k…1B) graduates in the same transaction; `graduate(coin)` is permissionless for an eligible coin.
+- Price: the pool opens at the curve's spot price (virtual COMD included), so graduation never moves the price;
+  full-range liquidity is sized by the real COMD, the coins it cannot pair with are burned (`coinBurned`), COMD
+  rounding dust stays as surplus. Checks-effects: reserves zeroed and `totalBacking` released before any pool call.
+- Pool key: coin/$COMD, `graduationFee` (10000/200 default; 500/10, 3000/60 allowed), hooks = the Incorporations
+  guard hook (`LaunchGuardHook` with `factory == Incorporations`, mined by `Deploy.s.sol`, key `incorporationsHook`,
+  set once via `setGraduationHook` by the owner or the deploy-time `installer`), so the pool cannot be front-run or
+  pre-initialized by anyone else (`test_nobodyElseCanInitializeAPoolWithTheHook`).
+- Liquidity is owned by Incorporations and there is no function that removes it (locked). `collectPoolFees(coin)`
+  (permissionless) takes only accrued fees: COMD → RewardDistributor (`totalToRewards`), coin → dead address.
+- After graduation every curve function for that coin reverts `CoinGraduated()`; `spotPrice` reads the pool.
+  `pause()` also blocks graduation; `rescueERC20` cannot reach pool liquidity (it is in the PoolManager).
+- `unlockCallback` is PoolManager-only; settle uses sync/transfer/settle for both currencies.
+
 ## 5. Residual risks
 
 - One internal pass, no external audit. The upgradeable NFT adds a trust assumption: whoever holds ADMIN can replace
@@ -95,6 +114,6 @@ Flywheel and Incorporations and `setTreasury` on RevenueRouter / CounselNFT. Tes
 
 ## 6. Test counts
 
-`FOUNDRY_SOLC=$SOLC_PATH FOUNDRY_OFFLINE=true forge test`: **162 tests / 31 suites**, all passing (V6: 95 / 17).
+`FOUNDRY_SOLC=$SOLC_PATH FOUNDRY_OFFLINE=true forge test`: **171 tests / 32 suites**, all passing (V6: 95 / 17).
 New: `CounselNFTUpgrade.t.sol` (10), `SafetyNets.t.sol` (16), `SafetyNetsLaunch.t.sol` (9), `security/Audit.t.sol`
 (29), `Deploy.t.sol` (+3), invariant handlers extended (rescue, launcher claims, owner-rescue attempts).

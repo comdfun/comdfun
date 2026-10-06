@@ -73,7 +73,7 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 | **The Docket** | The public explorer: every matter, ruling, filing, retainer and counsel, with the plan, attempts, reviews and on-chain record. |
 | **$COMD** | Company.md's token, launched on **Pons**: 1,000,000,000 supply, minted once, liquidity locked by Pons at graduation. Every request is paid in $COMD (80% to the Counsel who did the work, 20% to the firm treasury); every trade pays a 5% ETH tax into the flywheel. |
 | **The flywheel** | Every buy and sell pays 5% in ETH; half buys back and burns $COMD, half buys Counsel NFTs off the floor. |
-| **Incorporations** | Company coins on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. |
+| **Incorporations** | Company coins on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. At 400k $COMD in reserve a coin **graduates into a Uniswap v4 pool paired with $COMD** (locked liquidity, pool fees to Counsel rewards). |
 
 The house language is a law firm's: jobs are **matters**, oracle answers are **rulings**, published outputs are
 **filings**, schedules are **retainers**, reviews are **cross-examinations**, and the four-plus-one audit panel is
@@ -183,7 +183,11 @@ the RevenueRouter: **80% to the Counsel who did the work, 20% to the firm treasu
 
 **Incorporations** ([comd.fun/incorporations](https://comd.fun/incorporations)) is the firm's launchpad: anyone
 creates a company coin for gas (1B supply on a virtual constant-product curve priced in COMD, one shared COMD
-reserve) and trades it with ETH or COMD. Fees: 1% to Counsel rewards, 0.5% burned, 0.5% to the launcher.
+reserve) and trades it with ETH or COMD. Fees: 1% to Counsel rewards, 0.5% burned, 0.5% to the launcher. When a
+coin's COMD reserve reaches the graduation threshold (400,000 COMD at launch), the buy that gets it there also opens a
+**Uniswap v4 coin/$COMD pool** at the curve price, through a guard hook only Incorporations can initialize pools
+with: all of the coin's COMD backing and the matching unsold coins become liquidity locked forever, the remaining
+unsold supply is burned, the curve closes for that coin, and the pool's fees are collected into Counsel rewards.
 
 ## $COMD and the flywheel
 
@@ -194,7 +198,7 @@ reserve) and trades it with ETH or COMD. Fees: 1% to Counsel rewards, 0.5% burne
 | Allocations | none: no team, treasury or reserve tokens |
 | Tax | **5% of every buy and sell, in ETH**, set in Pons and forwarded by the Creator wallet to the Flywheel: **2.5% buyback-and-burn, 2.5% Counsel floor sweeps** (of volume). Pons charges its own **1% protocol fee** on top (6% per trade in total; the firm takes only the 5%). Buybacks are timed by the firm, not automatic. |
 | Job revenue | $COMD paid for work: **80% to the Counsel who did the work / 20% firm treasury** |
-| Incorporations | company coins on a $COMD curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher |
+| Incorporations | company coins on a $COMD curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher; graduation at 400k $COMD into a locked Uniswap v4 coin/$COMD pool |
 
 ```mermaid
 flowchart TB
@@ -326,7 +330,7 @@ Solidity 0.8.26, OpenZeppelin 5.4, Uniswap v4-core, Foundry. Addresses are publi
 | `CounselNFT` | The 2,000 Counsel: phases, free mint, royalties, metadata freeze |
 | ERC-8004 registries | Identity and Reputation (vendored CC0 reference contracts behind proxies) |
 | `ProjectFactory`, `ContributorDistributor`, `LaunchGuardHook` | Swarm launches: deterministic deploys, guarded pools, the swarm's 10% |
-| `Incorporations` | Company coins on a $COMD curve: 1% to Counsel rewards, 0.5% burned, 0.5% to the launcher |
+| `Incorporations` | Company coins on a $COMD curve: 1% to Counsel rewards, 0.5% burned, 0.5% to the launcher; graduates coins into Uniswap v4 $COMD pools (`graduate`, `collectPoolFees`) through its own `LaunchGuardHook` |
 | `OracleAttestationVerifier` | On-chain verification of the firm's signed rulings |
 
 ## Addresses

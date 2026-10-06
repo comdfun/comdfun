@@ -4,7 +4,7 @@ import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { erc20Abi, formatUnits, parseUnits, type Abi, type Address } from "viem";
 import { abiOf, contract } from "@/lib/contracts";
 import { useRead } from "@/lib/useChain";
-import { MOCK, PONS_URL } from "@/lib/config";
+import { MOCK, PONS_URL, UNISWAP_URL } from "@/lib/config";
 import { MOCK_CHAIN } from "@/lib/mock-chain";
 import { coinInfo, loadTrades, mockCoins, mockPrice, parseMeta, type TradeRow } from "@/lib/incorporations";
 import { explorerUrl } from "@/lib/chains";
@@ -65,9 +65,21 @@ export function CoinDetail({ address }: { address: Address }) {
   const [amt, setAmt] = useState("");
   const [out, setOut] = useState<bigint | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // graduation: on the curve until the $COMD reserve reaches the threshold, then a Uniswap v4 coin/$COMD pool
+  const [grad, setGrad] = useState<{ done: boolean; reserve: bigint; threshold: bigint; poolId?: string; fee?: number } | null>(null);
 
   useEffect(() => {
     if (!inc.address || !client) return;
+    (async () => {
+      try {
+        const [ci, th, g] = await Promise.all([
+          client.readContract({ address: inc.address!, abi: inc.abi as Abi, functionName: "coinInfo", args: [address] }) as Promise<{ comdReserve: bigint }>,
+          client.readContract({ address: inc.address!, abi: inc.abi as Abi, functionName: "graduationThreshold" }) as Promise<bigint>,
+          client.readContract({ address: inc.address!, abi: inc.abi as Abi, functionName: "graduationInfo", args: [address] }) as Promise<{ done: boolean; key: { fee: number }; liquidity: bigint }>,
+        ]);
+        setGrad({ done: g.done, reserve: ci.comdReserve, threshold: th, fee: g.key?.fee });
+      } catch { /* older deployment without graduation */ }
+    })();
     coinInfo(client, address).then((i) => setInfo((x) => ({ ...x, ...i }))).catch((e) => setErr((e as Error).message.split("\n")[0]));
     loadTrades(client, address).then(setTrades).catch(() => {});
     client.getContractEvents({ address: inc.address, abi: inc.abi as Abi, eventName: "CoinCreated", args: { coin: address }, fromBlock: 0n } as never).then((l) => {
@@ -163,7 +175,16 @@ export function CoinDetail({ address }: { address: Address }) {
           <dt>Launcher</dt><dd>{info?.creator ? <a className="mono ext" href={explorerUrl("address", info.creator)} target="_blank" rel="noreferrer">{short(info.creator)}</a> : "—"}</dd>
           <dt>Fees</dt><dd>1% to Counsel rewards · 0.5% to the launcher · 0.5% of the $COMD side burned (sent to the dead address)</dd>
           <dt>Backing</dt><dd>One $COMD reserve shared by every coin. Paying with ETH routes through the $COMD pool on Uniswap (after graduation on Pons), so every buy is a $COMD buy.</dd>
-          <dt>Graduation</dt><dd className="muted">Phase 2: at a $COMD threshold, liquidity migrates to a v4 COMD pool.</dd>
+          <dt>Graduation</dt>
+          <dd>
+            {grad?.done ? (
+              <><span className="badge ok fill">Graduated</span> This coin now trades on Uniswap v4, paired with $COMD{grad.fee ? ` (${grad.fee / 10_000}% pool fee)` : ""}. Its whole $COMD backing and the matching coins went in as locked liquidity; the rest of the unsold supply was burned. Pool fees go to Counsel rewards.{UNISWAP_URL && <> <a className="ext" href={UNISWAP_URL} target="_blank" rel="noreferrer">Trade on Uniswap</a></>}</>
+            ) : grad ? (
+              <>At <strong>{units(grad.threshold, 18, 0)} $COMD</strong> in the reserve ({grad.threshold > 0n ? `${Math.min(100, Number((grad.reserve * 1000n) / grad.threshold) / 10).toFixed(1)}%` : "—"} there) the coin graduates into a Uniswap v4 pool paired with $COMD — in the same transaction as the buy that gets it there. The curve then closes and the pool takes over at the same price.</>
+            ) : (
+              <span className="muted">At a $COMD threshold the coin graduates into a Uniswap v4 pool paired with $COMD.</span>
+            )}
+          </dd>
         </dl>
         {!mock && trades.length > 0 && (
           <div className="table-wrap">
@@ -186,6 +207,14 @@ export function CoinDetail({ address }: { address: Address }) {
         )}
       </div>
       <aside>
+        {grad?.done ? (
+          <div className="card" style={{ display: "grid", gap: 12 }}>
+            <span className="badge ok fill">Graduated</span>
+            <p style={{ margin: 0 }}>The curve is closed: <strong>${info?.symbol ?? "this coin"}</strong> trades on Uniswap v4 against $COMD.</p>
+            {UNISWAP_URL ? <a className="btn gold" href={UNISWAP_URL} target="_blank" rel="noreferrer">Trade on Uniswap</a> : <span className="small muted">Open the pool in any Uniswap v4 interface on Robinhood Chain.</span>}
+            <a className="small ext" href={explorerUrl("address", inc.address ?? address)} target="_blank" rel="noreferrer">Pool details on the explorer</a>
+          </div>
+        ) : (
         <div className="card" style={{ display: "grid", gap: 14 }}>
           <div className="seg" role="group" aria-label="Buy or sell">
             <button type="button" aria-pressed={side === "buy"} onClick={() => setSide("buy")}>Buy</button>
@@ -206,6 +235,7 @@ export function CoinDetail({ address }: { address: Address }) {
           {!inc.address && <span className="small muted">Incorporations contract not configured{mock ? "; quotes are mock" : ""}.</span>}
           {err && <span className="small err-text">{err}</span>}
         </div>
+        )}
       </aside>
     </div>
   );

@@ -203,16 +203,33 @@ contract IntegrationTest is Test, MerkleHelper {
         assertEq(inc.totalBurned(), 5e18);
         vm.deal(bob, 1 ether);
         vm.prank(bob);
-        uint256 coins = inc.buyWithETH{value: 0.1 ether}(coin, 1);
+        uint256 coins = inc.buyWithETH{value: 0.001 ether}(coin, 1); // ≈ 68k COMD: stays on the curve
         assertGt(coins, 0);
         vm.startPrank(bob);
         IERC20(coin).approve(d.incorporations, coins);
         uint256 ethOut = inc.sellForETH(coin, coins, 1);
         vm.stopPrank();
-        assertGt(ethOut, 0.08 ether);
-        assertLt(ethOut, 0.1 ether);
+        assertGt(ethOut, 0.0008 ether);
+        assertLt(ethOut, 0.001 ether);
         assertGe(comd.balanceOf(d.incorporations), inc.totalBacking());
         assertEq(inc.launcherEthOwed(carol), address(inc).balance);
+        _conserved();
+
+        // 7b. graduation: the buy that lifts the reserve past 400k COMD moves the coin into a v4 coin/$COMD pool
+        //     (through the Incorporations guard hook deployed by the script); the curve then refuses trades
+        assertEq(address(inc.graduationHook()), d.incorporationsHook);
+        vm.prank(bob);
+        inc.buyWithETH{value: 0.1 ether}(coin, 1); // ≈ 1e7 COMD, crosses the 400k threshold
+        assertTrue(inc.isGraduated(coin), "graduated on the crossing buy");
+        Incorporations.Graduation memory g = inc.graduationInfo(coin);
+        assertEq(address(g.key.hooks), d.incorporationsHook);
+        assertTrue(Currency.unwrap(g.key.currency0) == d.comd || Currency.unwrap(g.key.currency1) == d.comd);
+        assertGt(g.liquidity, 0);
+        assertEq(inc.coinInfo(coin).comdReserve, 0);
+        vm.prank(bob);
+        vm.expectRevert(Incorporations.CoinGraduated.selector);
+        inc.buyWithETH{value: 0.01 ether}(coin, 1);
+        assertGe(comd.balanceOf(d.incorporations), inc.totalBacking());
         _conserved();
 
         // 8. launch a custom_token paired with COMD; contributors claim after the lock

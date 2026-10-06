@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Deployers} from "v4-core/test/utils/Deployers.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
@@ -19,6 +20,7 @@ import {RewardDistributor} from "../../src/RewardDistributor.sol";
 import {RevenueRouter} from "../../src/RevenueRouter.sol";
 import {Flywheel} from "../../src/Flywheel.sol";
 import {Incorporations} from "../../src/Incorporations.sol";
+import {LaunchGuardHook} from "../../src/launch/LaunchGuardHook.sol";
 import {IBuybackSwapper} from "../../src/interfaces/IBuybackSwapper.sol";
 import {UniswapV4PoolSwapper} from "../../src/swap/UniswapV4PoolSwapper.sol";
 import {MockMarketplace} from "../../src/mocks/MockMarketplace.sol";
@@ -76,12 +78,29 @@ abstract contract Base is Deployers, MerkleHelper {
         marketplace = new MockMarketplace();
         flywheel = _newFlywheel(IERC20(address(comd)), address(swapper), address(marketplace));
         inc = new Incorporations(
-            IERC20(address(comd)), address(distributor), IBuybackSwapper(address(swapper)), admin
+            IERC20(address(comd)), address(distributor), IBuybackSwapper(address(swapper)), manager, address(this), admin
         );
+        inc.setGraduationHook(IHooks(address(_mineGuardHook(address(inc)))));
+        // curve-only by default in the shared fixture (threshold at its maximum); graduation tests lower it
+        uint256 maxGrad = inc.MAX_GRADUATION();
+        vm.prank(admin);
+        inc.setGraduationThreshold(maxGrad);
 
         bytes32 settlerRole = distributor.SETTLER_ROLE();
         vm.prank(admin);
         distributor.grantRole(settlerRole, settler);
+    }
+
+    /// @dev CREATE2-deploy a LaunchGuardHook (beforeInitialize flag only) that lets `factory` initialize pools.
+    function _mineGuardHook(address factory) internal returns (LaunchGuardHook hook) {
+        bytes32 h = keccak256(abi.encodePacked(type(LaunchGuardHook).creationCode, abi.encode(address(manager), factory)));
+        for (uint256 i; i < 500_000; ++i) {
+            address a = address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), bytes32(i), h)))));
+            if (uint160(a) & Hooks.ALL_HOOK_MASK == uint160(Hooks.BEFORE_INITIALIZE_FLAG) && a.code.length == 0) {
+                return new LaunchGuardHook{salt: bytes32(i)}(address(manager), factory);
+            }
+        }
+        revert("hook salt");
     }
 
     /// @dev A Flywheel owned by `admin` (keeper `keeper`, 0.5 ETH sweep cap) with one allowlisted adapter.

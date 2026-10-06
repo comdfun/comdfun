@@ -236,6 +236,11 @@ jobs:
           guard="$(jq -r .launchGuardHook "$d")"
           # v4 hook permissions are the address's low 14 bits (last 4 hex digits suffice)
           [ $(( 0x${guard: -4} & 0x3fff )) -eq $(( 0x2000 )) ] || { echo "::error::LaunchGuardHook flags wrong: $guard"; exit 1; }
+          ihook="$(jq -r .incorporationsHook "$d")"
+          [ $(( 0x${ihook: -4} & 0x3fff )) -eq $(( 0x2000 )) ] || { echo "::error::Incorporations hook flags wrong: $ihook"; exit 1; }
+          inc="$(jq -r .incorporations "$d")"
+          [ "$(cast call "$inc" 'graduationHook()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$ihook" | lower)" ] || { echo "::error::Incorporations.graduationHook() is not the deployed hook"; exit 1; }
+          [ "$(cast call "$ihook" 'factory()(address)' --rpc-url "$RPC_URL" | lower)" = "$(echo "$inc" | lower)" ] || { echo "::error::Incorporations hook factory() is not Incorporations"; exit 1; }
           fw="$(jq -r .flywheel "$d")"
           [ "$(cast call "$fw" 'comd()(address)' --rpc-url "$RPC_URL" | lower)" = "$(jq -r .comdToken "$d" | lower)" ] \
             || { echo "::error::Flywheel.comd() does not match the deployed comdToken"; exit 1; }
@@ -258,7 +263,7 @@ jobs:
           pf="$(jq -r .projectFactory "$d")"
           comd_allowed="$(cast call "$pf" 'pairedConfig(address)(bool,uint256,uint256)' "$(jq -r .comdToken "$d")" --rpc-url "$RPC_URL" | head -1)"
           [ "$comd_allowed" = "true" ] || { echo "::error::ProjectFactory: \$COMD pairing not allowlisted"; exit 1; }
-          echo "LaunchGuardHook flags ok; Flywheel bound to COMD $(jq -r .comdToken "$d"); ownership with ADMIN; COMD pairing on"
+          echo "LaunchGuardHook + Incorporations hook flags ok; graduation hook wired; Flywheel bound to COMD $(jq -r .comdToken "$d"); ownership with ADMIN; COMD pairing on"
 
       - name: Environment for Railway (api + web)
         if: ${{ !inputs.dry_run }}
