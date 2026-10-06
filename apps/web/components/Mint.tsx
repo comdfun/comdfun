@@ -23,6 +23,9 @@ export function Mint() {
   const max = useRead<bigint>("CounselNFT", "MAX_SUPPLY", [], M.maxSupply);
   const perWallet = useRead<bigint>("CounselNFT", "maxPerWallet", [], M.maxPerWallet);
   const minted = useRead<bigint>("CounselNFT", "mintedBy", [address], M.mintedBy, { enabled: !!address });
+  // the contract owner (Admin) gets a small control panel here, so the phase can be changed without an explorer
+  const owner = useRead<string>("CounselNFT", "owner", []);
+  const isOwner = !!address && !!owner.value && owner.value.toLowerCase() === address.toLowerCase();
   const [qty, setQty] = useState(1);
   const [proof, setProof] = useState<Hex[] | null | undefined>(undefined);
   const { writeContractAsync } = useWriteContract();
@@ -90,6 +93,23 @@ export function Mint() {
         }
         onDone={() => { supply.refetch(); minted.refetch(); celebrate("Seated"); }}
       />
+      {isOwner && (
+        <div className="card c-gold" style={{ display: "grid", gap: 10, marginTop: 6 }}>
+          <span className="label">Owner controls · you are the contract owner</span>
+          <div className="btn-row">
+            {PHASES.map((label, i) => (
+              <TxButton
+                key={label}
+                label={p === i ? `${label} (current)` : `Set ${label.toLowerCase()}`}
+                disabled={p === i}
+                run={() => writeContractAsync({ address: nft.address!, abi: nft.abi as Abi, functionName: "setPhase", args: [i] } as never)}
+                onDone={() => { phase.refetch(); celebrate(`Phase: ${label}`); }}
+              />
+            ))}
+          </div>
+          <span className="small muted">Closed → nobody mints · Allowlist → Merkle proofs only · Public → anyone, free, {fmtNum(perWallet.value)} per wallet. Changes are on-chain transactions from this wallet.</span>
+        </div>
+      )}
     </div>
   );
 }
