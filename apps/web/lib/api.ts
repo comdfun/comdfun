@@ -71,6 +71,8 @@ export const api = {
   schedule: (id: string) => get<T.Schedule>(`/schedules/${encodeURIComponent(id)}`),
   seatRecords: () => get<{ count: number; seats: T.SeatRecord[] }>("/seats/records", { revalidate: 5 }),
   seatOwners: () => get<{ owners: (string | null)[] }>("/seats/owners", { revalidate: 30 }),
+  /** The ERC-8004 registration document (+ OpenSea attributes) the API serves as the token URI. */
+  counselMetadata: (id: string) => get<{ attributes?: { trait_type: string; value: string }[]; active?: boolean; x402Support?: boolean }>(`/agents/by-token/${Number(id)}.json`, { revalidate: 60 }),
   seat: async (id: string, work = 50) => normalizeSeat(await get<Record<string, unknown>>(`/seats/${encodeURIComponent(id)}${qs({ work, reviews: 50 })}`)),
   workers: async () => {
     const r = await get<{ count: number; workers: Record<string, unknown>[] }>("/workers");

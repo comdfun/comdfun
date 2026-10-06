@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { api } from "@/lib/api";
 import { ago, caption, counselName, duration, fmtNum, short } from "@/lib/format";
-import { avatarUrl, metadataUrl } from "@/lib/links";
+import { avatarUrl } from "@/lib/links";
 import { chainName, explorerUrl, activeChain } from "@/lib/chains";
 import { addressOf } from "@/lib/contracts";
 import { MARKETPLACE_URL } from "@/lib/config";
@@ -21,11 +21,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function Agent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^\d{1,4}$/.test(id)) notFound();
-  const [seat, names, workers] = await Promise.all([api.seat(id, 50), api.names(), api.workers()]);
+  const [seat, names, workers, owners, meta] = await Promise.all([api.seat(id, 50), api.names(), api.workers(), api.seatOwners(), api.counselMetadata(id)]);
   if (!seat) notFound();
+  // the holder comes from the chain (ownerOf), whether or not the Counsel has registered yet
+  const holder = seat.owner || owners?.owners[Number(id)] || null;
+  const traits = (meta?.attributes ?? []).filter((a) => a && a.trait_type && a.value);
   const live = workers?.workers.find((w) => w.tokenId === String(seat.tokenId));
   const rt = live?.runtime ?? seat.runtime ?? null;
-  const ownerName = names?.names.find((n) => n.address?.toLowerCase() === seat.owner?.toLowerCase())?.name;
+  const ownerName = names?.names.find((n) => n.address?.toLowerCase() === holder?.toLowerCase())?.name;
   const judged = seat.accepted + seat.rejected;
   const rate = judged ? Math.round((seat.accepted / judged) * 100) : null;
   const identity = addressOf("IdentityRegistry");
@@ -42,7 +45,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
           {rt && <Runtime rt={rt} />}
         </>}
         title={<>Counsel <span className="accent">#{String(id).padStart(4, "0")}</span></>}
-        lede={<>A seat at the bar{seat.owner ? <>, held by <strong>{ownerName ?? short(seat.owner)}</strong></> : null}. {rt ? <>Runs <strong>{runtimeLabel(rt)}</strong>{rt.model ? <> on <span className="mono">{rt.model}</span></> : null}{rt.premium ? " at the premium tier" : ""}.</> : "No runtime reported while offline."}</>}
+        lede={<>A seat at the bar{holder ? <>, held by <strong>{ownerName ?? short(holder)}</strong></> : null}. {rt ? <>Runs <strong>{runtimeLabel(rt)}</strong>{rt.model ? <> on <span className="mono">{rt.model}</span></> : null}{rt.premium ? " at the premium tier" : ""}.</> : "No runtime reported while offline."}</>}
       />
       <div className="two-col side-wide">
         <div>
@@ -111,19 +114,28 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
           </div>
           <div className="card" style={{ marginTop: 28 }}>
             <dl className="kv">
-              <dt>Held by</dt><dd>{seat.owner ? <a className="ext" href={explorerUrl("address", seat.owner)} target="_blank" rel="noreferrer">{ownerName ?? short(seat.owner)}</a> : "—"}{ownerName && seat.owner && <div className="small muted mono">{short(seat.owner)}</div>}</dd>
+              <dt>Held by</dt><dd>{holder ? <><a className="ext mono break small" href={explorerUrl("address", holder)} target="_blank" rel="noreferrer">{holder}</a>{ownerName && <div className="small muted">{ownerName}</div>}<div className="small"><Link href={`/agents?owner=${holder.toLowerCase()}`}>all Counsel held by this wallet ›</Link></div></> : "—"}</dd>
               <dt>Runtime</dt><dd>{rt ? <><Runtime rt={rt} /><div className="small muted" style={{ marginTop: 4 }}>{[rt.version, rt.effort ? `effort ${rt.effort}` : null].filter(Boolean).join(" · ")}</div></> : "—"}</dd>
               <dt>Worker</dt><dd className="mono small">{seat.daemonVersion ? `company ${seat.daemonVersion}` : "—"}{live?.paused ? " · paused" : ""}</dd>
               <dt>ERC-8004</dt><dd>{seat.agentId ? <>agent {seat.agentId}{identity && <> · <a className="ext" href={explorerUrl("token", `${identity}/instance/${seat.agentId}`, chainId)} target="_blank" rel="noreferrer">registry</a></>}</> : <span className="muted">not registered</span>}</dd>
               <dt>ERC-721</dt><dd>#{id} on {chainName(chainId)}{nftAddr && <> · <a className="ext" href={explorerUrl("token", `${nftAddr}/instance/${id}`, chainId)} target="_blank" rel="noreferrer">Blockscout</a></>}</dd>
-              {MARKETPLACE_URL && (<><dt>Marketplace</dt><dd><a className="ext" href={`${MARKETPLACE_URL.replace(/\/$/, "")}/${nftAddr ?? ""}/${id}`} target="_blank" rel="noreferrer">view listing</a></dd></>)}
+              {MARKETPLACE_URL && (<><dt>Marketplace</dt><dd><a className="ext" href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea</a></dd></>)}
               <dt>Last seen</dt><dd>{seat.online ? <span className="ok">now</span> : seat.lastSeenAt ? ago(seat.lastSeenAt) : "—"}</dd>
-              <dt>Metadata</dt><dd><a className="ext small" href={metadataUrl(id)} target="_blank" rel="noreferrer">registration-v1 JSON</a></dd>
               {seat.wallClockMs != null && (<><dt>Time worked</dt><dd>{duration(seat.wallClockMs)}</dd></>)}
               <dt>Accepted</dt><dd><span className="num" style={{ fontSize: 20 }}>{fmtNum(seat.accepted)}</span></dd>
             </dl>
           </div>
-          <ClaimRewards tokenId={String(seat.tokenId)} owner={seat.owner || null} />
+          {traits.length > 0 && (
+            <div className="card c-gold" style={{ marginTop: 20 }}>
+              <span className="label" style={{ display: "block", marginBottom: 10 }}>Traits · {traits.length}</span>
+              <div className="trait-grid">
+                {traits.map((t) => (
+                  <div key={t.trait_type} className="trait"><span className="trait-k">{t.trait_type}</span><span className="trait-v">{t.value}</span></div>
+                ))}
+              </div>
+            </div>
+          )}
+          <ClaimRewards tokenId={String(seat.tokenId)} owner={holder} />
         </aside>
       </div>
     </>

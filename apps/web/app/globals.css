@@ -1320,3 +1320,10 @@ html.fx .wt-bar2 span { animation: wt-fill 0.9s steps(10, end) 0.2s both; transf
 .brief-list li:first-child .brief-body b { font-size: 20px; }
 .brief-list li:first-child .brief-body span { font-size: 14px; }
 @media (max-width: 760px) { .brief-list { grid-template-columns: minmax(0, 1fr); } }
+
+/* Counsel traits (agent page) */
+.trait-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.trait { display: grid; gap: 3px; padding: 8px 10px; border: 2px solid var(--rule-2); background: #050409; }
+.trait-k { font-family: var(--font-px); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.trait-v { font-size: 13.5px; color: var(--parch); }
+@media (max-width: 420px) { .trait-grid { grid-template-columns: minmax(0, 1fr); } }
