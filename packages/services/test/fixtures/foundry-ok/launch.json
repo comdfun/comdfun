@@ -1,0 +1,7 @@
+{
+  "schema": "company.launch.v1",
+  "kind": "evm_contracts",
+  "chainId": 46630,
+  "script": "script/Launch.s.sol:Launch",
+  "contracts": [{ "name": "Counter", "path": "src/Counter.sol", "args": ["$owner"] }]
+}

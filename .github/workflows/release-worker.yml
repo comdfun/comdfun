@@ -1,0 +1,94 @@
+name: release-worker
+
+# Push a tag `worker-v<version>` (matching apps/worker/package.json "version") to publish the `comd` CLI.
+# Assets (names fixed by apps/worker/src/updater.ts + package.json comdWorker):
+#   comd-worker.tgz      self-contained npm tarball (bundled CLI; viem + ws as bundleDependencies)
+#   SHA256SUMS           "<sha256>  comd-worker.tgz"
+# The GitHub release is created as tag `v<version>` (the updater reads /releases/latest, strips a leading "v" from
+# tag_name and compares it with the installed version) in the releases repository from package.json
+# comdWorker.releasesRepo (default comd-fun/worker). Publishing to a repository other than this one needs the secret
+# WORKER_RELEASE_TOKEN: a fine-grained token with "Contents: read and write" on that repository only.
+# Tags with a pre-release suffix (worker-v0.2.0-rc.1) become GitHub pre-releases, which auto-update ignores.
+
+on:
+  push:
+    tags: ["worker-v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and checksum only; do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Read version and releases repository
+        id: meta
+        run: |
+          version="$(node -p "require('./apps/worker/package.json').version")"
+          repo="$(node -p "const p=require('./apps/worker/package.json'); (p.comdWorker ?? p.companyWorker)?.releasesRepo ?? 'comd-fun/worker'")"
+          asset="$(node -p "const p=require('./apps/worker/package.json'); (p.comdWorker ?? p.companyWorker)?.asset ?? 'comd-worker.tgz'")"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag_version="${GITHUB_REF_NAME#worker-v}"
+            if [ "$tag_version" != "$version" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match apps/worker/package.json version $version"; exit 1
+            fi
+          fi
+          prerelease=false; case "$version" in *-*) prerelease=true ;; esac
+          {
+            echo "version=$version"
+            echo "repo=$repo"
+            echo "asset=$asset"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "releasing comd $version ($asset) to $repo (prerelease=$prerelease)"
+
+      - name: Test @company/worker
+        run: npm test -w @company/worker
+
+      - name: Build, pack, checksum, offline-install smoke test
+        run: bash scripts/pack-worker.sh release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: comd-worker-${{ steps.meta.outputs.version }}
+          path: |
+            release/${{ steps.meta.outputs.asset }}
+            release/SHA256SUMS
+
+      - name: Publish GitHub release
+        if: github.event_name == 'push' || inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ steps.meta.outputs.repo == github.repository && github.token || secrets.WORKER_RELEASE_TOKEN }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          REPO: ${{ steps.meta.outputs.repo }}
+          PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+          ASSET: ${{ steps.meta.outputs.asset }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::set the WORKER_RELEASE_TOKEN secret (contents: write on $REPO)"; exit 1
+          fi
+          flags=""; [ "$PRERELEASE" = "true" ] && flags="--prerelease" || flags="--latest"
+          # shellcheck disable=SC2016  # the install snippet is literal text for the release notes
+          notes="$(printf 'comd %s\n\nCompany.md worker CLI, built from %s@%s.\n\nInstall (Node 22.18+):\n\n```sh\nd="$(mktemp -d)"; (cd "$d" \\\n  && curl -fsSLO https://github.com/%s/releases/download/v%s/%s \\\n          -O https://github.com/%s/releases/download/v%s/SHA256SUMS \\\n  && sha256sum -c SHA256SUMS)\nnpm install --global "$d/%s"\ncomd start\n```\n\nSHA256SUMS:\n\n```\n%s\n```\n' \
+            "$VERSION" "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$REPO" "$VERSION" "$ASSET" "$REPO" "$VERSION" "$ASSET" "$(cat release/SHA256SUMS)")"
+          if gh release view "v$VERSION" --repo "$REPO" >/dev/null 2>&1; then
+            echo "::error::release v$VERSION already exists in $REPO; bump apps/worker/package.json"; exit 1
+          fi
+          gh release create "v$VERSION" "release/$ASSET" release/SHA256SUMS \
+            --repo "$REPO" --title "comd $VERSION" --notes "$notes" $flags

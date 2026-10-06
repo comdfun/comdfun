@@ -1,0 +1,41 @@
+{
+  "name": "@company/art",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pixel Counsel generator, cards, logo, wordmark, banners and icons for Company.md.",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./svg": {
+      "types": "./src/svg.ts",
+      "import": "./dist/svg.js",
+      "default": "./dist/svg.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "render": "tsx scripts/render.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "brand": "tsx scripts/brand.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

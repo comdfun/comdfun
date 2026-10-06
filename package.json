@@ -1,0 +1,33 @@
+{
+  "name": "the-company",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build:packages && npm run build -w @company/api && npm run build -w @company/worker && npm run build -w @company/web",
+    "build:packages": "npm run build -w @company/art --if-present && npm run build -w @company/abi --if-present && npm run build -w @company/services",
+    "test": "npm test -w @company/art && npm test -w @company/protocol && npm test -w @company/services && npm test -w @company/api && npm test -w @company/worker",
+    "e2e": "npm --prefix e2e run e2e",
+    "e2e:ui": "npm --prefix e2e run e2e:ui",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:api": "npm run dev -w @company/api",
+    "dev:web": "NEXT_PUBLIC_MOCK=1 npm run dev -w @company/web",
+    "demo": "npm run demo -w @company/api",
+    "local": "bash scripts/local-stack.sh",
+    "render:art": "npm run render -w @company/art",
+    "contracts:libs": "bash scripts/install-contract-libs.sh",
+    "contracts:build": "cd contracts && forge build",
+    "contracts:test": "cd contracts && forge test",
+    "contracts:abi": "npm run gen -w @company/abi",
+    "contracts:deploy:testnet": "bash scripts/deploy-contracts.sh testnet",
+    "contracts:deploy:mainnet": "bash scripts/deploy-contracts.sh mainnet",
+    "contracts:verify-mainnet": "bash scripts/check-mainnet-addresses.sh",
+    "worker:pack": "bash scripts/pack-worker.sh"
+  }
+}

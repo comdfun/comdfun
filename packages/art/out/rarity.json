@@ -1,0 +1,123 @@
+{
+  "supply": 2000,
+  "traits": {
+    "Practice": {
+      "Litigation": 298,
+      "Corporate": 240,
+      "Securities": 238,
+      "Contracts": 222,
+      "IP": 214,
+      "Tax": 212,
+      "Regulatory": 199,
+      "Arbitration": 168,
+      "Bankruptcy": 121,
+      "Admiralty": 88
+    },
+    "Headwear": {
+      "Barrister wig": 470,
+      "Slick": 319,
+      "Bob": 310,
+      "Curls": 237,
+      "Bald": 209,
+      "Bun": 208,
+      "Hat": 139,
+      "Full-bottom wig": 108
+    },
+    "Skin": {
+      "Olive": 335,
+      "Brown": 330,
+      "Fair": 329,
+      "Tan": 319,
+      "Deep": 313,
+      "Porcelain": 297,
+      "Chrome robot": 61,
+      "Gold robot": 16
+    },
+    "Eyes": {
+      "Plain": 819,
+      "Spectacles": 401,
+      "Shades": 238,
+      "Pince-nez": 195,
+      "Monocle": 190,
+      "Visor": 128,
+      "Laser": 29
+    },
+    "Attire": {
+      "Black robe": 633,
+      "Charcoal suit": 348,
+      "Navy suit": 342,
+      "Pinstripe": 260,
+      "Tweed": 230,
+      "Gown with bands": 187
+    },
+    "Neckwear": {
+      "Tie": 654,
+      "Bands": 420,
+      "Bow tie": 388,
+      "None": 308,
+      "Jabot": 230
+    },
+    "Held": {
+      "None": 373,
+      "Gavel": 333,
+      "Law book": 329,
+      "Quill": 299,
+      "Briefcase": 251,
+      "Pen": 241,
+      "Scales": 174
+    },
+    "Backdrop": {
+      "Black": 872,
+      "Chamber wood": 347,
+      "Library": 339,
+      "Courtroom": 319,
+      "Vault brass": 123
+    },
+    "Chambers": {
+      "Chambers I": 100,
+      "Chambers II": 100,
+      "Chambers III": 100,
+      "Chambers IV": 100,
+      "Chambers V": 100,
+      "Chambers VI": 100,
+      "Chambers VII": 100,
+      "Chambers VIII": 100,
+      "Chambers IX": 100,
+      "Chambers X": 100,
+      "Chambers XI": 100,
+      "Chambers XII": 100,
+      "Chambers XIII": 100,
+      "Chambers XIV": 100,
+      "Chambers XV": 100,
+      "Chambers XVI": 100,
+      "Chambers XVII": 100,
+      "Chambers XVIII": 100,
+      "Chambers XIX": 100,
+      "Chambers XX": 100
+    },
+    "Founding Partner": {
+      "Managing Partner": 1,
+      "Senior Partner": 1,
+      "Partner, Markets": 1,
+      "Partner, Drafting": 1,
+      "Partner, Disputes": 1,
+      "Partner, Patents": 1,
+      "Partner, Compliance": 1,
+      "Partner, Revenue": 1,
+      "Partner, Maritime": 1,
+      "Partner, Restructuring": 1
+    },
+    "Scheme": {
+      "Gilt": 1,
+      "Oxblood": 1,
+      "Verdigris": 1,
+      "Parchment": 1,
+      "Ink": 1,
+      "Ember": 1,
+      "Night": 1,
+      "Brass": 1,
+      "Ivory": 1,
+      "Natural": 1
+    }
+  }
+}

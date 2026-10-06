@@ -1,0 +1,14 @@
+# Test fixture for @company/services. Uses a pre-fetched native solc so it builds offline.
+# Tests rewrite `solc` to SOLC_BIN (default ~/.svm/0.8.26/solc-0.8.26).
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = []
+solc = "0.8.26"
+offline = true
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"

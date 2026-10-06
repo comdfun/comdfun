@@ -1,0 +1,161 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FOUNDRY_VERSION: v1.7.1
+  SOLC_VERSION: 0.8.26
+  SOLC_SHA256: d5f23436f443edb85d8e76906d12f0a86ce0490e7663a9e608efeb7a93f149ef
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ----------------------------------------------------------------------------------------- TypeScript workspaces
+  node:
+    name: packages, api, worker, web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # @company/services tests re-run Foundry builds (the Clerk) and are skipped without forge + solc.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Pre-fetch solc ${{ env.SOLC_VERSION }} (svm layout)
+        run: |
+          dir="$HOME/.svm/$SOLC_VERSION"; mkdir -p "$dir"
+          curl -fsSL -o "$dir/solc-$SOLC_VERSION" \
+            "https://github.com/ethereum/solidity/releases/download/v$SOLC_VERSION/solc-static-linux"
+          echo "$SOLC_SHA256  $dir/solc-$SOLC_VERSION" | sha256sum -c -
+          chmod +x "$dir/solc-$SOLC_VERSION"
+          echo "FORGE_BIN=$(command -v forge)" >> "$GITHUB_ENV"
+          echo "SOLC_BIN=$dir/solc-$SOLC_VERSION" >> "$GITHUB_ENV"
+
+      - name: git identity (Records Office tests commit to local bare repos)
+        run: |
+          git config --global user.name "ci"
+          git config --global user.email "ci@users.noreply.github.com"
+          git config --global init.defaultBranch main
+
+      - run: npm ci
+
+      - name: Build packages (art → services → api → worker)
+        run: |
+          npm run build -w @company/art --if-present
+          npm run build -w @company/services
+          npm run build -w @company/api
+          npm run build -w @company/worker
+
+      - name: Test @company/art
+        run: npm test -w @company/art
+      - name: Test @company/protocol
+        run: npm test -w @company/protocol
+      - name: Test @company/services
+        env:
+          SANDBOX_NET: env
+        run: npm test -w @company/services
+      - name: Test @company/api
+        run: npm test -w @company/api
+      - name: Test @company/worker
+        run: npm test -w @company/worker
+
+      - name: Build @company/web (mock mode)
+        env:
+          NEXT_PUBLIC_MOCK: "1"
+          NEXT_PUBLIC_CHAIN_ID: "46630"
+        run: npm run build -w @company/web
+
+      - name: Worker release bundle smoke test
+        run: |
+          node apps/worker/bin/comd.mjs help >/dev/null
+
+  # ----------------------------------------------------------------------------------------- Solidity
+  contracts:
+    name: contracts (forge test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      # contracts/lib is git-ignored: clone the pinned libs (cached on the pin list).
+      - uses: actions/cache@v4
+        with:
+          path: contracts/lib
+          key: contract-libs-${{ hashFiles('scripts/install-contract-libs.sh') }}
+      - run: bash scripts/install-contract-libs.sh
+
+      - name: Pre-fetch solc ${{ env.SOLC_VERSION }} (svm layout; avoids a binaries.soliditylang.org dependency)
+        run: |
+          dir="$HOME/.svm/$SOLC_VERSION"; mkdir -p "$dir"
+          curl -fsSL -o "$dir/solc-$SOLC_VERSION" \
+            "https://github.com/ethereum/solidity/releases/download/v$SOLC_VERSION/solc-static-linux"
+          echo "$SOLC_SHA256  $dir/solc-$SOLC_VERSION" | sha256sum -c -
+          chmod +x "$dir/solc-$SOLC_VERSION"
+
+      - name: forge build (default profile, solc 0.8.26 via svm)
+        working-directory: contracts
+        run: forge build --sizes
+
+      - name: forge test
+        working-directory: contracts
+        run: forge test -vv
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: "@company/abi is in sync with contracts/out (warning only)"
+        continue-on-error: true
+        run: |
+          node packages/abi/scripts/gen-abi.mjs
+          git diff --stat --exit-code -- packages/abi/src/abis \
+            || echo "::warning::packages/abi/src/abis differs from a fresh 'npm run gen -w @company/abi'; regenerate and commit"
+
+  # ----------------------------------------------------------------------------------------- deploy images
+  docker:
+    name: docker images (build only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker build ${{ matrix.service }}
+        run: |
+          docker build -f infra/docker/${{ matrix.service }}.Dockerfile \
+            --build-arg NEXT_PUBLIC_MOCK=1 \
+            -t comd-${{ matrix.service }}:ci .
+      - name: api /health smoke test
+        if: matrix.service == 'api'
+        run: |
+          docker run -d --name api -p 8787:8787 -e ALLOW_EPHEMERAL_STORAGE=1 comd-api:ci
+          for _ in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/health && exit 0; sleep 1; done
+          docker logs api; exit 1
+      - name: web / smoke test
+        if: matrix.service == 'web'
+        run: |
+          docker run -d --name web -p 3000:3000 comd-web:ci
+          for _ in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:3000/ && exit 0; sleep 1; done
+          docker logs web; exit 1

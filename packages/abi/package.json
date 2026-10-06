@@ -1,0 +1,20 @@
+{
+  "name": "@company/abi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Company.md — contract ABIs (as const) and per-chain address book, generated from contracts/out and contracts/deployments",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./addresses": "./src/addresses.ts",
+    "./eip712": "./src/eip712.ts",
+    "./abis": "./src/abis/index.ts"
+  },
+  "files": ["src", "scripts", "README.md"],
+  "scripts": {
+    "gen": "node scripts/gen-abi.mjs"
+  },
+  "license": "MIT"
+}

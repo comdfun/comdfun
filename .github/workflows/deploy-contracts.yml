@@ -1,0 +1,266 @@
+name: deploy-contracts
+
+# Deploy the Company.md contracts and open the COMD/ETH pool from GitHub Actions (Actions → deploy-contracts → Run).
+#
+#   1. Deploy.s.sol   every contract; 100% of the 1,000,000,000 COMD goes to the POL wallet
+#   2. SeedPool.s.sol the POL wallet seeds all of it into the official pool in ONE transaction (irreversible:
+#                     the liquidity is locked forever)
+#   3. artifacts      deployments/<chainId>.json, seed.json, broadcast receipts; the api/web env block is printed
+#                     to the job summary (scripts/deployment-env.mjs)
+#
+# Repository secrets: DEPLOYER_PRIVATE_KEY, POL_PRIVATE_KEY, RPC_URL_MAINNET, RPC_URL_TESTNET.
+# Repository (or environment) variables: ADMIN, POL, TREASURY, KEEPER, SETTLER, REGISTRAR, ATTESTER (addresses),
+# optional BOND_PRICE_WEI, MAX_SWEEP_PRICE, SEAPORT, COUNSEL_BASE_URI.
+# The job runs in the GitHub environment named after the network ("testnet" / "mainnet"): add required reviewers
+# to "mainnet" under Settings → Environments to get a manual approval gate.
+#
+# After it: ADMIN (multisig) calls acceptOwnership() on ComdTaxHook and Flywheel, commit the deployments JSON
+# (+ `npm run contracts:abi`), set the printed variables on Railway, open the mint (DEPLOY.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Robinhood Chain network"
+        type: choice
+        options: [testnet, mainnet]
+        default: testnet
+      initial_market_cap_wei:
+        description: "ETH value (wei) of all 1B COMD at the opening price (default 10 ETH)"
+        type: string
+        default: "10000000000000000000"
+      dry_run:
+        description: "Simulate Deploy.s.sol against the chain without broadcasting (skips seeding)"
+        type: boolean
+        default: false
+      seed_pool:
+        description: "Run SeedPool.s.sol after the deploy"
+        type: boolean
+        default: true
+      confirm:
+        description: 'Mainnet only: type "deploy mainnet"'
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-contracts-${{ inputs.network }}
+  cancel-in-progress: false
+
+env:
+  FOUNDRY_VERSION: v1.7.1
+  SOLC_VERSION: 0.8.26
+  SOLC_SHA256: d5f23436f443edb85d8e76906d12f0a86ce0490e7663a9e608efeb7a93f149ef
+
+jobs:
+  deploy:
+    name: deploy (${{ inputs.network }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.network }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Resolve network
+        id: net
+        env:
+          NETWORK: ${{ inputs.network }}
+          RPC_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+          RPC_TESTNET: ${{ secrets.RPC_URL_TESTNET }}
+          CONFIRM: ${{ inputs.confirm }}
+          MCAP: ${{ inputs.initial_market_cap_wei }}
+        run: |
+          if [ "$NETWORK" = mainnet ]; then
+            chain=4663; rpc="${RPC_MAINNET:-https://rpc.mainnet.chain.robinhood.com}"
+            if [ "$CONFIRM" != "deploy mainnet" ]; then
+              echo "::error::mainnet needs the confirm input set to: deploy mainnet"; exit 1
+            fi
+          else
+            chain=46630; rpc="${RPC_TESTNET:-https://rpc.testnet.chain.robinhood.com}"
+          fi
+          case "$MCAP" in ''|*[!0-9]*) echo "::error::initial_market_cap_wei must be a decimal integer"; exit 1 ;; esac
+          echo "::add-mask::$rpc"
+          got="$(cast chain-id --rpc-url "$rpc")"
+          if [ "$got" != "$chain" ]; then echo "::error::RPC is chain $got, expected $chain"; exit 1; fi
+          {
+            echo "chain=$chain"
+            echo "rpc=$rpc"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check keys and role addresses
+        env:
+          NETWORK: ${{ inputs.network }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          POL_PRIVATE_KEY: ${{ secrets.POL_PRIVATE_KEY }}
+          SEED: ${{ inputs.seed_pool && !inputs.dry_run }}
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+          ADMIN: ${{ vars.ADMIN }}
+          POL: ${{ vars.POL }}
+          TREASURY: ${{ vars.TREASURY }}
+          KEEPER: ${{ vars.KEEPER }}
+          SETTLER: ${{ vars.SETTLER }}
+          REGISTRAR: ${{ vars.REGISTRAR }}
+          ATTESTER: ${{ vars.ATTESTER }}
+        run: |
+          [ -n "$DEPLOYER_PRIVATE_KEY" ] || { echo "::error::secret DEPLOYER_PRIVATE_KEY is not set"; exit 1; }
+          deployer="$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")"
+          echo "deployer $deployer ($(cast balance "$deployer" --rpc-url "$RPC_URL" --ether) ETH)"
+          lower() { echo "$1" | tr 'A-F' 'a-f'; }
+          for v in ADMIN POL TREASURY KEEPER SETTLER REGISTRAR ATTESTER; do
+            val="${!v}"
+            if [ -z "$val" ]; then
+              if [ "$NETWORK" = mainnet ]; then echo "::error::variable $v must be set for mainnet"; exit 1; fi
+              echo "::warning::variable $v unset (Deploy.s.sol defaults the role to ADMIN / the deployer)"
+            elif ! [[ "$val" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
+              echo "::error::variable $v is not an address: $val"; exit 1
+            else
+              echo "$v $val"
+            fi
+          done
+          if [ "$NETWORK" = mainnet ] && [ "$(lower "$ADMIN")" = "$(lower "$deployer")" ]; then
+            echo "::error::mainnet: ADMIN must be a multisig, not the deployer"; exit 1
+          fi
+          if [ "$SEED" = true ]; then
+            [ -n "$POL_PRIVATE_KEY" ] || { echo "::error::secret POL_PRIVATE_KEY is not set (or untick seed_pool)"; exit 1; }
+            pol_addr="$(cast wallet address --private-key "$POL_PRIVATE_KEY")"
+            expected="${POL:-${ADMIN:-$deployer}}"
+            if [ "$(lower "$pol_addr")" != "$(lower "$expected")" ]; then
+              echo "::error::POL_PRIVATE_KEY is $pol_addr but the POL role will be $expected"; exit 1
+            fi
+            echo "POL key $pol_addr ($(cast balance "$pol_addr" --rpc-url "$RPC_URL" --ether) ETH for gas)"
+          fi
+
+      - name: External address checklist (mainnet)
+        if: inputs.network == 'mainnet'
+        env:
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+          SEAPORT: ${{ vars.SEAPORT }}
+        run: bash scripts/check-mainnet-addresses.sh
+
+      - uses: actions/cache@v4
+        with:
+          path: contracts/lib
+          key: contract-libs-${{ hashFiles('scripts/install-contract-libs.sh') }}
+      - run: bash scripts/install-contract-libs.sh
+
+      - name: Pre-fetch solc ${{ env.SOLC_VERSION }} (svm layout)
+        run: |
+          dir="$HOME/.svm/$SOLC_VERSION"; mkdir -p "$dir"
+          curl -fsSL -o "$dir/solc-$SOLC_VERSION" \
+            "https://github.com/ethereum/solidity/releases/download/v$SOLC_VERSION/solc-static-linux"
+          echo "$SOLC_SHA256  $dir/solc-$SOLC_VERSION" | sha256sum -c -
+          chmod +x "$dir/solc-$SOLC_VERSION"
+
+      - name: forge build
+        working-directory: contracts
+        run: forge build --sizes
+
+      - name: Deploy.s.sol ${{ inputs.dry_run && '(dry run)' || '' }}
+        id: deploy
+        working-directory: contracts
+        env:
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+          CHAIN: ${{ steps.net.outputs.chain }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          ADMIN: ${{ vars.ADMIN }}
+          POL: ${{ vars.POL }}
+          TREASURY: ${{ vars.TREASURY }}
+          KEEPER: ${{ vars.KEEPER }}
+          SETTLER: ${{ vars.SETTLER }}
+          REGISTRAR: ${{ vars.REGISTRAR }}
+          BOND_PRICE_WEI: ${{ vars.BOND_PRICE_WEI }}
+          MAX_SWEEP_PRICE: ${{ vars.MAX_SWEEP_PRICE }}
+          SEAPORT: ${{ vars.SEAPORT }}
+          COUNSEL_BASE_URI: ${{ vars.COUNSEL_BASE_URI }}
+        run: |
+          # unset optional variables must not reach vm.envOr as empty strings
+          for v in ADMIN POL TREASURY KEEPER SETTLER REGISTRAR BOND_PRICE_WEI MAX_SWEEP_PRICE SEAPORT COUNSEL_BASE_URI; do
+            [ -n "${!v}" ] || unset "$v"
+          done
+          broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
+          mkdir -p deployments ../.deploy
+          forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" $broadcast --slow 2>&1 | tee ../.deploy/deploy.log
+          test "${PIPESTATUS[0]}" -eq 0
+          sed -n '/DEPLOYMENTS_JSON_BEGIN/,/DEPLOYMENTS_JSON_END/p' ../.deploy/deploy.log | sed '1d;$d' | sed 's/^ *//' \
+            | jq . > ../.deploy/deployment.json
+          test "$(jq -r .chainId ../.deploy/deployment.json)" = "$CHAIN"
+          if [ "$DRY_RUN" != true ]; then cp ../.deploy/deployment.json "deployments/$CHAIN.json"; fi
+          echo "hook=$(jq -r .comdTaxHook ../.deploy/deployment.json)" >> "$GITHUB_OUTPUT"
+          jq . ../.deploy/deployment.json
+
+      - name: Sanity checks
+        if: ${{ !inputs.dry_run }}
+        env:
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+        run: |
+          d=.deploy/deployment.json
+          hook="$(jq -r .comdTaxHook "$d")"; guard="$(jq -r .launchGuardHook "$d")"
+          # v4 hook permissions are the address's low 14 bits (last 4 hex digits suffice)
+          [ $(( 0x${hook: -4} & 0x3fff )) -eq $(( 0x18CC )) ] || { echo "::error::ComdTaxHook flags wrong: $hook"; exit 1; }
+          [ $(( 0x${guard: -4} & 0x3fff )) -eq $(( 0x2000 )) ] || { echo "::error::LaunchGuardHook flags wrong: $guard"; exit 1; }
+          supply="$(cast call "$(jq -r .comdToken "$d")" 'totalSupply()(uint256)' --rpc-url "$RPC_URL" | awk '{print $1}')"
+          [ "$supply" = "1000000000000000000000000000" ] || { echo "::error::unexpected COMD supply $supply"; exit 1; }
+          echo "hook flags ok, COMD supply 1,000,000,000"
+
+      - name: SeedPool.s.sol (100% of COMD, atomic initialize + seed)
+        if: ${{ inputs.seed_pool && !inputs.dry_run }}
+        working-directory: contracts
+        env:
+          RPC_URL: ${{ steps.net.outputs.rpc }}
+          POL_PRIVATE_KEY: ${{ secrets.POL_PRIVATE_KEY }}
+          HOOK: ${{ steps.deploy.outputs.hook }}
+          INITIAL_MARKET_CAP_WEI: ${{ inputs.initial_market_cap_wei }}
+        run: |
+          forge script script/SeedPool.s.sol:SeedPool --rpc-url "$RPC_URL" --broadcast --slow 2>&1 | tee ../.deploy/seed.log
+          test "${PIPESTATUS[0]}" -eq 0
+          sed -n '/SEED_JSON_BEGIN/,/SEED_JSON_END/p' ../.deploy/seed.log | sed '1d;$d' | sed 's/^ *//' | jq . > ../.deploy/seed.json
+          jq . ../.deploy/seed.json
+
+      - name: Environment for Railway (api + web)
+        if: ${{ !inputs.dry_run }}
+        env:
+          CHAIN: ${{ steps.net.outputs.chain }}
+          ATTESTER: ${{ vars.ATTESTER }}
+        run: |
+          node scripts/deployment-env.mjs "$CHAIN" --deployments contracts/deployments --broadcast contracts/broadcast \
+            | tee .deploy/railway.env
+          {
+            echo "## Company.md contracts on chain $CHAIN"
+            echo
+            echo '```json'
+            cat .deploy/deployment.json
+            echo '```'
+            if [ -f .deploy/seed.json ]; then echo; echo "### Pool seeded"; echo '```json'; cat .deploy/seed.json; echo '```'; fi
+            echo
+            echo "### Railway variables"
+            echo '```sh'
+            cat .deploy/railway.env
+            echo '```'
+            [ -n "$ATTESTER" ] && echo "Attester address to publish: \`$ATTESTER\` (api ATTESTER_PRIVATE_KEY)"
+            echo
+            echo "Next: ADMIN calls acceptOwnership() on ComdTaxHook and Flywheel; commit contracts/deployments/$CHAIN.json"
+            echo "and run \`npm run contracts:abi\`; set the variables above on Railway; open the Counsel mint (DEPLOY.md)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployments-${{ inputs.network }}-${{ github.run_number }}
+          path: |
+            contracts/deployments/${{ steps.net.outputs.chain }}.json
+            .deploy/
+            contracts/broadcast/Deploy.s.sol/${{ steps.net.outputs.chain }}/
+            contracts/broadcast/SeedPool.s.sol/${{ steps.net.outputs.chain }}/
+          if-no-files-found: warn
+          retention-days: 90

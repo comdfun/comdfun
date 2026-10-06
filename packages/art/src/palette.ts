@@ -1,0 +1,75 @@
+import { hex } from "./raster.js";
+
+/** SPEC §3 brand palette. */
+export const BRAND = {
+  black: hex("#000000"),
+  panel: hex("#0A0A0A"),
+  rule: hex("#262626"),
+  parchment: hex("#E9E3D3"),
+  muted: hex("#8C877A"),
+  brass: hex("#C9A227"),
+  oxblood: hex("#9E2A2B"),
+  verdigris: hex("#4FA38A"),
+} as const;
+
+/** Extended ramps used by the sprites (kept tight: every sprite uses 2–4 of these). */
+export const P = {
+  ink: hex("#08070A"), // sprite outline
+  brassHi: hex("#F0D272"),
+  brass: BRAND.brass,
+  brassLo: hex("#8A6A12"),
+  brassDk: hex("#4A3808"),
+  parchHi: hex("#FFFBEF"),
+  parch: BRAND.parchment,
+  parchLo: hex("#BDB5A0"),
+  parchDk: hex("#8C877A"),
+  oxHi: hex("#C8484A"),
+  ox: BRAND.oxblood,
+  oxLo: hex("#621819"),
+  vdHi: hex("#86D1B8"),
+  vd: BRAND.verdigris,
+  vdLo: hex("#2C6555"),
+  woodHi: hex("#9A6A3C"),
+  wood: hex("#6E4523"),
+  woodLo: hex("#462913"),
+  steelHi: hex("#E6EEF5"),
+  steel: hex("#A9B3BC"),
+  steelLo: hex("#6E7882"),
+  steelDk: hex("#3E454D"),
+  goldHi: hex("#FFE58A"),
+  gold: hex("#D8AE2E"),
+  goldLo: hex("#8E6A10"),
+  red: hex("#FF3B30"),
+  redHi: hex("#FFB4A8"),
+  white: hex("#FFFFFF"),
+} as const;
+
+/** Arcade brand palette (owner round 2): colourful pixels on pure black. */
+export const ARCADE = {
+  black: hex("#000000"),
+  gold: hex("#FFC83D"),
+  goldHi: hex("#FFE9A8"),
+  goldLo: hex("#E0921A"),
+  goldDk: hex("#8A4F08"),
+  violet: hex("#9B5CFF"),
+  violetLo: hex("#5B2DB8"),
+  violetDk: hex("#2C1470"),
+  violetDeep: hex("#160A3A"),
+  cyan: hex("#2DE2E6"),
+  cyanLo: hex("#1A8E9C"),
+  lime: hex("#8CFF3A"),
+  limeLo: hex("#4E9E1A"),
+  crimson: hex("#FF3B5C"),
+  crimsonLo: hex("#A81E3A"),
+  orange: hex("#FF8A1F"),
+  pink: hex("#FF4FD8"),
+  pinkLo: hex("#A02A8A"),
+  parchment: hex("#F3EBD3"),
+  parchLo: hex("#C9BFA6"),
+  parchDk: hex("#8C8474"),
+  muted: hex("#9A9488"),
+  night0: hex("#000000"),
+  night1: hex("#07041A"),
+  night2: hex("#120A33"),
+  night3: hex("#1E1050"),
+} as const;

@@ -1,0 +1,23 @@
+{
+  "name": "@company/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Company.md wire protocol: API object types, canonical JSON, Ed25519 envelopes, EIP-712 typed data, x402 payloads, WS frames, Merkle trees.",
+  "engines": { "node": ">=22.18" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": { "viem": "^2.57.2" },
+  "devDependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.8",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}

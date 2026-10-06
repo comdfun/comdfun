@@ -1,0 +1,1253 @@
+{
+  "version": 1,
+  "generatedFrom": "skills/*/SKILL.md via skills/check-skill.mjs --write-index",
+  "count": 51,
+  "skills": {
+    "adapt-contract-project": {
+      "id": "adapt-contract-project",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test",
+        "launch-manifest"
+      ],
+      "outputs": [],
+      "references": [
+        "evm-project-launch",
+        "custom-token-launch",
+        "evm-contracts-launch",
+        "eth-security"
+      ],
+      "description": "Make a requester's existing Foundry project launchable through ProjectFactory while changing as little of it as the launch requires.",
+      "sha256": "30c2bdecb0b18e63886350f29b3245d31a4a93adb9fac68fa4e7c0de286226c0",
+      "bytes": 4823
+    },
+    "adversarial-review": {
+      "id": "adversarial-review",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "review",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "review-report"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/review.json",
+          "mediaType": "application/json",
+          "required": true
+        },
+        {
+          "path": "artifacts/review.md",
+          "mediaType": "text/markdown",
+          "required": false
+        }
+      ],
+      "references": [
+        "solidity-security-review",
+        "eth-security",
+        "pashov-skill"
+      ],
+      "description": "Cross-examine an implementation and its tests for defects an independent reader can reproduce, and change nothing.",
+      "sha256": "910daf6d3e4537c505d94db1dec000ce69a7061da4e22a3144e30a716e009034",
+      "bytes": 3908
+    },
+    "audit-imported-code": {
+      "id": "audit-imported-code",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "review",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "review-report"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/review.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "solidity-security-review",
+        "pashov-skill",
+        "tob-entry-point-analyzer",
+        "eth-security"
+      ],
+      "description": "Audit a requester's contracts as they arrived, before they are adapted for launch, and change nothing.",
+      "sha256": "9a55f0062b817d59cd92ad2f187ba1a7c9d112f586f889d3c4e4a0c8cfcdb6e0",
+      "bytes": 3037
+    },
+    "audit-judge": {
+      "id": "audit-judge",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "review",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "review-report"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/review.json",
+          "mediaType": "application/json",
+          "required": true
+        },
+        {
+          "path": "artifacts/audit-report.md",
+          "mediaType": "text/markdown",
+          "required": true
+        }
+      ],
+      "references": [
+        "pashov-skill",
+        "solidity-security-review"
+      ],
+      "description": "Merge four specialists' reports, reproduce every claim against the code, and rule on what the author must fix.",
+      "sha256": "08ade341685b2e0ab2ea3c95521aed724b10a0c9c335a5469542f0b353624497",
+      "bytes": 3117
+    },
+    "audit-specialist": {
+      "id": "audit-specialist",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "review",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "review-report"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/review.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "pashov-skill",
+        "pashov-xray",
+        "uniswap-v4-security",
+        "solidity-security-review"
+      ],
+      "description": "Audit one assigned area of a contract project in depth for the Bench, and change nothing.",
+      "sha256": "8a7a93c46eee834c04296b44504a7b18d7bd0672b7f363e875f3953bf2243a94",
+      "bytes": 3031
+    },
+    "better-interface": {
+      "id": "better-interface",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Six interface disciplines for building and reviewing websites, judged from rendered browser evidence.",
+      "sha256": "cb06cbc25bea7d232b74b16d3c520edb23d8bdc1096df936b6df46b5025ca71b",
+      "bytes": 4373
+    },
+    "build-contract-project": {
+      "id": "build-contract-project",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test",
+        "foundry-sizes"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security",
+        "eth-testing",
+        "solidity-security-review"
+      ],
+      "description": "Build and test a complete standalone Foundry project from the objective, without assuming a Uniswap hook.",
+      "sha256": "79dcb1a1a43a0be8fbf1eaa799108b6d4fd973fb2aeb2fc0ef6c88ab614482b2",
+      "bytes": 3483
+    },
+    "build-ponder-indexer": {
+      "id": "build-ponder-indexer",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "indexer",
+        "npm-check"
+      ],
+      "outputs": [],
+      "references": [
+        "public-rpcs",
+        "eth-robinhood-chain",
+        "eth-concepts"
+      ],
+      "description": "Build a Ponder indexer for specific contracts so their events are queryable as tables and GraphQL.",
+      "sha256": "37bac572ee0df223f140318ac6249d790422076ad47205a92f4894960889b944",
+      "bytes": 2908
+    },
+    "build-website": {
+      "id": "build-website",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "premium",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "web-build",
+        "site-screen"
+      ],
+      "outputs": [],
+      "references": [
+        "better-interface",
+        "eth-frontend-ux"
+      ],
+      "description": "Build a responsive Vite and React website, validate it on the seat, and deliver its source and static export.",
+      "sha256": "184d21a40e57b3229ec5e422a2e1a02e36f64065c1a029214180d9450cfe3ee0",
+      "bytes": 3303
+    },
+    "create-audio": {
+      "id": "create-audio",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "tool:audio"
+      ],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "outputs",
+        "media-audio"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/provenance.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [],
+      "description": "Produce narration, speech or music with the seat operator's explicitly installed audio tool.",
+      "sha256": "1520c758a61a2e60d04fbceca42cff66a71d2c632adbbf54138346a9fc3e4855",
+      "bytes": 3164
+    },
+    "create-image": {
+      "id": "create-image",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "tool:image"
+      ],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "outputs",
+        "media-image"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/provenance.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "better-interface"
+      ],
+      "description": "Produce the requested image with the seat operator's explicitly installed image tool.",
+      "sha256": "f2c80921d7e7f3b878af3b36ea6483cdd17a4c80fd397c3023e2085a00bea686",
+      "bytes": 3155
+    },
+    "create-video": {
+      "id": "create-video",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "tool:video"
+      ],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "outputs",
+        "media-video"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/provenance.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [],
+      "description": "Produce a video with the seat operator's explicitly installed video tool.",
+      "sha256": "45941ce7121e631c162d41e21e93bbd0729398ad055afa2fa5d573dcc8290e64",
+      "bytes": 3136
+    },
+    "custom-token-launch": {
+      "id": "custom-token-launch",
+      "version": 2,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A requester's own ERC-20 launched through ProjectFactory with their pool share and opening market cap, ten percent to the swarm.",
+      "sha256": "8ae904be5e2060b13016c830c33ab1113d12c1c9bc97f6a8483f37c5ce5732c4",
+      "bytes": 5192
+    },
+    "defi-native": {
+      "id": "defi-native",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "DeFi foundations for vaults and ERC-4626, yield, lending, stablecoins, oracles, real-world assets and liquidity risk.",
+      "sha256": "87ca08d01a1c4145de75f689613a01539606ef70be0a2c82bc9d44fa898254fe",
+      "bytes": 7113
+    },
+    "deploy-script": {
+      "id": "deploy-script",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test",
+        "foundry-script"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security",
+        "eth-robinhood-chain",
+        "eth-addresses"
+      ],
+      "description": "Write a Foundry deployment script whose parameters all come from configuration, and prove it runs.",
+      "sha256": "14fbf057d117f806f9c5029d80f72dae0766e89ef1130b2abf6e9126bb098821",
+      "bytes": 3001
+    },
+    "eth-addresses": {
+      "id": "eth-addresses",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A table of widely used protocol addresses on Ethereum and major L2s, each to be verified on chain before use.",
+      "sha256": "7d59277145a2c452c5a465802a87ceb83b59614bd9251af2031864f114f4bc20",
+      "bytes": 4552
+    },
+    "eth-concepts": {
+      "id": "eth-concepts",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Mental models for onchain systems: who calls each state transition, who pays for it, and why they would.",
+      "sha256": "1db633d65f43c865b160b1d4d0534edcc1277b0b6c676b576812a52d0728db29",
+      "bytes": 4496
+    },
+    "eth-frontend-ux": {
+      "id": "eth-frontend-ux",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "dApp UX rules for pending states, the connect-switch-approve-execute flow, amounts and address display.",
+      "sha256": "af9e4939237878b1274f9c9a89d78d7e50fc15f0f9a59d2e022bdf21b2ed20dc",
+      "bytes": 4366
+    },
+    "eth-l2s": {
+      "id": "eth-l2s",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "The L2 landscape for builders: rollup families, behaviour that differs from Ethereum, and where Robinhood Chain fits.",
+      "sha256": "fa204ad5c06f4c6a4543d338f26784b1f928b5e5518359442cc0825f59cd2f65",
+      "bytes": 4811
+    },
+    "eth-robinhood-chain": {
+      "id": "eth-robinhood-chain",
+      "version": 1,
+      "kind": "reference",
+      "origin": "comd",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Facts about Robinhood Chain, the network Company.md runs on: ids, RPCs, explorers, core addresses and Orbit behaviour.",
+      "sha256": "9560ef3505553804b4984e564eebaea2e45c3878e82df4337891b1863a455f69",
+      "bytes": 5752
+    },
+    "eth-security": {
+      "id": "eth-security",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A Solidity safety checklist covering decimals, math, access control, external calls, signatures and proxies.",
+      "sha256": "ba98d8336a5130a5dfc041057e147bd055c593368e05df89b81273aff98041c9",
+      "bytes": 6530
+    },
+    "eth-standards": {
+      "id": "eth-standards",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Working notes on the standards the firm runs on: ERC-8004 identity, x402 payments, permits, EIP-7702 and ERC-4337.",
+      "sha256": "8f1b3e85c882ab9056f0a5521bc2ad396476087f0ecf1a8bc829973a0acb7bbd",
+      "bytes": 7649
+    },
+    "eth-testing": {
+      "id": "eth-testing",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Foundry testing practice covering failure-path unit tests, fuzzing, fork tests and invariant suites.",
+      "sha256": "8cb2c6f6f8277c9bcde7fc74cac3c9324a4d999f4359cdf454c7b070b4dbe4f8",
+      "bytes": 4963
+    },
+    "evm-contracts-launch": {
+      "id": "evm-contracts-launch",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Application contracts deployed without a launch token, distributor or pool, in one all-or-nothing factory transaction.",
+      "sha256": "261929795caaac8250190a1e740704a817f052e686e91ecf060113b9d5632d50",
+      "bytes": 3468
+    },
+    "evm-project-launch": {
+      "id": "evm-project-launch",
+      "version": 2,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Constructor-only EVM projects launched with a token and a factory-initialised pool through ProjectFactory, under launch policy.",
+      "sha256": "c5f57bbe3f6f5fca2ba46e97cb3002f0e4a065406788651b886db0efdd3f1697",
+      "bytes": 8374
+    },
+    "fix-findings": {
+      "id": "fix-findings",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test",
+        "findings-response"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/responses.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "eth-security",
+        "solidity-security-review"
+      ],
+      "description": "Address exactly the blocking findings of a review, and answer with evidence the ones that do not hold.",
+      "sha256": "abd1ec794269127bb0de36e5b698f1beef4c44d404a71aea1677824b7fa0f7b9",
+      "bytes": 2921
+    },
+    "frontend-for-contract": {
+      "id": "frontend-for-contract",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "premium",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "web-build",
+        "site-screen"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-frontend-ux",
+        "better-interface",
+        "eth-robinhood-chain",
+        "public-rpcs"
+      ],
+      "description": "Build and validate a wallet-connected frontend for deployed contracts, delivering source and static export.",
+      "sha256": "e97961a58ca268790e0e4040904428f456a7ddd3e2048de6f3d861a0eac08250",
+      "bytes": 3340
+    },
+    "gas-and-size-report": {
+      "id": "gas-and-size-report",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "tests",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test",
+        "foundry-sizes",
+        "gas-report"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/gas-report.json",
+          "mediaType": "application/json",
+          "required": true
+        },
+        {
+          "path": "artifacts/gas-report.md",
+          "mediaType": "text/markdown",
+          "required": false
+        }
+      ],
+      "references": [
+        "eth-testing"
+      ],
+      "description": "Measure a project's gas use and contract sizes, record them as artifacts, and refuse contracts that cannot deploy.",
+      "sha256": "2d688e2675af03bf519e37846aad6ffc44ec50da09ac1128c7cb793e4ba4dcd6",
+      "bytes": 3073
+    },
+    "implement-and-test": {
+      "id": "implement-and-test",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security",
+        "eth-testing"
+      ],
+      "description": "One seat writes a small contract change and its tests, for work too small to need a second pair of hands.",
+      "sha256": "de7ca259cc567ae2e35cec9ce09193facd86f0a7f0aada46f9d11d077d9e9e8f",
+      "bytes": 2365
+    },
+    "implement-component": {
+      "id": "implement-component",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "outputs",
+        "project-build"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-frontend-ux",
+        "better-interface"
+      ],
+      "description": "Implement one scoped component against agreed interfaces while other seats build independent components.",
+      "sha256": "78359f70512cd792308c5a14c7b8f273e1ce8d8e2a978aa79d4c6600302c96c0",
+      "bytes": 2237
+    },
+    "implement-contract": {
+      "id": "implement-contract",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security",
+        "solidity-security-review"
+      ],
+      "description": "Write the contract and leave the tests to a different seat that did not write it.",
+      "sha256": "6cd7852ee6f06e3d7ee068676a0472d68b3003f8dde485a23dc7b8d99e411572",
+      "bytes": 2747
+    },
+    "implement-one-contract": {
+      "id": "implement-one-contract",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security"
+      ],
+      "description": "Write one contract of several being built in parallel by other seats against agreed interfaces.",
+      "sha256": "0982089f9bc5dfbced037bb4b8673ef61605a4a91b62c4232dd43aad09034c07",
+      "bytes": 2512
+    },
+    "import-site": {
+      "id": "import-site",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "web-build",
+        "site-screen"
+      ],
+      "outputs": [],
+      "references": [
+        "better-interface"
+      ],
+      "description": "Build the static export of a website somebody else wrote, from their repository as it stands.",
+      "sha256": "d024122184622309b77778f5a5ed4d05c5d1d67fc6d3449a972287ede416ce09",
+      "bytes": 2386
+    },
+    "integrate-project": {
+      "id": "integrate-project",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "integrate",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "project-build"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/integration.md",
+          "mediaType": "text/markdown",
+          "required": true
+        }
+      ],
+      "references": [
+        "eth-security",
+        "eth-testing"
+      ],
+      "description": "Join accepted parallel branches into one project and validate the whole against the original requirements.",
+      "sha256": "dad4864ce8e0ed33c021b5bc46b0281d2416ecffae667c2493b185f01854b158",
+      "bytes": 2797
+    },
+    "oracle-assess": {
+      "id": "oracle-assess",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "economy",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "oracle-answer"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/answer.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "public-rpcs",
+        "eth-robinhood-chain",
+        "eth-concepts",
+        "eth-addresses"
+      ],
+      "description": "Answer a typed on-chain question from a pinned request, with the recipe that lets anyone reproduce the answer.",
+      "sha256": "967a0e99b8b4618154ce14c208ed9effac7e333a9de46b6069973dd59f120577",
+      "bytes": 3396
+    },
+    "pashov-fizz": {
+      "id": "pashov-fizz",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Invariant discovery and property patterns, applied with Foundry handler-based invariant tests.",
+      "sha256": "1928e267ff1ba6a78449fa44dc0885ef46e6eb1093e0785f37209d166a028014",
+      "bytes": 4925
+    },
+    "pashov-skill": {
+      "id": "pashov-skill",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A specialty-based Solidity audit method with evidence-based finding validation, in the style of Pashov Audit Group.",
+      "sha256": "7c36de83bc575d598300dcd6f7c85f5e24529a6377a5698477831a9bb3085022",
+      "bytes": 5440
+    },
+    "pashov-xray": {
+      "id": "pashov-xray",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A failure-mode catalog and invariant templates for auditing contract projects, organised by mechanism.",
+      "sha256": "d690445c136317df362bb8034b5786b186ce68c58d27e79d157f922e4f3e4fc0",
+      "bytes": 5331
+    },
+    "public-rpcs": {
+      "id": "public-rpcs",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Public JSON-RPC endpoints and chain ids for Robinhood Chain and major EVM chains, ordered for rotation.",
+      "sha256": "16d0e1236abf310edb4b26c114840b3918d1411cfc1f6f346da860f10a609e82",
+      "bytes": 4696
+    },
+    "refine-project": {
+      "id": "refine-project",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "project-build"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security",
+        "better-interface"
+      ],
+      "description": "Change an existing project to address specific reported problems, without rebuilding it.",
+      "sha256": "007f4db4c5ef5d99ade8cf0010d68e95d15bb94432cf329a6fa6399e702afe3d",
+      "bytes": 2361
+    },
+    "research-report": {
+      "id": "research-report",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "outputs",
+        "research-citations"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/report.md",
+          "mediaType": "text/markdown",
+          "required": true
+        },
+        {
+          "path": "artifacts/sources.json",
+          "mediaType": "application/json",
+          "required": false
+        }
+      ],
+      "references": [
+        "defi-native",
+        "eth-l2s"
+      ],
+      "description": "Research a question and deliver a reusable report with sources and a frank account of uncertainty.",
+      "sha256": "5b5a36c7fc59af9dee7eb811c1e4be02048880c8980b12d302d84ccc8979b097",
+      "bytes": 3012
+    },
+    "scaffold-project": {
+      "id": "scaffold-project",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [
+        "network"
+      ],
+      "writes": "any",
+      "checks": [
+        "paths",
+        "project-build"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-testing",
+        "better-interface"
+      ],
+      "description": "Build a working project from an empty tree, including its layout, configuration, and the thing itself.",
+      "sha256": "8346a60c910e1287455cab728b5e450c71adaa34108b47c3fce9ff9a96b392a8",
+      "bytes": 2433
+    },
+    "site-content-check": {
+      "id": "site-content-check",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "review",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "site-verdict"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/site-verdict.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "eth-frontend-ux"
+      ],
+      "description": "Read a website that is about to be hosted under the firm's domain for content that must not be hosted.",
+      "sha256": "812a6a70dfab1bfc9a86a5b4576b4f6e685d2317550e0d599e699dab70acd433",
+      "bytes": 3185
+    },
+    "solidity-security-review": {
+      "id": "solidity-security-review",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "A lightweight Solidity threat-model reference for a scoped review; it does not create a review assignment by itself.",
+      "sha256": "41f342c2c4926b242c2c434564d680f1fddde676846252ec214ae122ba1beb2c",
+      "bytes": 4562
+    },
+    "tob-entry-point-analyzer": {
+      "id": "tob-entry-point-analyzer",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Entry-point analysis in the style of Trail of Bits: every state-changing entry point, who may call it, and what it moves.",
+      "sha256": "ca660d9d9bdafceadbc5865e396684220cb18e86864425c22a1dfa54484f5564",
+      "bytes": 4012
+    },
+    "tob-property-based-testing": {
+      "id": "tob-property-based-testing",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Property-based testing guidance in the style of Trail of Bits: choosing, writing, reviewing and debugging properties.",
+      "sha256": "779070319ac75a7f618f381f139130b6fe025685161310934054d05174142705",
+      "bytes": 4482
+    },
+    "uniswap-v4-hooks": {
+      "id": "uniswap-v4-hooks",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Uniswap v4 hook design: the singleton PoolManager, flash accounting, hook permissions, deltas, fees and periphery.",
+      "sha256": "1af9b43e1043c322f88668f02d471f3fad90dafbb477303d565eafb53e07713c",
+      "bytes": 6762
+    },
+    "uniswap-v4-security": {
+      "id": "uniswap-v4-security",
+      "version": 1,
+      "kind": "reference",
+      "origin": "parity",
+      "role": "reference",
+      "inference": "none",
+      "tier": null,
+      "judge": "none",
+      "requires": [],
+      "writes": "none",
+      "checks": [],
+      "outputs": [],
+      "references": [],
+      "description": "Security-first Uniswap v4 hook development: the attack surface of callbacks, deltas, pool keys and hook state.",
+      "sha256": "b2c10fe6ff0361ab9d3c932c5c17157490c68ebcec7c0759d81cc6b5f5321054",
+      "bytes": 7275
+    },
+    "workflow-planner": {
+      "id": "workflow-planner",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [],
+      "writes": "none",
+      "checks": [
+        "no-writes",
+        "workflow-plan"
+      ],
+      "outputs": [
+        {
+          "path": "artifacts/workflow.json",
+          "mediaType": "application/json",
+          "required": true
+        }
+      ],
+      "references": [
+        "evm-project-launch",
+        "custom-token-launch",
+        "evm-contracts-launch"
+      ],
+      "description": "Propose a bounded parallel workflow as JSON for Chambers to validate, without executing any of it.",
+      "sha256": "4f2766b7b3adf05006acd279103175e9157109c811f8ce4c80faddbb3169a8aa",
+      "bytes": 3447
+    },
+    "write-foundry-tests": {
+      "id": "write-foundry-tests",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "tests",
+      "inference": "standard",
+      "tier": 1,
+      "judge": "verifier-rerun",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "foundry-build",
+        "foundry-test"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-testing",
+        "tob-property-based-testing",
+        "pashov-fizz"
+      ],
+      "description": "Test somebody else's accepted implementation, including the paths its author would rather you did not take.",
+      "sha256": "dcf65e191d38b2bdde9ed4164ee57b0a272299c41910527191d49f4a1e7f6ffa",
+      "bytes": 3209
+    },
+    "write-readme-and-docs": {
+      "id": "write-readme-and-docs",
+      "version": 1,
+      "kind": "runnable",
+      "origin": "parity",
+      "role": "implement",
+      "inference": "standard",
+      "tier": 2,
+      "judge": "verifier-paths",
+      "requires": [],
+      "writes": "paths",
+      "checks": [
+        "paths",
+        "readme"
+      ],
+      "outputs": [],
+      "references": [
+        "eth-security"
+      ],
+      "description": "Document a delivered project for a stranger who has to run it, use it and change it.",
+      "sha256": "93f1f6324965acf4a1fcb31098c566a80314c5d893a8394a99a40f322a9d1b1b",
+      "bytes": 2559
+    }
+  }
+}

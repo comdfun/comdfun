@@ -1,0 +1,11 @@
+{
+  "name": "@company/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end proof of Company.md on a local anvil chain: real contracts, real x402/Permit2 settlement, real control plane and services, six paired mock-runtime seats. ui.ts drives the website with an injected wallet (Playwright).",
+  "scripts": {
+    "e2e": "node --import tsx run.ts",
+    "e2e:ui": "node --import tsx ui.ts"
+  }
+}

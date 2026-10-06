@@ -1,0 +1,25 @@
+# Build context for infra/docker/*.Dockerfile (context = repo root). Keep it small and secret-free.
+.git
+.github
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+**/.turbo
+**/coverage
+.env
+**/.env
+**/.env.local
+**/.env.*.local
+*.local
+storage
+**/storage
+.local-stack
+_old_worker_ref
+apps/web/screenshots
+contracts/out
+contracts/cache
+contracts/lib
+contracts/broadcast
+npm-debug.log*
+.DS_Store

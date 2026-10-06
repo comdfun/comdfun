@@ -1,0 +1,47 @@
+{
+  "name": "@company/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Company.md worker CLI (`comd`): pairs a Company.md Counsel seat and runs its work on your own Claude Code or Codex.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "bin": {
+    "comd": "./bin/comd.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "comd": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@company/protocol": "*",
+    "viem": "^2.57.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "esbuild": "^0.28.0"
+  },
+  "comdWorker": {
+    "releasesRepo": "comd-fun/worker",
+    "asset": "comd-worker.tgz"
+  }
+}

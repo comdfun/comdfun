@@ -1,0 +1,26 @@
+{
+  "name": "@company/services",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Company.md back-office services: blob store, Clerk (verifier), Records Office (publisher), Registrar (deployer), site hosting.",
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./dist": "./dist/index.js"
+  },
+  "files": ["src", "dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test --test-concurrency=1 test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
