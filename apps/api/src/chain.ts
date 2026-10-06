@@ -123,7 +123,8 @@ export function rpcUrls(spec: string): string[] {
 }
 export function rpcTransport(spec: string, opts: { timeout?: number; retryCount?: number } = {}) {
   const urls = rpcUrls(spec);
-  const transports = urls.map((u) => http(u, { timeout: opts.timeout ?? 10_000, retryCount: opts.retryCount ?? 1 }));
+  // a 429 from a metered endpoint is retried briefly before the next endpoint is tried; a 403 (bot wall) is not retried
+  const transports = urls.map((u) => http(u, { timeout: opts.timeout ?? 10_000, retryCount: Math.max(opts.retryCount ?? 1, 2), retryDelay: 250 }));
   return transports.length === 1 ? transports[0] : fallback(transports, { rank: false, retryCount: 0 });
 }
 
