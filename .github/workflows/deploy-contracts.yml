@@ -199,6 +199,17 @@ jobs:
           done
           broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
           mkdir -p deployments ../.deploy
+          # never redeploy the Counsel NFT or the registries by accident: when the committed deployment for this chain
+          # already has them, reuse them unless the variables say otherwise
+          prev="deployments/$CHAIN.json"
+          if [ -f "$prev" ]; then
+            for key in COUNSEL_NFT:counselNFT IDENTITY_REGISTRY:identityRegistry REPUTATION_REGISTRY:reputationRegistry; do
+              var="${key%%:*}"; field="${key#*:}"; have="$(jq -r ".$field // empty" "$prev")"
+              if [ -z "${!var:-}" ] && [ -n "$have" ] && [ "$have" != 0x0000000000000000000000000000000000000000 ]; then
+                export "$var=$have"; echo "reusing $var=$have from $prev"
+              fi
+            done
+          fi
           # accept the key with or without the 0x prefix (vm.envUint needs the prefix)
           case "$DEPLOYER_PRIVATE_KEY" in 0x*|0X*) ;; *) DEPLOYER_PRIVATE_KEY="0x$DEPLOYER_PRIVATE_KEY" ;; esac
           export DEPLOYER_PRIVATE_KEY

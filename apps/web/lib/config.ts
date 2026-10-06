@@ -28,7 +28,7 @@ export const APPROVAL_REQUESTS = 10n;
 export const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 export const TAX_BPS_DEFAULT = 500;
 /** Pons: the launchpad that minted $COMD and runs its trading (bonding curve, then a locked Uniswap v4 pool). */
-export const PONS_URL = process.env.NEXT_PUBLIC_PONS_URL || "https://pons.fun";
+export const PONS_URL = process.env.NEXT_PUBLIC_PONS_URL || "https://ponsfamily.com/launchpad/0xbfdac6235dbe77c0cd6edb01c810c7da858c6c41";
 /** Uniswap trade link, set after graduation; the link is hidden while unset. */
 export const UNISWAP_URL = process.env.NEXT_PUBLIC_UNISWAP_URL || "";
 /** The graduated pool id (bytes32), when known; enables the live price read through the swapper. */

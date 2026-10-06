@@ -9,9 +9,9 @@ export type AddressBook = Record<ContractName, Address> & { chainId: number; dep
 export const addresses: Record<number, AddressBook> = {
   4663: {
     chainId: 4663,
-    deployed: false,
+    deployed: true,
     deployedAtBlock: 81844154,
-    comdToken: "0x0000000000000000000000000000000000000000",
+    comdToken: "0xBfdac6235dBe77c0cD6EDB01C810c7DA858C6c41",
     counselNFT: "0x7d6B060186faB000ad9c54D56FcE447CC22942b7",
     counselNFTImpl: "0x1e2d5495D1398fa22C598677a39054222b1DBfCa",
     identityRegistry: "0x6397A4Ae3738829F2CAF6d0ec08e0db11b579adC",
