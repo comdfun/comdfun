@@ -87,7 +87,9 @@ describe("pairing, enrollments and ERC-8004 agents", () => {
     const doc = (await get(h, "/agents/by-token/10.json")).body;
     assert.equal(doc.type, "https://eips.ethereum.org/EIPS/eip-8004#registration-v1");
     assert.match(doc.name, /^Counsel #0010$/);
-    assert.equal(doc.x402Support, false);
+    assert.equal(doc.x402Support, true, "work is retained through the firm's x402 endpoints");
+    assert.ok(doc.services.some((s: { name: string; endpoint: string }) => s.name === "x402" && /\/requests\/quote$/.test(s.endpoint)), "x402 service endpoint listed");
+    assert.equal(doc.active, true, "a device is paired, so the agent is active");
     assert.deepEqual(doc.supportedTrust, ["reputation"]);
     assert.equal(doc.registrations[0].agentRegistry, `eip155:46630:${h.app.cfg.identityRegistry!.toLowerCase()}`);
     assert.equal(doc.registrations[0].agentId, Number(agentId));

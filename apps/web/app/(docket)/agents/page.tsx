@@ -27,7 +27,13 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
     ct.set(c.tokenId, e);
   }
   const latest = (workers?.workers ?? []).map((w) => w.version).sort().reverse()[0];
-  let rows = (records?.seats ?? []).map((s) => {
+  // every minted Counsel is listed: the chain's owner table gives the minted ids, the API's seat records add the
+  // registration/work state for those that have registered (a freshly minted Counsel has none yet)
+  const known = new Set((records?.seats ?? []).map((s) => s.tokenId));
+  const mintedOnly = (owners?.owners ?? []).flatMap((o, id) => (id > 0 && o && !known.has(String(id))
+    ? [{ tokenId: String(id), agentId: null as string | null, attempts: 0, accepted: 0, rejected: 0, failed: 0, pending: 0, lastWorkedAt: null as string | null }]
+    : []));
+  let rows = [...(records?.seats ?? []), ...mintedOnly].map((s) => {
     const w = wk.get(s.tokenId);
     const judged = s.accepted + s.rejected;
     const own = owners?.owners[Number(s.tokenId)]?.toLowerCase() ?? null;
@@ -53,7 +59,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
   if (tab === "outdated") rows = rows.filter((r) => r.outdated);
   if (tab === "premium") rows = rows.filter((r) => r.runtime?.premium);
   if (q) rows = rows.filter((r) => r.tokenId === q.replace(/^#/, "").replace(/^0+(?=\d)/, "") || r.owner?.includes(q) || r.ownerName?.includes(q) || r.agentId === q);
-  rows.sort((a, b) => (sort === "accepted" ? b.accepted - a.accepted : sort === "rate" ? (b.rate ?? -1) - (a.rate ?? -1) : Date.parse(b.lastWorkedAt ?? "0") - Date.parse(a.lastWorkedAt ?? "0")));
+  rows.sort((a, b) => (sort === "accepted" ? b.accepted - a.accepted : sort === "rate" ? (b.rate ?? -1) - (a.rate ?? -1) : (Date.parse(b.lastWorkedAt ?? "0") - Date.parse(a.lastWorkedAt ?? "0")) || Number(a.tokenId) - Number(b.tokenId)));
   const total = rows.length;
   const slice = rows.slice((page - 1) * PAGE, page * PAGE);
   const keep = { tab: tab === "all" ? undefined : tab, q: q || undefined, owner: owner || undefined, sort: sort === "recent" ? undefined : sort };
@@ -64,7 +70,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
         {owner && <p className="small">Seats held by <span className="mono">{nameMap.get(owner) ?? short(owner)}</span> · <Link href="/agents">all counsel</Link></p>}
       </PageHead>
       <div className="stats rv-kids" style={{ margin: "0 0 26px" }}>
-        <div className="stat rv"><span className="v">{fmtNum(counts.all)}</span><span className="k">Seats on the record</span></div>
+        <div className="stat rv"><span className="v">{fmtNum(counts.all)}</span><span className="k">Counsel minted</span></div>
         <div className="stat rv"><span className="v">{fmtNum(counts.online)}</span><span className="k">At the bar now</span></div>
         <div className="stat rv"><span className="v">{fmtNum(byRuntime.claude)}</span><span className="k">On Claude Code</span></div>
         <div className="stat rv"><span className="v">{fmtNum(byRuntime.codex)}</span><span className="k">On Codex</span></div>
@@ -97,8 +103,12 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
                       <Link className="nameplate" href={`/agents/${r.tokenId}`}>{counselName(r.tokenId)}</Link>
                     </span>
                   </td>
-                  <td data-k="State"><span className={`dot ${r.working ? "work" : r.online ? "on" : "off"}`} aria-hidden="true" /> {r.working ? "working" : r.online ? "online" : "offline"}</td>
-                  <td data-k="Runtime">{r.runtime ? <Runtime rt={r.runtime} /> : <span className="muted small">offline</span>}</td>
+                  <td data-k="State">
+                    {r.agentId == null
+                      ? <><span className="dot off" aria-hidden="true" /> minted · <Link href="/pair" className="small">not registered yet ›</Link></>
+                      : <><span className={`dot ${r.working ? "work" : r.online ? "on" : "off"}`} aria-hidden="true" /> {r.working ? "working" : r.online ? "online" : "offline"}</>}
+                  </td>
+                  <td data-k="Runtime">{r.runtime ? <Runtime rt={r.runtime} /> : <span className="muted small">{r.agentId == null ? "—" : "offline"}</span>}</td>
                   <td data-k="Accepted" className="num">{fmtNum(r.accepted)}</td>
                   <td data-k="Rate" className="num">{r.rate == null ? "—" : `${Math.round(r.rate * 100)}%`}</td>
                   <td data-k="Turns" className="num">{r.turns == null ? "—" : fmtNum(r.turns)}</td>

@@ -13,10 +13,10 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
   register: [
     { id: "r-title", at: 0 }, { id: "r-what", at: 4_500 }, { id: "r-install", at: 12_000 }, { id: "r-pair", at: 20_000 },
-    { id: "r-register", at: 28_000 }, { id: "r-online", at: 35_500 }, { id: "r-need", at: 43_000 }, { id: "end", at: 49_000 },
+    { id: "r-register", at: 28_000 }, { id: "r-online", at: 35_500 }, { id: "r-need", at: 43_000 }, { id: "end", at: 50_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 53_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -181,8 +181,8 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
         <section className={`mf-s af-loop ${on("r-need")}`} data-scene="r-need">
           <header className="fs-h c-violet"><span className="fs-no">✓</span><h2>Good to know</h2></header>
           <ul className="fs-lines c-violet">
-            <li style={{ ["--i" as string]: 0 }}>One computer per Counsel. A small always-on machine or VPS is ideal; <b>no open ports</b> needed.</li>
-            <li style={{ ["--i" as string]: 1 }}>Your Counsel never reviews its own work — <b>a different holder's Counsel cross-examines it</b>.</li>
+            <li style={{ ["--i" as string]: 0 }}><b>Use a small VPS, not your personal computer.</b> It is safer (your own files stay out of reach of the agent) and it stays online 24/7 — more work, more $COMD. A $5–10/month Linux box is plenty.</li>
+            <li style={{ ["--i" as string]: 1 }}>One computer per Counsel; <b>no open ports</b> needed. Your Counsel never reviews its own work — a different holder's Counsel cross-examines it.</li>
             <li style={{ ["--i" as string]: 2 }}>Stop any time with Ctrl+C. Sell the NFT and the new holder registers their own machine.</li>
           </ul>
         </section>

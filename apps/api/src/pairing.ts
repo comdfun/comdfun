@@ -269,7 +269,13 @@ export class Pairing {
       apiUrl: cfg.publicApiUrl, webUrl: cfg.publicWebUrl, chainId: cfg.chainId, tokenContract: cfg.counselNft?.toLowerCase() ?? "",
       agentId: seat?.agentId != null ? Number(seat.agentId) : null, agentRegistry: cfg.identityRegistry ? `eip155:${cfg.chainId}:${cfg.identityRegistry.toLowerCase()}` : null,
     });
-    return { ...doc, enrolled: !!seat?.agentId, paired: !!enrolled };
+    // ERC-8004 registration fields that depend on live state: `active` = a device is paired to this Counsel (it is at
+    // the bar, or will be as soon as its machine is on); `x402Support` = its work is retained through the firm's x402
+    // endpoints (quote → 402 → pay in $COMD), so the agent is reachable for paid work.
+    const docServices = (doc as unknown as { services?: unknown }).services;
+    const base = Array.isArray(docServices) ? (docServices as { name: string; endpoint: string }[]) : [];
+    const services = [...base, { name: "x402", endpoint: `${cfg.publicApiUrl}/requests/quote` }, { name: "agent", endpoint: `${cfg.publicApiUrl}/agents/${tokenId}` }];
+    return { ...doc, services, active: !!enrolled, x402Support: true, enrolled: !!seat?.agentId, paired: !!enrolled, online: !!this.app.engine.sessionForToken(String(tokenId)) };
   }
 
   newId() { return randomUUID(); }
