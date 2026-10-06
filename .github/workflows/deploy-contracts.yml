@@ -199,8 +199,28 @@ jobs:
           done
           broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
           mkdir -p deployments ../.deploy
+          # the deployer must hold gas: say so plainly instead of failing inside forge's fee estimation
+          deployer="$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")"
+          bal="$(cast balance "$deployer" --rpc-url "$RPC_URL")"
+          echo "deployer $deployer balance $(cast from-wei "$bal") ETH"
+          if [ "$bal" = 0 ]; then echo "::error::deployer $deployer has 0 ETH on this chain; fund it first"; exit 1; fi
+          set +e
           forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" $broadcast --slow 2>&1 | tee ../.deploy/deploy.log
-          test "${PIPESTATUS[0]}" -eq 0
+          rc="${PIPESTATUS[0]}"
+          if [ "$rc" -ne 0 ] && grep -qiE "eip-?1559|feeHistory|max fee|priority fee" ../.deploy/deploy.log; then
+            echo "::warning::EIP-1559 fee estimation failed on this RPC; retrying with legacy transactions"
+            forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" $broadcast --slow --legacy 2>&1 | tee ../.deploy/deploy.log
+            rc="${PIPESTATUS[0]}"
+          fi
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            # surface the reason in the run summary and as an annotation (the raw log needs a click to reach)
+            tail -n 40 ../.deploy/deploy.log > ../.deploy/tail.txt
+            { echo "## Deploy.s.sol failed"; echo; echo '```'; cat ../.deploy/tail.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            reason="$(grep -iE "error|revert|insufficient|failed" ../.deploy/tail.txt | tail -n 1 | cut -c1-400)"
+            echo "::error::Deploy.s.sol failed: ${reason:-see the step log}"
+            exit "$rc"
+          fi
           sed -n '/DEPLOYMENTS_JSON_BEGIN/,/DEPLOYMENTS_JSON_END/p' ../.deploy/deploy.log | sed '1d;$d' | sed 's/^ *//' \
             | jq . > ../.deploy/deployment.json
           test "$(jq -r .chainId ../.deploy/deployment.json)" = "$CHAIN"
