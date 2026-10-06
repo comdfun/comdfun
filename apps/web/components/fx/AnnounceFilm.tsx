@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -40,8 +40,10 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   dev: [
     { id: "d-title", at: 0 }, { id: "d-today", at: 4_500 }, { id: "d-next", at: 12_500 }, { id: "d-how", at: 21_000 }, { id: "end", at: 28_500 },
   ],
+  gm: [{ id: "g-title", at: 0 }, { id: "g-back", at: 4_500 }, { id: "end", at: 12_500 }],
+  burn: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -545,6 +547,86 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Built in public. <b className="c-gold">Shipping continuously.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "gm") {
+    return (
+      <div className="film mf af-reg af-tasks af-gm" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("g-title")}`} data-scene="g-title">
+          <div className="af-sun" aria-hidden="true" />
+          <div className="af-jury-sm">{portraits.slice(18, 24).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title">GM<b>.</b></div>
+          <div className="mf-sub">Day two at the firm · <b>2,000 Counsel</b> report for duty</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("g-back")}`} data-scene="g-back">
+          <header className="fs-h c-gold"><span className="fs-no">⟳</span><h2>Back to shipping</h2></header>
+          <ul className="fs-lines fs-big c-gold">
+            <li style={{ ["--i" as string]: 0 }}><b>Day one</b>: 2,000 Counsel minted out, <b>$COMD</b> live on Pons, every contract live on Robinhood Chain.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>Today</b>: register your Counsel, retain the firm, watch the docket fill — we keep fixing and building in public.</li>
+            <li style={{ ["--i" as string]: 2 }}>Every commit at <b>github.com/comdfun/comdfun</b> · changelog on <b>@comdfun</b>.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">GM. <b className="c-gold">Back to shipping.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "burn") {
+    return (
+      <div className="film mf af-reg af-tasks af-burn" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle af-coin ${on("x-title")}`} data-scene="x-title">
+          <div className="af-coinwrap af-burnwrap"><div className="af-flames" aria-hidden="true"><i /><i /><i /><i /><i /></div><div className="af-coin3d"><span>$</span></div></div>
+          <div className="af-title af-title-sm">First <b>buyback &amp; burn</b></div>
+          <div className="mf-sub"><b>Completed</b> · on chain · Robinhood Chain</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-crimson ${on("x-what")}`} data-scene="x-what">
+          <header className="fs-h c-crimson"><span className="fs-no">🔥</span><h2>What just happened</h2></header>
+          <ul className="fs-lines fs-big c-crimson">
+            <li style={{ ["--i" as string]: 0 }}>The Flywheel took the ETH collected from the <b>5% trading tax</b> and bought <b>$COMD</b> on the market.</li>
+            <li style={{ ["--i" as string]: 1 }}>Every token bought was sent to <b>0x…dEaD</b> — gone for good. The supply only ever shrinks.</li>
+            <li style={{ ["--i" as string]: 2 }}><b>Timed by the firm</b>, not fired by a bot. The transaction is public: verify it on the explorer, totals on comd.fun/flywheel.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("x-loop")}`} data-scene="x-loop">
+          <header className="fs-h c-gold"><span className="fs-no">⟳</span><h2>The loop is turning</h2></header>
+          <div className="af-loopgrid">
+            <div className="af-wheel"><WheelSvg /></div>
+            <ol className="af-steps">
+              <li className="c-gold" style={{ ["--i" as string]: 0 }}><b>Trades</b> pay the 5% tax in ETH</li>
+              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>Half burns $COMD</b> — done, for the first time</li>
+              <li className="c-violet" style={{ ["--i" as string]: 2 }}><b>Half buys Counsel</b> off the floor — next</li>
+              <li className="c-lime" style={{ ["--i" as string]: 3 }}><b>Work</b> is paid in $COMD → more trades → repeat</li>
+            </ol>
+          </div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
+          <div className="mf-tag">First burn done. <b className="c-gold">Many more to come.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
