@@ -1,0 +1,38 @@
+name: opensea-refresh
+# Make OpenSea re-read every Counsel's metadata (traits + image) through its API, item by item.
+# Needs the OPENSEA_API_KEY secret (free: https://docs.opensea.io/reference/api-keys). The on-chain path — the
+# "Refresh metadata on marketplaces" button on comd.fun/mint, which emits ERC-4906 BatchMetadataUpdate — is the first
+# thing to try; run this when OpenSea has not caught up after that.
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "First token id"
+        default: "1"
+      to:
+        description: "Last token id"
+        default: "2000"
+      rps:
+        description: "Requests per second"
+        default: "2"
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Refresh on OpenSea
+        env:
+          OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY }}
+        run: |
+          [ -n "$OPENSEA_API_KEY" ] || { echo "::error::add the OPENSEA_API_KEY secret first (repo → Settings → Secrets → Actions)"; exit 1; }
+          node scripts/opensea-refresh.mjs --from "${{ inputs.from }}" --to "${{ inputs.to }}" --rps "${{ inputs.rps }}" | tee /tmp/refresh.log
+          { echo "## OpenSea refresh"; echo; echo '```'; tail -n 5 /tmp/refresh.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
