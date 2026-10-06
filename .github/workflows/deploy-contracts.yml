@@ -199,6 +199,9 @@ jobs:
           done
           broadcast="--broadcast"; [ "$DRY_RUN" = true ] && broadcast=""
           mkdir -p deployments ../.deploy
+          # accept the key with or without the 0x prefix (vm.envUint needs the prefix)
+          case "$DEPLOYER_PRIVATE_KEY" in 0x*|0X*) ;; *) DEPLOYER_PRIVATE_KEY="0x$DEPLOYER_PRIVATE_KEY" ;; esac
+          export DEPLOYER_PRIVATE_KEY
           # the deployer must hold gas: say so plainly instead of failing inside forge's fee estimation
           deployer="$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")"
           bal="$(cast balance "$deployer" --rpc-url "$RPC_URL")"
