@@ -19,7 +19,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IBuybackSwapper} from "../interfaces/IBuybackSwapper.sol";
 
 /// @title UniswapV4PoolSwapper — IBuybackSwapper over one Uniswap v4 ETH/COMD pool
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice Exact-input ETH <-> COMD swaps through `IPoolManager.unlock` on an owner-configured pool: after Pons
 ///         graduates $COMD into its v4 position, the owner calls `setPoolKey(fee, tickSpacing, hooks)` with
 ///         Pons's pool parameters (currency0 is always ETH, currency1 always COMD). Until then every swap reverts

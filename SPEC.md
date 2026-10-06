@@ -1,7 +1,7 @@
 # COMPANY.MD ($COMD) — Build Spec v5
 
 Source of truth for every package in this repo. Status: V5 (final for launch), 2026-10-06; supersedes v1–v4.
-Contracts UNAUDITED. Binding names (routes, env, signatures, signing domains) are in [INTERFACES.md](INTERFACES.md),
+Contracts reviewed before launch (contracts/AUDIT.md). Binding names (routes, env, signatures, signing domains) are in [INTERFACES.md](INTERFACES.md),
 whose "V5" block wins over anything older.
 
 Company.md is inspired by IMD (imd.fun) and offers the same features on **Robinhood Chain**, themed as a **law firm**,

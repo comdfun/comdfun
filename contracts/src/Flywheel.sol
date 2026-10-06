@@ -14,7 +14,7 @@ import {IMarketplaceAdapter} from "./interfaces/IMarketplaceAdapter.sol";
 import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
 
 /// @title Flywheel — where the $COMD tax goes (Pons mode)
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice $COMD is launched on Pons, which pays the creator wallet in ETH (the 5% tax + its fee share). That ETH
 ///         is forwarded here: `receive()` (or `notifyTax()`) accepts ETH from anyone and splits every wei into two
 ///         buckets by bps (default buyback 5000 / floor sweep 5000):

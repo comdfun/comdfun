@@ -6,7 +6,7 @@ import {FullMath} from "v4-core/src/libraries/FullMath.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @title LaunchMath — opening tick of a token from a market cap
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 library LaunchMath {
     error BadPrice();
 

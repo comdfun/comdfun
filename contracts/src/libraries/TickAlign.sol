@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 
 /// @title TickAlign — tick rounding to a tick spacing
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 library TickAlign {
     function floor(int24 tick, int24 spacing) internal pure returns (int24) {
         int24 c = tick / spacing;

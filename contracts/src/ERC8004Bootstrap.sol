@@ -5,7 +5,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title ERC8004Bootstrap — first implementation behind the ERC-8004 registry proxies
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @notice The vendored CC0 registries (erc-8004-contracts v2) are UUPS implementations whose
 ///         `initialize()` is `reinitializer(2) onlyOwner`: they expect a proxy that already has an owner
 ///         (upstream uses a MinimalUUPS placeholder with a hard-coded owner). This bootstrap plays that role

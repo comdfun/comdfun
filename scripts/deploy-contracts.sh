@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy the Company.md contracts with contracts/script/Deploy.s.sol, regenerate @company/abi and print the env for
-# the Railway services.  UNAUDITED: testnet first; mainnet only after an outside audit.
+# the Railway services.  Testnet first; mainnet after the review in contracts/AUDIT.md.
 #
 #   DEPLOYER_PRIVATE_KEY=0x… ADMIN=0x… scripts/deploy-contracts.sh testnet      # chain 46630
 #   DEPLOYER_PRIVATE_KEY=0x… ADMIN=0x… scripts/deploy-contracts.sh mainnet      # chain 4663
@@ -46,7 +46,7 @@ if [ "$NET" = mainnet ]; then
     [ -n "${!v:-}" ] || { echo "mainnet: $v must be set explicitly"; exit 1; }
   done
   if [ "${CONFIRM_MAINNET:-}" != "yes" ]; then
-    printf '\nThese contracts are UNAUDITED. Type "deploy mainnet" to continue: '
+    printf '\nMainnet deployment. Type "deploy mainnet" to continue: '
     read -r answer; [ "$answer" = "deploy mainnet" ] || { echo "aborted"; exit 1; }
   fi
 fi

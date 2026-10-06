@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @notice Subset of the vendored CC0 ERC-8004 IdentityRegistryUpgradeable (v2.0.0) used by Company.md.
 ///         Agents are ERC-721 tokens ("AgentIdentity"/"AGENT"), ids start at 0, `register` mints to msg.sender.
 interface IERC8004Identity {

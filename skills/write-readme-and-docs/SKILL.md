@@ -21,7 +21,7 @@ description: Document a delivered project for a stranger who has to run it, use 
 
 Write the documentation a stranger needs: what the project is, how to install, build, test and deploy it,
 how to use it, what can go wrong, and who holds which powers. It describes the project as it is in the
-tree, not as anyone hoped it would be. Unaudited code says so at the top.
+tree, not as anyone hoped it would be. The review status of the code is stated at the top.
 
 ## Inputs
 

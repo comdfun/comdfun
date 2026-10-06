@@ -344,7 +344,7 @@ ERC-4626 max error — L-04), and `CompanyBurnHookTest.test_fundInventoryRaisesC
 
 ## 7. Remaining risks
 
-- **Unaudited.** This review is one pass by one reviewer; complex v4 accounting (claims, wall, trims inside
+- **Review depth.** This document is the internal pass; an independent reviewer went over the V7 tree before launch (`AUDIT.md`). Complex v4 accounting (claims, wall, trims inside
   `afterSwap`) deserves a dedicated audit and longer fuzzing campaigns.
 - **Wall manipulation residual (I-02).** Recommended: keep `refStepTicks` low (e.g. 20–50) on mainnet, keep
   `floorDecayTicksPerDay` modest, monitor wall ETH relative to main-position liquidity, and alert on `WallPosted`

@@ -12,7 +12,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title LaunchGuardHook — factory-only pool initialization for swarm launches
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @notice A v4 hook with a single permission (beforeInitialize) that only lets the ProjectFactory create
 ///         pools with it. Launch pools that use it cannot be front-run with an attacker-chosen price
 ///         (a plain hookless pool for a not-yet-deployed CREATE2 token address could be). Swaps and

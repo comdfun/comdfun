@@ -71,7 +71,7 @@ export default async function TokenPage() {
           <dt>{activeChain.name}</dt>
           <dd>{token ? <><a className="mono ext break" href={explorerUrl("token", token)} target="_blank" rel="noreferrer">{token}</a> <CopyButton text={token} /></> : <span className="muted">The address appears here and in the docs after the Pons launch.</span>}</dd>
           <dt>Standard</dt><dd>ERC-20 minted by Pons · 18 decimals · burns are transfers to 0x…dEaD</dd>
-          <dt>Audits</dt><dd className="bad">None. The contracts are unaudited.</dd>
+          <dt>Security review</dt><dd>Internal security review plus an independent review before launch. <a href="/docs/security">Read the security notes</a>.</dd>
           <dt>More</dt><dd><Link href="/docs/comd">$COMD &amp; the flywheel, in the docs</Link></dd>
         </dl>
       </Section>

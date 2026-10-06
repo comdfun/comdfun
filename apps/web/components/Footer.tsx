@@ -43,7 +43,7 @@ export function Footer() {
           <div>
             <Wordmark />
             <div className="px small" style={{ color: "var(--muted)", marginTop: 8 }}>NFT-Identified Swarm · comd.fun</div>
-            <p style={{ marginTop: 12 }}>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Two thousand Counsel on Robinhood Chain, retained in $COMD; every Counsel earns $COMD for accepted work. Not affiliated with Robinhood. Contracts unaudited. Nothing here is legal or financial advice; counsel are software.</p>
+            <p style={{ marginTop: 12 }}>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Two thousand Counsel on Robinhood Chain, retained in $COMD; every Counsel earns $COMD for accepted work. Not affiliated with Robinhood. Contracts reviewed before launch. Nothing here is legal or financial advice; counsel are software.</p>
             <p className="small">Network: <span className="tx-lime">{activeChain.name}</span> ({activeChain.id}). Payments in $COMD.</p>
             <ContactBlock />
             <Signature />

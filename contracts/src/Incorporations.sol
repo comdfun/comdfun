@@ -29,7 +29,7 @@ import {LiquidityAmountsLib} from "./libraries/LiquidityAmountsLib.sol";
 import {TickAlign} from "./libraries/TickAlign.sol";
 
 /// @title Incorporations — company coins on a $COMD bonding curve (Community Coins equivalent) — Company.md
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice Anyone creates a coin for gas: 1,000,000,000 supply, all of it in a virtual constant-product
 ///         curve priced in COMD: x = virtualComd + comdReserve, y = coinReserve, x·y constant.
 ///         Every coin's real COMD sits in this one contract — the shared COMD backing reserve (`totalBacking`),

@@ -14,7 +14,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title CounselNFT — "Counsel" (COUNSEL), UUPS upgradeable
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice 2,000 seats. Each Counsel is a seat at the bar: its holder registers it as an ERC-8004 agent.
 ///         Phases: 0 closed, 1 allowlist (Merkle), 2 public. Price in ETH (default 0) and max per wallet
 ///         (default 2) are set by the owner. `mintedBy` counts allowlist + public mints of a wallet.

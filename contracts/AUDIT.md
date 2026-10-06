@@ -5,8 +5,8 @@ traced end to end against `INTERFACES.md`, the API (`apps/api/src/pairing.ts`, `
 `launches.ts`, `launch-template.ts`) and the web ABI usage (`apps/web/lib/contracts.ts`).
 Method: line-by-line review with the checklist from `SECURITY_REVIEW.md` §2, then a Foundry test for every
 adversarial case (`test/security/Audit.t.sol`, `test/SafetyNets*.t.sol`, `test/CounselNFTUpgrade.t.sol`,
-`test/Deploy.t.sol`), plus the invariant campaigns extended with the new owner actions. One internal pass; **this is
-not an external audit** (see "Residual risks").
+`test/Deploy.t.sol`), plus the invariant campaigns extended with the new owner actions. One internal pass, followed by an
+independent security reviewer's pass before launch (see "Residual risks").
 
 Result: no Critical or High issue in the V6 code. The Medium findings are operational (no way to stop a bad root,
 no way out of a frozen venue, deployer window on the Flywheel, ETH pairing on by default). All Medium and above are
@@ -100,7 +100,7 @@ paired with COMD"). Design and checks (`test/IncorporationsGraduation.t.sol`, 9 
 
 ## 5. Residual risks
 
-- One internal pass, no external audit. The upgradeable NFT adds a trust assumption: whoever holds ADMIN can replace
+- One internal pass plus one independent review; not an audit-firm engagement. The upgradeable NFT adds a trust assumption: whoever holds ADMIN can replace
   the collection's code — keep ADMIN on a multisig, consider a timelock in front of `upgradeToAndCall`.
 - Owner powers are now broader by design (pause, rescue, emergency withdraw). Every one of them is owner-only,
   evented, and (where it could hurt users) two-step: Incorporations' emergency path has a 48 h public countdown and

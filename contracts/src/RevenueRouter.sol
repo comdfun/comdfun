@@ -9,7 +9,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title RevenueRouter — payTo of every Company.md job payment (x402 + Permit2, paid in COMD)
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice Anyone calls `distribute()`: the COMD balance is split `rewardsBps` (default 80%) to the RewardDistributor
 ///         (Counsel rewards, split per epoch by accepted work) and the rest (default 20%) to the firm treasury
 ///         (compute + gas). No swaps. Receiving COMD (a plain ERC-20 transfer from Permit2) is never blocked.

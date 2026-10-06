@@ -48,7 +48,7 @@ export default async function TradePage() {
               <dt>Buyback swapper</dt><dd>{swapper ? <a className="mono ext break" href={explorerUrl("address", swapper)} target="_blank" rel="noreferrer">{swapper}</a> : <span className="muted">not deployed yet</span>}{s.swapper.configured ? <> · <span className="ok">pool configured</span></> : <> · <span className="muted">pool not configured yet</span></>}</dd>
             </dl>
           </div>
-          <p className="small muted rv">Pons and Uniswap are third-party sites. Unaudited contracts. Nothing here is financial advice. <Link href="/docs/security">Security</Link></p>
+          <p className="small muted rv">Pons and Uniswap are third-party sites. Nothing here is financial advice. <Link href="/docs/security">Security</Link></p>
         </div>
       </div>
     </div>

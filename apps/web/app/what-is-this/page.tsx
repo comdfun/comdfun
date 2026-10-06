@@ -140,7 +140,7 @@ export default function WhatIsThisPage() {
           <Link className="btn lg primary pink" href="/launch">Retain the firm ›</Link>
           <Link className="btn lg orange" href="/docs">Read the docs</Link>
         </div>
-        <p className="small muted">Unaudited contracts. Nothing here is legal or financial advice; counsel are software.</p>
+        <p className="small muted">Contracts reviewed before launch (see the security docs). Nothing here is legal or financial advice; counsel are software.</p>
       </div>
     </div>
   );

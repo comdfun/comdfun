@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @notice Buys one ERC-721 from an NFT marketplace for the Flywheel's floor sweep.
 ///         The adapter receives up to `maxPrice` ETH (msg.value), must deliver `tokenId` of `nft` to `recipient`,
 ///         must refund every unused wei to msg.sender before returning, and returns the ETH actually spent.

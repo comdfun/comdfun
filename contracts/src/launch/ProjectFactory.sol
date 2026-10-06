@@ -25,7 +25,7 @@ import {TickAlign} from "../libraries/TickAlign.sol";
 import {LaunchMath} from "../libraries/LaunchMath.sol";
 
 /// @title ProjectFactory — deploys swarm launches (Registrar / deployer service only)
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 ///
 /// Launch kinds (IMD parity): 0 custom_token, 1 evm_project, 2 univ4_hook, 3 evm_contracts.
 /// - `deployContract(ref, salt, initCode)`: deterministic CREATE2 deployment of an attested build artifact

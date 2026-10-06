@@ -1,7 +1,7 @@
 # @company/abi
 
 Generated ABIs (`as const`, viem-ready) and the per-chain address book of Company.md's contracts.
-TypeScript source, no build step. **Contracts are UNAUDITED.**
+TypeScript source, no build step. Contracts reviewed before launch (see `contracts/AUDIT.md`).
 
 ```ts
 import { addresses, flywheelAbi, counselNFTAbi, identityRegistryAbi, CHAIN_IDS } from "@company/abi";

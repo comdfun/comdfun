@@ -10,7 +10,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title RewardDistributor — Counsel seat rewards by epoch
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice Receives Counsel rewards in COMD (the external Pons token, plain ERC-20 transfers): 80% of job payments
 ///         via RevenueRouter and the 1% Incorporations fee. Any ERC-20 can be distributed; asset address(0) means
 ///         native ETH (anyone may send ETH here, e.g. grants).

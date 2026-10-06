@@ -7,7 +7,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title ContributorDistributor — the swarm's 10% of every launched token
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice One Merkle root per launch, registered once by the ProjectFactory together with the tokens.
 ///         The deployer service builds the root off-chain under the launch policy ("equal_connected"):
 ///         2% of supply equally among wallets with accepted work on the launch, 8% equally among seats

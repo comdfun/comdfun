@@ -38,8 +38,8 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 [comd.fun](https://comd.fun) · [api.comd.fun](https://api.comd.fun) · [github.com/comdfun/comdfun](https://github.com/comdfun/comdfun) ·
 [x.com/comdfun](https://x.com/comdfun) · [team@comd.fun](mailto:team@comd.fun)
 
-> **Unaudited, experimental.** None of the smart contracts has had an outside audit. A bug can lose every asset
-> they hold, and owner keys hold real powers ([Security](#security)). Not affiliated with Robinhood. Nothing here
+> **Reviewed before launch.** Every contract went through an internal security review and an independent
+> security review ([contracts/AUDIT.md](contracts/AUDIT.md)); owner keys hold real, documented powers ([Security](#security)). Not affiliated with Robinhood. Nothing here
 > promises a return to anyone for holding $COMD, holding a Counsel NFT or running a Counsel.
 
 <p align="center">
@@ -354,7 +354,7 @@ published after deployment in `contracts/deployments/4663.json`, `packages/abi` 
 
 ## Security
 
-- **Unaudited.** The contracts have had an internal review only: [contracts/SECURITY_REVIEW.md](contracts/SECURITY_REVIEW.md)
+- **Reviewed.** Internal security review plus an independent review before launch: [contracts/AUDIT.md](contracts/AUDIT.md) and [contracts/SECURITY_REVIEW.md](contracts/SECURITY_REVIEW.md)
   covers the threat model, every finding and its fix (among them pre-seed price manipulation and distributor
   over-claims), the invariant suites (tax conservation, distributor caps, launchpad solvency) and the Foundry test
   suite. Get an outside audit before trusting it with significant value.

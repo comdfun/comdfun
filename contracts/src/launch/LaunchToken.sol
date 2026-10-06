@@ -6,7 +6,7 @@ import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 /// @title LaunchToken — fixed-supply ERC-20 template for swarm launches and Incorporations coins
-/// @notice UNAUDITED — experimental. Do not use with funds you cannot afford to lose.
+/// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
 /// @notice The whole supply is minted once to `recipient` (the factory / launchpad). No owner, no mint.
 contract LaunchToken is ERC20, ERC20Burnable, ERC20Permit {
     constructor(string memory name_, string memory symbol_, uint256 supply_, address recipient)

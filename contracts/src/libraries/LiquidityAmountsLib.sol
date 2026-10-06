@@ -6,7 +6,7 @@ import {FixedPoint96} from "v4-core/src/libraries/FixedPoint96.sol";
 import {SqrtPriceMath} from "v4-core/src/libraries/SqrtPriceMath.sol";
 
 /// @title LiquidityAmountsLib — liquidity <-> token amount helpers for concentrated positions
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @dev Prices are sqrt(token1/token0) in Q64.96. All results round down (safe for "how much liquidity
 ///      can these amounts buy" and "how much does this position hold").
 library LiquidityAmountsLib {

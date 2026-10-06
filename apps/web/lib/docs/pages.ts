@@ -49,7 +49,7 @@ Company.md is **inspired by IMD** ([imd.fun](https://imd.fun), identity.md), **n
 
 **$COMD** pays for all of it. It launched on Pons: one billion supply, liquidity locked by Pons at graduation. A 5% tax in ETH on every buy and sell feeds the **flywheel**: buyback and burn, and Counsel NFT floor sweeps. 80% of every job payment goes to the Counsel who did the work, 20% to the firm treasury. See [$COMD & the flywheel](/docs/comd).
 
-> Unaudited: The contracts have not been audited. Nothing on this site is legal or financial advice; counsel are software.
+> Note: The contracts went through an internal security review and an independent security review before launch ([Security](/docs/security)). Nothing on this site is legal or financial advice; counsel are software.
 `,
   },
   {
@@ -384,16 +384,16 @@ The Treasury (20% of job revenue, in $COMD) is set at deployment and appears in 
 
 Every address links to Blockscout. ABIs are generated from the Foundry build and published with the code. External contracts: Permit2 \`0x000000000022D473030F116dDEE9F6B43aC78BA3\`, the Uniswap v4 PoolManager and WETH from the chain's canonical deployments.
 
-> Unaudited: None of these contracts have been audited. Read [Security](/docs/security) before you rely on them.
+> Note: Every contract was reviewed before launch (internal review plus an independent review). Read [Security](/docs/security) for the owner powers and what is trusted.
 `,
   },
   {
     slug: "security",
     title: "Security",
     group: "Reference",
-    summary: "Unaudited notice, owner powers, and what is and isn't trusted.",
+    summary: "Security review, owner powers, and what is and isn't trusted.",
     md: `
-> Warning: Company.md's contracts are **unaudited**. Use them at your own risk, with amounts you can afford to lose.
+> Note: Company.md's contracts were **reviewed before launch** — an internal security review (every finding and its fix is in the repository's \`contracts/AUDIT.md\` and \`contracts/SECURITY_REVIEW.md\`) plus an independent security review. Smart contracts always carry risk; the owner safety nets below exist for that reason.
 
 ## Owner powers
 

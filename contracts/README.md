@@ -1,10 +1,10 @@
 # Company.md — contracts
 
-> ## ⚠ UNAUDITED — EXPERIMENTAL
-> None of these contracts has been audited by an outside firm (see `SECURITY_REVIEW.md` for the internal reviews).
-> A bug in the Flywheel, the swapper, the distributors, the factory or the launchpad can lose every asset they
-> hold. Owner and keeper keys hold real powers (listed below). Deploy to testnet (46630) first; deploy to mainnet
-> (4663) only after an outside audit. Not affiliated with Robinhood or Pons.
+> ## Reviewed before launch
+> Every contract went through an internal security review (`SECURITY_REVIEW.md`, `AUDIT.md`: every finding and
+> its fix, with a test) and an independent security review. Owner and keeper keys hold real powers (listed below)
+> and every money-holding contract has pause and recovery (`AUDIT.md` §3). Deploy to testnet (46630) first.
+> Not affiliated with Robinhood or Pons.
 
 Solidity 0.8.26, OpenZeppelin 5.4, Uniswap v4-core, Foundry. License MIT (vendored ERC-8004 registries: CC0;
 v4-core `PoolManager`: BUSL-1.1 — only deployed by us in tests and on testnet when no `POOL_MANAGER` is given).
@@ -159,7 +159,7 @@ graduation.
 
 ## Known limitations
 
-- **Unaudited.** See `SECURITY_REVIEW.md` (V6 note at the top).
+- **Review status.** Internal review plus an independent review before launch; see `AUDIT.md` and `SECURITY_REVIEW.md`.
 - The token, the tax and the pool belong to Pons: we cannot change the tax, the liquidity or the hook. The
   Flywheel only ever sees the ETH that is actually forwarded to it.
 - `UniswapV4PoolSwapper` is tested against a hookless local v4 pool only. Pons's hook may tax inside the swap

@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
 /// @title Create2Deployer — permissionless CREATE2 deployer for v4 hooks (mined addresses)
-/// @notice UNAUDITED — experimental. Used by the deploy script so hook addresses (whose low 14 bits encode
+/// @notice Reviewed before launch (contracts/AUDIT.md). Used by the deploy script so hook addresses (whose low 14 bits encode
 ///         their permissions) can be mined without relying on a pre-deployed deterministic deployer.
 ///         Front-running a deployment is harmless: the address commits to the full init code (incl. args).
 contract Create2Deployer {

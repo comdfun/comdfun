@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /// @title OracleAttestationVerifier — EIP-712 verification of Company.md's oracle ("Rulings") attestations
-/// @notice UNAUDITED — experimental.
+/// @notice Reviewed before launch (contracts/AUDIT.md).
 /// @dev Domain: EIP712Domain(string name,string version,uint256 chainId) with name "Company.md Oracle",
 ///      version "1", chainId = the chain where the attestation is verified (block.chainid). No
 ///      verifyingContract (the attester signs once for every consumer on that chain).
