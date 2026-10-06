@@ -143,6 +143,9 @@ export class App {
       settler = new MockSettler(spender);
       paymentsEnabled = (cfg.storage.PAYMENTS_MODE ?? (cfg.storage.NODE_ENV === "production" ? "off" : "mock")) === "mock";
     }
+    // Pons mode, before the token exists: no asset or no payTo means nothing can be paid for yet (mint and pairing
+    // work; retain/launch/oracle quotes answer "payments disabled" instead of quoting a zero-address asset)
+    if (settler.mode !== "mock" && (/^0x0{40}$/i.test(cfg.comd) || /^0x0{40}$/i.test(cfg.payTo))) paymentsEnabled = false;
     const app = new App({ cfg, store, blobs, services, chain, extraChains, writer, settler, paymentsEnabled, now: deps.now ?? Date.now, fetch: deps.fetch ?? fetch });
     // $COMD is Pons's token: read its decimals rather than assume them (18 expected; fallback 18 when unreadable)
     if (chain.configured && !/^0x0{40}$/i.test(cfg.comd)) {
