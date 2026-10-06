@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -42,8 +42,11 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   ],
   gm: [{ id: "g-title", at: 0 }, { id: "g-back", at: 4_500 }, { id: "end", at: 12_500 }],
   burn: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
+  backend: [
+    { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
+  ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -627,6 +630,53 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
           <div className="mf-tag">First burn done. <b className="c-gold">Many more to come.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "backend") {
+    const Item = ({ id, color, no, title, lines, who }: { id: string; color: string; no: string; title: string; lines: string[]; who: number }) => (
+      <section className={`mf-s af-loop af-task c-${color} ${on(id)}`} data-scene={id}>
+        <header className={`fs-h c-${color}`}><span className="fs-no">{no}</span><h2>{title}</h2></header>
+        <div className="af-taskgrid">
+          <ul className={`fs-lines c-${color}`}>{lines.map((l, i) => <li key={i} style={{ ["--i" as string]: i }} dangerouslySetInnerHTML={{ __html: l }} />)}</ul>
+          <div className="af-taskside">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/art/${portraits[who]}.svg`} alt="" className={`af-hero af-hero-sm c-${color}`} />
+          </div>
+        </div>
+      </section>
+    );
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("k-title")}`} data-scene="k-title">
+          <div className="af-jury-sm">{portraits.slice(24, 30).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Backend <b>improvements</b></div>
+          <div className="mf-sub">Shipped tonight · the machinery behind <b>comd.fun</b></div>
+        </section>
+
+        <Item id="k-rpc" color="cyan" no="01" title="Chain access that does not flinch" who={6}
+          lines={["The public RPC began answering our servers with a bot wall. The API and the site now use a <b>dedicated endpoint first</b> and <b>fail over</b> to the public one.", "Rate limits are <b>retried</b> before switching; a bot wall is skipped at once.", "No single RPC can take the firm offline again."]} />
+        <Item id="k-owners" color="lime" no="02" title="Holder lookups, 250× lighter" who={7}
+          lines={["Who holds each Counsel used to take <b>2,000 separate calls</b> every 30 seconds.", "Now: <b>8 batched Multicall3 calls</b>, cached, refreshed in the background — Counsel pages and the directory load instantly.", "A failed lookup <b>keeps the last known holder</b>; a flaky RPC never makes a Counsel look unowned."]} />
+        <Item id="k-index" color="gold" no="03" title="Friendlier to indexers" who={8}
+          lines={["Token metadata, portraits and brand files carry <b>no per-IP limits</b> — OpenSea and other indexers fetch all 2,000 in one pass.", "One <b>ERC-4906</b> transaction from the Mint page tells every marketplace to re-read the collection.", "Traits, images and the holder are read from the same source the chain points to."]} />
+        <Item id="k-tests" color="violet" no="04" title="Checked, not hoped" who={9}
+          lines={["<b>171 contract tests</b> · <b>26 end-to-end runs</b> through a real chain · unit suites on every push.", "Every change is a <b>public commit</b>; CI has to be green before anything deploys.", "What broke tonight was fixed tonight — in the open."]} />
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
+          <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>

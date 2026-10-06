@@ -21,6 +21,6 @@ export default async function FilmPage({ searchParams }: { searchParams: Promise
   const art = { logo: logo(), icons: { scales: icon("scales"), chain: icon("chain"), gavel: icon("gavel"), coin: icon("coin"), seal: icon("seal") }, portraits: PORTRAITS };
   const mode = sp.still === "1" ? "still" : sp.manual === "1" ? "manual" : "auto";
   if (sp.v === "mint") return <MintFilm logo={art.logo} portraits={WALL} mode={mode} />;
-  if (sp.v === "minted" || sp.v === "comd" || sp.v === "register" || sp.v === "tasks" || sp.v === "steps" || sp.v === "build" || sp.v === "imd" || sp.v === "fomo" || sp.v === "wheel" || sp.v === "dev" || sp.v === "gm" || sp.v === "burn") return <AnnounceFilm kind={sp.v} logo={art.logo} portraits={WALL} mode={mode} />;
+  if (sp.v === "minted" || sp.v === "comd" || sp.v === "register" || sp.v === "tasks" || sp.v === "steps" || sp.v === "build" || sp.v === "imd" || sp.v === "fomo" || sp.v === "wheel" || sp.v === "dev" || sp.v === "gm" || sp.v === "burn" || sp.v === "backend") return <AnnounceFilm kind={sp.v} logo={art.logo} portraits={WALL} mode={mode} />;
   return <Film art={art} mode={mode} />;
 }
