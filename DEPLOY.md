@@ -12,7 +12,7 @@ own a pool. Everything below assumes Robinhood Chain mainnet (chain id 4663); th
 
 | Role | Address (mainnet) | Where the key lives | Needs ETH |
 |---|---|---|---|
-| Creator | `0x0000000000000000000000000000000000000000` | your wallet; launches $COMD on Pons, receives Pons payouts, forwards them to the Flywheel | Pons launch fee + any dev buy |
+| Creator | not published (a fresh wallet nobody has seen, or the launch gets sniped) | your wallet; launches $COMD on Pons, receives Pons payouts, forwards them to the Flywheel | Pons launch fee + any dev buy |
 | Deployer | `0x71A2e394A20bea28C6C80Dbdc8e238Da40050E29` | GitHub secret `DEPLOYER_PRIVATE_KEY` | ~0.02 |
 | Admin | `0xe5375641670C965c264C234839cEbAc9f4e1d2FD` | hardware wallet / multisig; owns every contract (`ADMIN` variable, must differ from the deployer) | ~0.01 |
 | Treasury | = Admin | receives 20% of job revenue in COMD (`TREASURY`; can be the Admin) | 0 |

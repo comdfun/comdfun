@@ -341,7 +341,6 @@ published after deployment in `contracts/deployments/4663.json`, `packages/abi` 
 
 | Role | Address | What it does |
 |---|---|---|
-| Creator | [`0x0000000000000000000000000000000000000000`](https://robinhoodchain.blockscout.com/address/0x0000000000000000000000000000000000000000) | Launches $COMD on Pons and forwards the tax to the Flywheel |
 | Deployer | [`0x71A2e394A20bea28C6C80Dbdc8e238Da40050E29`](https://robinhoodchain.blockscout.com/address/0x71A2e394A20bea28C6C80Dbdc8e238Da40050E29) | Deploys the contracts |
 | Admin | [`0xe5375641670C965c264C234839cEbAc9f4e1d2FD`](https://robinhoodchain.blockscout.com/address/0xe5375641670C965c264C234839cEbAc9f4e1d2FD) | Owns every contract |
 | Settler | [`0x4ddFf58eEEC4D838fb9e7069fF48faFCD7a898e0`](https://robinhoodchain.blockscout.com/address/0x4ddFf58eEEC4D838fb9e7069fF48faFCD7a898e0) | Signs work records and reward roots |
