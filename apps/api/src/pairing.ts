@@ -176,28 +176,35 @@ export class Pairing {
 
   // ------------------------------------------------------------------------------------------ owners / wallets
 
+  /** Owners of every minted Counsel. Stale-while-revalidate: once a snapshot exists, callers get it at once and a
+   *  refresh runs in the background (at most every 30s); `force` waits for a fresh one. A failed lookup keeps the
+   *  last known owner instead of blanking it, so a flaky RPC never makes a Counsel look unowned. */
   async refreshOwners(force = false): Promise<void> {
+    const have = this.owners.at > 0;
     if (!force && this.app.now() - this.owners.at < 30_000) return;
-    if (this.refreshing) return this.refreshing;
-    this.refreshing = (async () => {
+    if (this.refreshing) return have && !force ? undefined : this.refreshing;
+    const run = (async () => {
       try {
         const supply = await this.app.chain.nftTotalSupply();
         const n = Math.min(this.app.cfg.maxSupply, supply);
+        const prev = this.owners.owners;
+        const ids = Array.from({ length: n }, (_, k) => String(k + 1));
+        const got = this.app.chain.ownersOf
+          ? await this.app.chain.ownersOf(ids)
+          : await Promise.all(ids.map(async (id) => { try { return await this.app.chain.ownerOf(id); } catch (e) { if (e instanceof ChainUnavailable) throw e; return undefined; } }));
         const out: (string | null)[] = new Array(n + 1).fill(null);
-        let i = 0;
-        const worker = async () => {
-          while (i <= n) {
-            const id = i++;
-            try { out[id] = (await this.app.chain.ownerOf(String(id)))?.toLowerCase() ?? null; } catch (e) { if (e instanceof ChainUnavailable) throw e; out[id] = null; }
-          }
-        };
-        await Promise.all(Array.from({ length: 16 }, worker));
+        for (let k = 0; k < n; k++) {
+          const o = got[k];
+          out[k + 1] = o === undefined ? prev[k + 1] ?? null : o?.toLowerCase() ?? null;
+        }
         this.owners = { at: this.app.now(), owners: out };
       } finally {
         this.refreshing = null;
       }
     })();
-    return this.refreshing;
+    this.refreshing = run;
+    if (have && !force) { run.catch((e) => console.warn(`[pairing] owners refresh failed: ${(e as Error).message}`)); return; }
+    return run;
   }
 
   async wallet(address: string, fresh: boolean) {

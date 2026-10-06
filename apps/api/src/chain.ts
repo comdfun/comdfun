@@ -47,6 +47,8 @@ export interface ChainReader {
   block(n: number | "latest"): Promise<BlockInfo>;
   /** Counsel NFT owner; null when the token does not exist. */
   ownerOf(tokenId: string): Promise<Address | null>;
+  /** Owners of many Counsel at once (Multicall3 when the chain has it, else parallel ownerOf); `undefined` = lookup failed. */
+  ownersOf?(tokenIds: string[]): Promise<(Address | null | undefined)[]>;
   nftTotalSupply(): Promise<number>;
   /** ERC-8004 IdentityRegistry owner + URI of an agent; null when unknown. */
   agent(agentId: string): Promise<{ owner: Address; uri: string } | null>;
@@ -125,6 +127,8 @@ export function rpcTransport(spec: string, opts: { timeout?: number; retryCount?
   return transports.length === 1 ? transports[0] : fallback(transports, { rank: false, retryCount: 0 });
 }
 
+const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11" as const;
+const ownerOfAbi = parseAbi(["function ownerOf(uint256 tokenId) view returns (address)"]);
 const notFound = (e: unknown) => /nonexistent|ERC721NonexistentToken|invalid token|reverted|revert/i.test((e as Error).message);
 
 export class ViemChain implements ChainReader {
@@ -154,6 +158,41 @@ export class ViemChain implements ChainReader {
   async nftTotalSupply() {
     if (!this.addrs.counselNft) return 0;
     return Number(await this.client.readContract({ address: this.addrs.counselNft, abi: counselNFTAbi, functionName: "totalSupply" }));
+  }
+  /** Multicall3 lives at the same address on most EVM chains; remembered as absent after the first failure. */
+  private multicall3: boolean | null = null;
+  async ownersOf(tokenIds: string[]): Promise<(Address | null | undefined)[]> {
+    if (!this.addrs.counselNft) throw new Error("COUNSEL_NFT not configured");
+    const nft = this.addrs.counselNft;
+    if (this.multicall3 !== false) {
+      try {
+        const out: (Address | null | undefined)[] = [];
+        for (let i = 0; i < tokenIds.length; i += 250) {
+          const slice = tokenIds.slice(i, i + 250);
+          const res = (await this.client.multicall({
+            multicallAddress: MULTICALL3,
+            allowFailure: true,
+            contracts: slice.map((id) => ({ address: nft, abi: ownerOfAbi, functionName: "ownerOf", args: [BigInt(id)] })),
+          })) as { status: "success" | "failure"; result?: unknown; error?: unknown }[];
+          for (const r of res) out.push(r.status === "success" ? getAddress(r.result as Address) : notFound(r.error) ? null : undefined);
+        }
+        this.multicall3 = true;
+        return out;
+      } catch (e) {
+        if (this.multicall3 === true) throw e; // it worked before: a transient RPC failure, not a missing contract
+        this.multicall3 = false;
+      }
+    }
+    const out: (Address | null | undefined)[] = new Array(tokenIds.length).fill(undefined);
+    let i = 0;
+    const worker = async () => {
+      while (i < tokenIds.length) {
+        const k = i++;
+        try { out[k] = await this.ownerOf(tokenIds[k]); } catch { out[k] = undefined; }
+      }
+    };
+    await Promise.all(Array.from({ length: 8 }, worker));
+    return out;
   }
   async agent(agentId: string) {
     if (!this.addrs.identityRegistry) return null;
