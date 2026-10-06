@@ -11,22 +11,12 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
-import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {FullMath} from "v4-core/src/libraries/FullMath.sol";
-import {FixedPoint96} from "v4-core/src/libraries/FixedPoint96.sol";
-import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
-import {PoolKey} from "v4-core/src/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {LaunchToken} from "./launch/LaunchToken.sol";
 import {LaunchGuardHook} from "./launch/LaunchGuardHook.sol";
 import {IBuybackSwapper} from "./interfaces/IBuybackSwapper.sol";
-import {LiquidityAmountsLib} from "./libraries/LiquidityAmountsLib.sol";
-import {TickAlign} from "./libraries/TickAlign.sol";
+import {GraduationLib} from "./libraries/GraduationLib.sol";
 
 /// @title Incorporations — company coins on a $COMD bonding curve (Community Coins equivalent) — Company.md
 /// @notice Reviewed before launch: an internal security review plus an independent security review (contracts/AUDIT.md).
@@ -67,8 +57,7 @@ import {TickAlign} from "./libraries/TickAlign.sol";
 ///            emptied curve without the owner first restoring the backing.
 contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
-    using PoolIdLibrary for PoolKey;
-    using StateLibrary for IPoolManager;
+    using GraduationLib for GraduationLib.Graduation;
 
     uint256 public constant COIN_SUPPLY = 1_000_000_000e18;
     uint256 public constant BPS = 10_000;
@@ -93,21 +82,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
         string metadataURI;
     }
 
-    /// @notice A coin's Uniswap v4 pool after graduation (zeroed while it is still on the curve).
-    struct Graduation {
-        bool done;
-        uint64 at;
-        PoolKey key;
-        int24 tickLower;
-        int24 tickUpper;
-        uint128 liquidity;
-        uint256 comdIn;
-        uint256 coinIn;
-        uint256 coinBurned;
-        uint256 feesComd;
-        uint256 feesCoin;
-    }
-
+    /// @dev Graduation state per coin lives in `GraduationLib.Graduation` (the v4 side is a linked library).
     IERC20 public immutable comd;
     address public immutable rewardDistributor;
     IPoolManager public immutable poolManager;
@@ -119,7 +94,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
     uint24 public graduationFee = 10_000;
     int24 public graduationTickSpacing = 200;
     uint256 public graduatedCount;
-    mapping(address => Graduation) internal _grads;
+    mapping(address => GraduationLib.Graduation) internal _grads;
 
     uint256 public virtualComd = 100_000e18;
     address[] public coins;
@@ -364,16 +339,12 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
     /// @notice Spot price: COMD wei per 1e18 coin wei — from the curve, or from the Uniswap pool once graduated.
     function spotPrice(address coin) external view returns (uint256) {
         Coin storage c = _coin(coin);
-        Graduation storage g = _grads[coin];
+        GraduationLib.Graduation storage g = _grads[coin];
         if (!g.done) return ((c.virtualComd + c.comdReserve) * 1e18) / c.coinReserve;
-        (uint160 sqrtP,,,) = poolManager.getSlot0(g.key.toId());
-        uint256 priceX96 = FullMath.mulDiv(sqrtP, sqrtP, FixedPoint96.Q96); // currency1 per currency0, Q96
-        return Currency.unwrap(g.key.currency0) == coin
-            ? FullMath.mulDiv(priceX96, 1e18, FixedPoint96.Q96)
-            : FullMath.mulDiv(FixedPoint96.Q96, 1e18, priceX96);
+        return g.spot(poolManager, coin);
     }
 
-    function graduationInfo(address coin) external view returns (Graduation memory) {
+    function graduationInfo(address coin) external view returns (GraduationLib.Graduation memory) {
         return _grads[coin];
     }
 
@@ -428,7 +399,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
 
     /// @notice Collect the pool's accrued swap fees: $COMD → Counsel rewards, coin → burned. Permissionless.
     function collectPoolFees(address coin) external nonReentrant returns (uint256 comdToRewards, uint256 coinBurned) {
-        Graduation storage g = _grads[coin];
+        GraduationLib.Graduation storage g = _grads[coin];
         if (!g.done) revert NotGraduated();
         (uint256 a0, uint256 a1) = abi.decode(poolManager.unlock(abi.encode(OP_COLLECT, coin)), (uint256, uint256));
         bool coinIs0 = Currency.unwrap(g.key.currency0) == coin;
@@ -450,32 +421,9 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
         (uint8 op, address coin) = abi.decode(data, (uint8, address));
-        Graduation storage g = _grads[coin];
-        PoolKey memory key = g.key;
-        if (op == OP_SEED) {
-            (BalanceDelta d,) = poolManager.modifyLiquidity(
-                key, ModifyLiquidityParams(g.tickLower, g.tickUpper, int256(uint256(g.liquidity)), bytes32(0)), ""
-            );
-            uint256 owe0 = d.amount0() < 0 ? uint256(uint128(-d.amount0())) : 0;
-            uint256 owe1 = d.amount1() < 0 ? uint256(uint128(-d.amount1())) : 0;
-            _settle(key.currency0, owe0);
-            _settle(key.currency1, owe1);
-            return abi.encode(owe0, owe1);
-        }
-        (BalanceDelta f,) =
-            poolManager.modifyLiquidity(key, ModifyLiquidityParams(g.tickLower, g.tickUpper, 0, bytes32(0)), "");
-        uint256 f0 = f.amount0() > 0 ? uint256(uint128(f.amount0())) : 0;
-        uint256 f1 = f.amount1() > 0 ? uint256(uint128(f.amount1())) : 0;
-        if (f0 > 0) poolManager.take(key.currency0, address(this), f0);
-        if (f1 > 0) poolManager.take(key.currency1, address(this), f1);
-        return abi.encode(f0, f1);
-    }
-
-    function _settle(Currency cur, uint256 amount) internal {
-        if (amount == 0) return;
-        poolManager.sync(cur);
-        IERC20(Currency.unwrap(cur)).safeTransfer(address(poolManager), amount);
-        poolManager.settle();
+        GraduationLib.Graduation storage g = _grads[coin];
+        (uint256 a0, uint256 a1) = op == OP_SEED ? g.seed(poolManager) : g.collect(poolManager);
+        return abi.encode(a0, a1);
     }
 
     function _maybeGraduate(address coin, Coin storage c) internal {
@@ -488,10 +436,21 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
     ///      includes the virtual COMD, becomes the pool's opening price, so graduation never moves the price;
     ///      the real COMD is therefore the binding side and the coins it cannot pair with are burned.
     function _graduate(address coin, Coin storage c) internal {
-        Graduation storage g = _grads[coin];
+        GraduationLib.Graduation storage g = _grads[coin];
         uint256 comdAmt = c.comdReserve;
         uint256 coinAmt = c.coinReserve;
-        uint160 sqrtP = _plan(g, coin, c.virtualComd + comdAmt, comdAmt, coinAmt);
+        uint160 sqrtP = g.plan(
+            GraduationLib.Plan({
+                coin: coin,
+                comd: address(comd),
+                fee: graduationFee,
+                spacing: graduationTickSpacing,
+                hook: graduationHook,
+                x: c.virtualComd + comdAmt,
+                comdAmt: comdAmt,
+                coinAmt: coinAmt
+            })
+        );
         if (g.liquidity == 0) revert ZeroAmount();
 
         c.comdReserve = 0;
@@ -503,36 +462,6 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
 
         poolManager.initialize(g.key, sqrtP);
         (uint256 used0, uint256 used1) = abi.decode(poolManager.unlock(abi.encode(OP_SEED, coin)), (uint256, uint256));
-        _finish(g, coin, coinAmt, used0, used1, sqrtP);
-    }
-
-    /// @dev Pool key, full-range ticks, opening price and the liquidity the reserves can fund (written into `g`).
-    function _plan(Graduation storage g, address coin, uint256 x, uint256 comdAmt, uint256 coinAmt)
-        internal
-        returns (uint160 sqrtP)
-    {
-        bool coinIs0 = coin < address(comd);
-        int24 spacing = graduationTickSpacing;
-        g.key = coinIs0
-            ? PoolKey(Currency.wrap(coin), Currency.wrap(address(comd)), graduationFee, spacing, graduationHook)
-            : PoolKey(Currency.wrap(address(comd)), Currency.wrap(coin), graduationFee, spacing, graduationHook);
-        // pool price = currency1 per currency0: COMD per coin when the coin is currency0, coins per COMD otherwise
-        sqrtP = _sqrtPriceX96(coinIs0 ? coinAmt : x, coinIs0 ? x : coinAmt);
-        g.tickLower = TickAlign.minUsable(spacing);
-        g.tickUpper = TickAlign.maxUsable(spacing);
-        g.liquidity = LiquidityAmountsLib.forAmounts(
-            sqrtP,
-            TickMath.getSqrtPriceAtTick(g.tickLower),
-            TickMath.getSqrtPriceAtTick(g.tickUpper),
-            coinIs0 ? coinAmt : comdAmt,
-            coinIs0 ? comdAmt : coinAmt
-        );
-    }
-
-    /// @dev Records what the pool took, burns the unsold coins the COMD could not pair with, emits.
-    function _finish(Graduation storage g, address coin, uint256 coinAmt, uint256 used0, uint256 used1, uint160 sqrtP)
-        internal
-    {
         if (Currency.unwrap(g.key.currency0) == coin) {
             g.coinIn = used0;
             g.comdIn = used1;
@@ -543,16 +472,7 @@ contract Incorporations is Ownable2Step, Pausable, ReentrancyGuard, IUnlockCallb
         g.coinBurned = coinAmt - g.coinIn;
         if (g.coinBurned > 0) IERC20(coin).safeTransfer(DEAD, g.coinBurned);
         // COMD rounding dust (a few wei) stays as surplus
-        emit Graduated(coin, PoolId.unwrap(g.key.toId()), sqrtP, g.comdIn, g.coinIn, g.coinBurned, g.liquidity);
-    }
-
-    /// @dev sqrt(amount1 / amount0) in Q64.96, clamped to the pool manager's bounds.
-    function _sqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
-        uint256 ratioX192 = FullMath.mulDiv(amount1, uint256(1) << 192, amount0);
-        uint256 s = Math.sqrt(ratioX192);
-        if (s < TickMath.MIN_SQRT_PRICE + 1) s = TickMath.MIN_SQRT_PRICE + 1;
-        if (s > TickMath.MAX_SQRT_PRICE - 1) s = TickMath.MAX_SQRT_PRICE - 1;
-        return uint160(s);
+        emit Graduated(coin, g.poolId(), sqrtP, g.comdIn, g.coinIn, g.coinBurned, g.liquidity);
     }
 
     // =====================================================================================

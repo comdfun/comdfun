@@ -97,6 +97,9 @@ paired with COMD"). Design and checks (`test/IncorporationsGraduation.t.sol`, 9 
 - After graduation every curve function for that coin reverts `CoinGraduated()`; `spotPrice` reads the pool.
   `pause()` also blocks graduation; `rescueERC20` cannot reach pool liquidity (it is in the PoolManager).
 - `unlockCallback` is PoolManager-only; settle uses sync/transfer/settle for both currencies.
+- The v4 side lives in `GraduationLib`, an external (linked) library the contract delegatecalls into, which keeps
+  `Incorporations` at ~23.2 KB (EIP-170 limit 24,576; CI's `forge build --sizes` enforces it). `forge script`
+  deploys the library automatically before the contracts (verified against anvil).
 
 ## 5. Residual risks
 

@@ -549,7 +549,7 @@ export const incorporationsAbi = [
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct Incorporations.Graduation",
+        "internalType": "struct GraduationLib.Graduation",
         "components": [
           {
             "name": "done",
@@ -1673,11 +1673,6 @@ export const incorporationsAbi = [
         "internalType": "uint256"
       }
     ]
-  },
-  {
-    "type": "error",
-    "name": "LiquidityOverflow",
-    "inputs": []
   },
   {
     "type": "error",

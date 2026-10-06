@@ -20,6 +20,7 @@ import {RevenueRouter} from "../src/RevenueRouter.sol";
 import {Flywheel} from "../src/Flywheel.sol";
 import {UniswapV4PoolSwapper} from "../src/swap/UniswapV4PoolSwapper.sol";
 import {Incorporations} from "../src/Incorporations.sol";
+import {GraduationLib} from "../src/libraries/GraduationLib.sol";
 import {ProjectFactory} from "../src/launch/ProjectFactory.sol";
 import {ContributorDistributor} from "../src/launch/ContributorDistributor.sol";
 import {MockMarketplace} from "../src/mocks/MockMarketplace.sol";
@@ -221,7 +222,7 @@ contract IntegrationTest is Test, MerkleHelper {
         vm.prank(bob);
         inc.buyWithETH{value: 0.1 ether}(coin, 1); // ≈ 1e7 COMD, crosses the 400k threshold
         assertTrue(inc.isGraduated(coin), "graduated on the crossing buy");
-        Incorporations.Graduation memory g = inc.graduationInfo(coin);
+        GraduationLib.Graduation memory g = inc.graduationInfo(coin);
         assertEq(address(g.key.hooks), d.incorporationsHook);
         assertTrue(Currency.unwrap(g.key.currency0) == d.comd || Currency.unwrap(g.key.currency1) == d.comd);
         assertGt(g.liquidity, 0);

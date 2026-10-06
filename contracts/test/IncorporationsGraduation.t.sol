@@ -14,6 +14,7 @@ import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 
 import {Base} from "./utils/Base.sol";
 import {Incorporations} from "../src/Incorporations.sol";
+import {GraduationLib} from "../src/libraries/GraduationLib.sol";
 import {LaunchGuardHook} from "../src/launch/LaunchGuardHook.sol";
 
 /// Graduation: the buy that lifts a coin's COMD reserve to the threshold moves it into a Uniswap v4 coin/$COMD pool
@@ -67,7 +68,7 @@ contract IncorporationsGraduationTest is Base {
 
         _buyUpTo(400_000e18);
 
-        Incorporations.Graduation memory g = inc.graduationInfo(coin);
+        GraduationLib.Graduation memory g = inc.graduationInfo(coin);
         assertTrue(g.done, "graduated");
         assertEq(inc.graduatedCount(), 1);
         assertEq(inc.isGraduated(coin), true);
@@ -114,7 +115,7 @@ contract IncorporationsGraduationTest is Base {
         inc.quoteSell(coin, 1e18);
         vm.stopPrank();
 
-        Incorporations.Graduation memory g = inc.graduationInfo(coin);
+        GraduationLib.Graduation memory g = inc.graduationInfo(coin);
         bool coinIs0 = Currency.unwrap(g.key.currency0) == coin;
         uint256 coinBefore = IERC20(coin).balanceOf(bob);
         uint256 priceBefore = inc.spotPrice(coin);
@@ -136,7 +137,7 @@ contract IncorporationsGraduationTest is Base {
 
     function test_poolFeesGoToCounselRewardsAndBurn() public {
         _buyUpTo(400_000e18);
-        Incorporations.Graduation memory g = inc.graduationInfo(coin);
+        GraduationLib.Graduation memory g = inc.graduationInfo(coin);
         bool coinIs0 = Currency.unwrap(g.key.currency0) == coin;
         vm.prank(bob);
         swapRouter.swap(
