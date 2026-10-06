@@ -193,7 +193,7 @@ html[data-cursor="pixel"], html[data-cursor="pixel"] * { cursor: url("data:image
 .brand .wm { animation: wm-shimmer 9s steps(1, end) infinite; }
 @keyframes wm-shimmer { 0%, 84%, 100% { color: var(--parch); } 85% { color: var(--gold); } 87% { color: var(--pink); } 89% { color: var(--cyan); } 91% { color: var(--lime); } 93% { color: var(--orange); } 95% { color: var(--violet); } 97% { color: var(--gold); } }
 .brand .est { font-family: var(--font-px); font-size: 9px; color: var(--muted); letter-spacing: 0.1em; display: block; margin-top: 4px; line-height: 1; }
-.nav { display: flex; align-items: center; gap: 2px; flex: 1; flex-wrap: wrap; }
+.nav { display: flex; align-items: center; gap: 2px; flex: 1; flex-wrap: nowrap; white-space: nowrap; min-width: 0; overflow: visible; }
 .nav a { --c: var(--parch); font-size: 12px; text-decoration: none; padding: 10px 11px 12px; color: var(--parch); position: relative; letter-spacing: 0.06em; }
 .nav a::after { content: ""; position: absolute; left: 11px; bottom: 4px; height: 4px; width: 0; background: var(--c); transition: width 0.24s steps(6, end); }
 .nav a:hover { color: var(--c); }
@@ -247,7 +247,7 @@ html[data-cursor="pixel"], html[data-cursor="pixel"] * { cursor: url("data:image
 html.nav-open { overflow: hidden; }
 /* rows settle in one after another when the drawer opens */
 html.fx .nav-drawer.open .nd-link, html.fx .nav-drawer.open .nd-group { animation: it-rise 0.3s var(--rv-ease) calc(0.08s + var(--i, 0) * 0.03s) both; }
-@media (max-width: 980px) {
+@media (max-width: 1140px) {
   .nav { display: none; }
   .nav-mobile { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .site-header .bar .connect { display: none; }
@@ -1218,6 +1218,15 @@ html.has-intro.intro-fade .intro.intro { opacity: 0; transition: opacity 0.5s va
 .docs-side { overflow: visible; max-height: none; }
 .docs-side { z-index: 25; } .docs-hits { z-index: 40; } .docs-hit-t { align-items: baseline; }
 .doc-md .dtable code { white-space: nowrap; }
+.doc-md a > code, .doc-md a code { text-decoration: none; border-bottom: 0; color: var(--gold); }
+.doc-md a:hover > code { color: var(--cyan); }
+@media (max-width: 860px) {
+  .doc-md .dtable code { white-space: normal; word-break: break-all; }
+  .doc-md .dtable thead { display: none; }
+  .doc-md .dtable tr { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 0; border-bottom: 2px solid var(--rule); }
+  .doc-md .dtable td { border: 0; padding: 2px 0; }
+  .doc-md .dtable td:first-child { color: var(--sig); }
+}
 @media (max-width: 600px) { .dossier-head { flex-wrap: wrap; } .dossier-head .eng-r { white-space: normal; min-width: 0; } }
 .trade-card { display: flex; gap: 16px; align-items: flex-start; text-decoration: none; color: inherit; transition: transform 0.1s steps(2, end); }
 .trade-card:hover { transform: translate(-2px, -2px); }

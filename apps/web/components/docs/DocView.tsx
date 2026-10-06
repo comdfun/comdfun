@@ -11,7 +11,7 @@ import { ContactBlock } from "@/components/Footer";
 
 const ROLE: Record<string, string> = {
   ComdToken: "$COMD, launched on Pons (external token)", Flywheel: "Tax buckets: buyback-and-burn (to 0x…dEaD), Counsel floor sweeps", Swapper: "UniswapV4PoolSwapper: buyback route into Pons's graduated pool",
-  CounselNFT: "Company.md Counsel (ERC-721)", IdentityRegistry: "ERC-8004 identities", RevenueRouter: "Job payments: 80% Counsel / 20% firm", RewardDistributor: "Counsel rewards by epoch (COMD)",
+  CounselNFT: "Counsel (ERC-721, upgradeable proxy)", IdentityRegistry: "ERC-8004 identities", RevenueRouter: "Job payments: 80% Counsel / 20% firm", RewardDistributor: "Counsel rewards by epoch (COMD)",
   ContributorDistributor: "Launch contributor claims", Incorporations: "Company coins", Permit2: "Uniswap Permit2 (payments)", WETH: "Wrapped ether",
 };
 
@@ -48,8 +48,8 @@ export async function DocView({ slug }: { slug: string }) {
     md = md.replace("{{contracts}}", ["| Contract | Key | Role | Robinhood Chain (4663) |", "|---|---|---|---|", ...rows].join("\n"));
   }
   if (md.includes("{{roles}}")) {
-    const rows = ROLE_ADDRESSES.map((r) => `| **${r.role}** | [\`${r.address}\`](${roleExplorerUrl(r.address)}) | ${r.does} |`);
-    md = md.replace("{{roles}}", ["| Role | Address | What it does |", "|---|---|---|", ...rows].join("\n"));
+    const rows = ROLE_ADDRESSES.map((r) => `| **${r.role}** — ${r.does} | [\`${r.address}\`](${roleExplorerUrl(r.address)}) |`);
+    md = md.replace("{{roles}}", ["| Role | Address (Blockscout) |", "|---|---|", ...rows].join("\n"));
   }
   const { nodes, headings } = renderMd(md);
   return (
