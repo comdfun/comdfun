@@ -10,16 +10,16 @@ own a pool. Everything below assumes Robinhood Chain mainnet (chain id 4663); th
 
 ## 0. Accounts and keys
 
-| Role | Where the key lives | Needs ETH |
-|---|---|---|
-| Creator | your wallet; launches $COMD on Pons, receives Pons payouts, forwards them to the Flywheel | Pons launch fee + any dev buy |
-| Deployer | GitHub secret `DEPLOYER_PRIVATE_KEY` | ~0.02 |
-| Admin | hardware wallet / multisig; owns every contract (`ADMIN` variable, must differ from the deployer) | ~0.01 |
-| Treasury | receives 20% of job revenue in COMD (`TREASURY`; can be the Admin) | 0 |
-| Settler | api `SETTLER_PRIVATE_KEY`; work records, reward roots | ~0.05, top up |
-| Registrar | api `DEPLOYER_PRIVATE_KEY`; deploys the swarm's launches | ~0.05, top up |
-| Keeper | api `KEEPER_PRIVATE_KEY`; buybacks and the revenue split (`KEEPER` variable) | ~0.02 |
-| Attester | api `ATTESTER_PRIVATE_KEY`; signs oracle rulings off-chain | 0 |
+| Role | Address (mainnet) | Where the key lives | Needs ETH |
+|---|---|---|---|
+| Creator | `0x0000000000000000000000000000000000000000` | your wallet; launches $COMD on Pons, receives Pons payouts, forwards them to the Flywheel | Pons launch fee + any dev buy |
+| Deployer | `0x71A2e394A20bea28C6C80Dbdc8e238Da40050E29` | GitHub secret `DEPLOYER_PRIVATE_KEY` | ~0.02 |
+| Admin | `0xe5375641670C965c264C234839cEbAc9f4e1d2FD` | hardware wallet / multisig; owns every contract (`ADMIN` variable, must differ from the deployer) | ~0.01 |
+| Treasury | = Admin | receives 20% of job revenue in COMD (`TREASURY`; can be the Admin) | 0 |
+| Settler | `0x4ddFf58eEEC4D838fb9e7069fF48faFCD7a898e0` | api `SETTLER_PRIVATE_KEY`; work records, reward roots | ~0.05, top up |
+| Registrar | `0x620962425FF8539ecD9F1D02D71B336d61802D03` | api `DEPLOYER_PRIVATE_KEY`; deploys the swarm's launches | ~0.05, top up |
+| Keeper | `0x163Bdf367c6B20BC561439bdc0523D49cae6be19` | api `KEEPER_PRIVATE_KEY`; buybacks and the revenue split (`KEEPER` variable) | ~0.02 |
+| Attester | `0x1aC3F8bd5dB5C26A5E1bcE2201c378b5fcBF8272` | api `ATTESTER_PRIVATE_KEY`; signs oracle rulings off-chain | 0 |
 
 Other credentials: `ANTHROPIC_API_KEY` (Managing Partner planning), a GitHub fine-grained token with Contents
 read/write on `comdfun/worker` and repo creation in the `comdfun` org (api `GITHUB_TOKEN`, repo secret
@@ -75,7 +75,7 @@ job summary. From a laptop instead: `scripts/deploy-contracts.sh mainnet` with t
 
 After the run:
 1. Commit `contracts/deployments/4663.json` and run `npm run contracts:abi` (the address book the apps read).
-2. Admin calls `acceptOwnership()` on the Flywheel (Ownable2Step). The other contracts are owned by Admin directly.
+2. Nothing to accept: every contract (Flywheel included) is owned by Admin from its first block; the deployer keeps no power (`test_noDeployerPowersRemain`).
 3. Paste the env block into Railway (§2.4). Real payments settle on-chain as soon as `SETTLER_PRIVATE_KEY` and `RPC_URL` are set (leave `PAYMENTS_MODE=off`; `mock` is for local demos only).
 
 ## 5. Open for business
@@ -114,3 +114,18 @@ Status: `GET /services` (Keeper row) and `GET /health` (`keeper_off`, `keeper_lo
 - [ ] `scripts/check-mainnet-addresses.sh` passes with `COMD_TOKEN` set
 - [ ] Testnet run completed end to end (deploy, mint, pair a worker, pay a job)
 - [ ] Railway domains resolve with TLS; `/health` is green and shows payments live
+
+## 9. Emergency runbook (Admin, on Blockscout → contract → Write proxy / Write contract)
+
+All owner powers are evented and owner-only; full policy table in `contracts/AUDIT.md` §3.
+
+| If… | Do |
+|---|---|
+| a hot key leaks (Settler / Registrar / Keeper / Attester) | `RewardDistributor.revokeRole(SETTLER_ROLE, old)` + `grantRole(SETTLER_ROLE, new)`; `ProjectFactory.revokeRole/grantRole(REGISTRAR_ROLE, …)`; `Flywheel.setKeeper(new)`; rotate the key in Railway (`*_PRIVATE_KEY`) and redeploy `api` |
+| a wrong reward root was posted | `RewardDistributor.pause()`, `revokeRoot(epoch, asset)`, post the corrected root, `unpause()` |
+| the swapper is broken / Pons's hook rejects buybacks | deploy another `IBuybackSwapper`, `Flywheel.setSwapper(new)`; or `Flywheel.pause()` + `rescueETH(to, amount)` to move the bucket |
+| a curve (Incorporations) bug | `Incorporations.pause()` (stops create + all trades); surplus: `rescueERC20/rescueETH`; backing: `scheduleEmergencyWithdraw()` → 48 h public countdown → `emergencyWithdraw(to)` |
+| job revenue stuck in the router | `RevenueRouter.pause()` then `rescueERC20(COMD, to, amount)`; `unpause()` to resume the 80/20 split |
+| a launch misbehaves | `ProjectFactory.pause()`; `rescueERC20/rescueETH/rescueFromDistributor` for surplus |
+| NFT metadata or mint bug | `CounselNFT.setPhase(0)` (closes minting) and `setBaseURI(...)`; for a code fix deploy the new implementation and `upgradeToAndCall(newImpl, "")` from Admin — holders, balances, phase and URI survive; test first on testnet with `CounselNFTV2Mock` as the template |
+| the API is down | nothing on chain changes; workers reconnect when it returns; mints and claims keep working through Blockscout |
