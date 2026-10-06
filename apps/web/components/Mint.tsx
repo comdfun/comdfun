@@ -25,6 +25,7 @@ export function Mint() {
   const minted = useRead<bigint>("CounselNFT", "mintedBy", [address], M.mintedBy, { enabled: !!address });
   // the contract owner (Admin) gets a small control panel here, so the phase can be changed without an explorer
   const owner = useRead<string>("CounselNFT", "owner", []);
+  const baseURI = useRead<string>("CounselNFT", "baseURI", []);
   const isOwner = !!address && !!owner.value && owner.value.toLowerCase() === address.toLowerCase();
   const [qty, setQty] = useState(1);
   const [proof, setProof] = useState<Hex[] | null | undefined>(undefined);
@@ -108,6 +109,15 @@ export function Mint() {
             ))}
           </div>
           <span className="small muted">Closed → nobody mints · Allowlist → Merkle proofs only · Public → anyone, free, {fmtNum(perWallet.value)} per wallet. Changes are on-chain transactions from this wallet.</span>
+          <div className="btn-row" style={{ marginTop: 4 }}>
+            <TxButton
+              label="Refresh metadata on marketplaces"
+              disabled={!baseURI.value}
+              run={() => writeContractAsync({ address: nft.address!, abi: nft.abi as Abi, functionName: "setBaseURI", args: [baseURI.value] } as never)}
+              onDone={() => celebrate("Metadata refresh emitted")}
+            />
+          </div>
+          <span className="small muted">Re-sets the current base URI, which emits ERC-4906 <code>BatchMetadataUpdate(1, 2000)</code>: OpenSea and other marketplaces re-read every Counsel&apos;s traits and image. One transaction, cents of gas; use it whenever the metadata changes.</span>
         </div>
       )}
     </div>
