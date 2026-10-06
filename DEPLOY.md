@@ -71,7 +71,7 @@ job summary. From a laptop instead: `scripts/deploy-contracts.sh mainnet` with t
 After the run:
 1. Commit `contracts/deployments/4663.json` and run `npm run contracts:abi` (the address book the apps read).
 2. Admin calls `acceptOwnership()` on the Flywheel (Ownable2Step). The other contracts are owned by Admin directly.
-3. Paste the env block into Railway (§2.4); set `PAYMENTS_MODE=live`.
+3. Paste the env block into Railway (§2.4). Real payments settle on-chain as soon as `SETTLER_PRIVATE_KEY` and `RPC_URL` are set (leave `PAYMENTS_MODE=off`; `mock` is for local demos only).
 
 ## 5. Open for business
 
@@ -108,4 +108,4 @@ Status: `GET /services` (Keeper row) and `GET /health` (`keeper_off`, `keeper_lo
 - [ ] `ADMIN` is a hardware wallet or multisig and differs from the deployer
 - [ ] `scripts/check-mainnet-addresses.sh` passes with `COMD_TOKEN` set
 - [ ] Testnet run completed end to end (deploy, mint, pair a worker, pay a job)
-- [ ] Railway domains resolve with TLS; `/health` is green; `PAYMENTS_MODE=live`
+- [ ] Railway domains resolve with TLS; `/health` is green and shows payments live
