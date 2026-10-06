@@ -8,6 +8,7 @@ import { PageHead, Section, Badge } from "@/components/ui";
 import { TaxStage, FlywheelStatsGrid } from "@/components/Flywheel";
 import { CountUp } from "@/components/fx/CountUp";
 import { VaultNav } from "@/components/VaultNav";
+import { TreasuryControls } from "@/components/TreasuryControls";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "The Flywheel" };
@@ -69,6 +70,7 @@ export default async function FlywheelPage() {
       {!s.configured && <p className="notice warn small" style={{ marginTop: 12 }}>{s.reason} Every total below starts at zero on deployment.</p>}
       {s.configured && !s.swapper.configured && <p className="notice small" style={{ marginTop: 12 }}><strong>Buybacks start after graduation, once the pool is configured.</strong> Until then the buyback bucket accumulates ETH; floor sweeps run as soon as the sweep bucket can afford a Counsel. <a href={s.pons.url} target="_blank" rel="noreferrer">Trade on Pons</a></p>}
       {s.source === "mock" && <p className="small muted" style={{ marginTop: 10 }}><span className="tag c-orange">mock</span> Fixture numbers until the contracts are live.</p>}
+      <TreasuryControls />
 
       <Section num="§1" title="The buckets" id="buckets" c="gold">
         <div className="grid g2 rv-kids">
