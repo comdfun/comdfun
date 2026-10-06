@@ -16,7 +16,7 @@
  * `MockChain`/`MockWriter` back tests and demos.
  */
 import {
-  createPublicClient, createWalletClient, decodeAbiParameters, decodeEventLog, encodeFunctionData, erc20Abi, getAddress, http, keccak256, parseAbi, toHex, zeroAddress,
+  createPublicClient, createWalletClient, decodeAbiParameters, decodeEventLog, encodeFunctionData, erc20Abi, fallback, getAddress, http, keccak256, parseAbi, toHex, zeroAddress,
   type Abi, type Address, type Hex, type PublicClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -112,6 +112,19 @@ export const permit2Abi = parseAbi([
 /** The ABIs this module uses, re-exported for callers that encode calldata (register-intent, tests). */
 export const ABIS = { counselNFT: counselNFTAbi, identityRegistry: identityRegistryAbi, reputationRegistry: reputationRegistryAbi, rewardDistributor: rewardDistributorAbi, projectFactory: projectFactoryAbi, permit2: permit2Abi, erc20: erc20Abi } as const;
 
+/** `RPC_URL` may list several endpoints (comma/space/newline separated): the first is primary, the rest take over
+ *  when it fails or is blocked (a public RPC behind a bot challenge returns 403 to servers). Order is kept (no ranking),
+ *  so the paid/dedicated endpoint should come first. */
+export function rpcUrls(spec: string): string[] {
+  const list = spec.split(/[\s,]+/).map((u) => u.trim()).filter(Boolean);
+  return list.length ? list : [spec];
+}
+export function rpcTransport(spec: string, opts: { timeout?: number; retryCount?: number } = {}) {
+  const urls = rpcUrls(spec);
+  const transports = urls.map((u) => http(u, { timeout: opts.timeout ?? 10_000, retryCount: opts.retryCount ?? 1 }));
+  return transports.length === 1 ? transports[0] : fallback(transports, { rank: false, retryCount: 0 });
+}
+
 const notFound = (e: unknown) => /nonexistent|ERC721NonexistentToken|invalid token|reverted|revert/i.test((e as Error).message);
 
 export class ViemChain implements ChainReader {
@@ -121,7 +134,7 @@ export class ViemChain implements ChainReader {
   private readonly addrs: ChainAddresses;
   constructor(rpcUrl: string, chainId: number, addrs: ChainAddresses) {
     this.chainId = chainId;
-    this.client = createPublicClient({ transport: http(rpcUrl, { timeout: 10_000, retryCount: 1 }) }) as PublicClient;
+    this.client = createPublicClient({ transport: rpcTransport(rpcUrl, { timeout: 10_000, retryCount: 1 }) }) as PublicClient;
     this.addrs = addrs;
   }
   async blockNumber() { return Number(await this.client.getBlockNumber()); }
@@ -241,9 +254,9 @@ export class ViemWriter implements ChainWriter {
   constructor(rpcUrl: string, chainId: number, key: Hex, addrs: ChainAddresses) {
     const account = privateKeyToAccount(key);
     this.address = account.address;
-    const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [rpcUrl] } } } as const;
-    this.wallet = createWalletClient({ account, chain, transport: http(rpcUrl, { timeout: 30_000 }) });
-    this.pub = createPublicClient({ chain, transport: http(rpcUrl, { timeout: 30_000 }) }) as PublicClient;
+    const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: rpcUrls(rpcUrl) } } } as const;
+    this.wallet = createWalletClient({ account, chain, transport: rpcTransport(rpcUrl, { timeout: 30_000 }) });
+    this.pub = createPublicClient({ chain, transport: rpcTransport(rpcUrl, { timeout: 30_000 }) }) as PublicClient;
     this.addrs = addrs;
   }
   /** simulate (so reverts surface with their reason) → send → wait; one transaction at a time. */

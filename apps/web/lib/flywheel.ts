@@ -4,10 +4,10 @@
 // Jobs paid in $COMD go through the RevenueRouter (80% Counsel rewards / 20% firm).
 // Source order: the API's GET /flywheel (cached chain reads + recent events) → direct chain reads → an
 // "awaiting deployment" shape. Amounts are strings in wei (ETH) or atomic COMD (18 decimals).
-import { createPublicClient, http, type Abi, type Address } from "viem";
+import { createPublicClient, type Abi, type Address } from "viem";
 import { get } from "./api";
 import { abiOf, addressOf } from "./contracts";
-import { activeChain, RPC_URL } from "./chains";
+import { activeChain, rpcTransport } from "./chains";
 import { MOCK, PONS_URL, TAX_BPS_DEFAULT } from "./config";
 
 export interface FlywheelEvent {
@@ -94,7 +94,7 @@ const ZERO = /^0x0{40}$/i;
 async function fromChain(): Promise<FlywheelStats | null> {
   const fw = addressOf("Flywheel");
   if (!fw) return null;
-  const c = createPublicClient({ chain: activeChain, transport: http(RPC_URL) });
+  const c = createPublicClient({ chain: activeChain, transport: rpcTransport() });
   const read = <T,>(name: Parameters<typeof abiOf>[0], address: Address, fn: string) => c.readContract({ address, abi: abiOf(name) as Abi, functionName: fn }) as Promise<T>;
   try {
     const r = <T,>(fn: string) => read<T>("Flywheel", fw, fn);

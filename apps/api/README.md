@@ -24,7 +24,7 @@ Every variable is in [`.env.example`](./.env.example). The essentials:
 
 | What | Env |
 |---|---|
-| chain | `CHAIN_ID` (default **4663**), `RPC_URL`, extra chains `RPC_URL_<id>`, `LAUNCH_CHAINS` |
+| chain | `CHAIN_ID` (default **4663**), `RPC_URL` (one URL or a comma-separated fallback list, primary first), extra chains `RPC_URL_<id>`, `LAUNCH_CHAINS` |
 | contracts | each from its env var (`COUNSEL_NFT`, `IDENTITY_REGISTRY`, `REPUTATION_REGISTRY`, `REWARD_DISTRIBUTOR`, `CONTRIBUTOR_DISTRIBUTOR`, `PROJECT_FACTORY`, `REVENUE_ROUTER`, `COMD_TOKEN` (the Pons $COMD, external), `FLYWHEEL`, `SWAPPER`, `INCORPORATIONS`, `PERMIT2_ADDRESS`), else `DEPLOYMENTS_FILE` (= `contracts/deployments/<chainId>.json`), else the `@company/abi` address book when that chain is marked deployed |
 | payments | asset `COMD_TOKEN` (decimals read at startup, 18 expected); payTo = `PAYTO_ADDRESS` or the **RevenueRouter** (80% Counsel rewards / 20% firm treasury); `PRICE_COMD` (default 100 COMD); `ENABLED_ACTIONS` |
 | brand | `PUBLIC_WEB_URL`, `PUBLIC_API_URL`, `SITES_DOMAIN` (production defaults comd.fun), `CONTACT_EMAIL` (team@comd.fun), `GITHUB_ORG` (comdfun), `PONS_URL` (Pons trade page, in `GET /flywheel`) |

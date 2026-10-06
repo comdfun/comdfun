@@ -245,7 +245,9 @@ export async function loadServices(opts: { store: BlobStore; sitesDomain: string
       return mod.serveSite(opts.store as any, label, reqPath, { method: o.method, ifNoneMatch: o.ifNoneMatch });
     },
     async deployLaunch(i) {
-      const rpcUrl = env[`RPC_URL_${i.chainId}`] ?? (Number(env.CHAIN_ID ?? 4663) === i.chainId ? env.RPC_URL : undefined);
+      // forge takes a single --rpc-url: the primary endpoint of the (possibly comma-separated) list
+      const rpcSpec = env[`RPC_URL_${i.chainId}`] ?? (Number(env.CHAIN_ID ?? 4663) === i.chainId ? env.RPC_URL : undefined);
+      const rpcUrl = rpcSpec ? rpcSpec.split(/[\s,]+/).filter(Boolean)[0] : undefined;
       const factory = opts.projectFactory ?? env.PROJECT_FACTORY;
       const live = !!(deployerKey && rpcUrl && factory);
       const r = await mod.deployLaunch({

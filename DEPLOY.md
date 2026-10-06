@@ -52,6 +52,13 @@ read/write on `comdfun/worker` and repo creation in the `comdfun` org (api `GITH
 4. Variables: paste the block printed by the deploy workflow (§4) into each service, then add the secrets from §0.
    `NEXT_PUBLIC_*` values are baked into the web build; redeploy `web` after changing any of them.
 5. The api runs the control plane, scheduler, attester, settler and keeper in one process: keep it at 1 replica.
+6. **RPC.** The public `https://rpc.mainnet.chain.robinhood.com` sits behind a bot challenge that answers servers
+   with `403 Just a moment…` once they poll it steadily (the api did, on launch day: `/health` → `degraded: ["chain"]`,
+   `/flywheel` → `HTTP request failed … Status: 403`). Use a dedicated endpoint as the primary and keep the public one
+   as a fallback — `RPC_URL` (api) and `NEXT_PUBLIC_RPC_URL` (web) accept a **comma-separated list**, tried in order:
+   `RPC_URL=https://robinhood-mainnet.g.alchemy.com/v2/<key>,https://rpc.mainnet.chain.robinhood.com`
+   (Alchemy's free tier serves Robinhood Chain; restrict the web key to the `comd.fun` origins in Alchemy's dashboard
+   since `NEXT_PUBLIC_*` is public). forge-based deploys use the first URL only.
 
 ## 3. Launch $COMD on Pons
 

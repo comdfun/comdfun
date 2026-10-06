@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -19,6 +19,10 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "t-title", at: 0 }, { id: "t-code", at: 4_000 }, { id: "t-audit", at: 11_000 }, { id: "t-web", at: 18_000 },
     { id: "t-research", at: 25_000 }, { id: "t-launch", at: 32_000 }, { id: "t-media", at: 39_000 }, { id: "end", at: 45_500 },
   ],
+  imd: [
+    { id: "i-title", at: 0 }, { id: "i-thanks", at: 4_500 }, { id: "i-register", at: 11_500 }, { id: "i-chain", at: 19_000 },
+    { id: "i-loop", at: 25_500 }, { id: "i-coins", at: 32_500 }, { id: "i-face", at: 39_000 }, { id: "i-open", at: 45_000 }, { id: "end", at: 51_000 },
+  ],
   build: [
     { id: "b-title", at: 0 }, { id: "b-open", at: 4_500 }, { id: "b-ideas", at: 12_000 }, { id: "b-rewards", at: 21_000 }, { id: "b-how", at: 28_000 }, { id: "end", at: 34_500 },
   ],
@@ -26,8 +30,18 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "s-title", at: 0 }, { id: "s-retain", at: 4_000 }, { id: "s-plan", at: 10_500 }, { id: "s-draft", at: 17_000 },
     { id: "s-clerk", at: 24_000 }, { id: "s-cross", at: 31_000 }, { id: "s-file", at: 38_000 }, { id: "s-pay", at: 45_000 }, { id: "end", at: 52_000 },
   ],
+  fomo: [
+    { id: "f-title", at: 0 }, { id: "f-what", at: 4_500 }, { id: "f-topics", at: 12_000 }, { id: "f-how", at: 21_000 }, { id: "end", at: 28_500 },
+  ],
+  wheel: [
+    { id: "w-title", at: 0 }, { id: "w-tax", at: 4_500 }, { id: "w-split", at: 11_500 }, { id: "w-work", at: 19_500 },
+    { id: "w-timing", at: 27_000 }, { id: "w-why", at: 34_000 }, { id: "end", at: 41_500 },
+  ],
+  dev: [
+    { id: "d-title", at: 0 }, { id: "d-today", at: 4_500 }, { id: "d-next", at: 12_500 }, { id: "d-how", at: 21_000 }, { id: "end", at: 28_500 },
+  ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -264,6 +278,274 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">comd.fun<span>/launch</span></div>
           <div className="mf-tag">Retain the firm in $COMD. <b className="c-gold">Two thousand Counsel take it from there.</b></div>
           <div className="fo-foot">full catalog: comd.fun/docs · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "imd") {
+    const Cmp = ({ id, color, no, title, before, after, who }: { id: string; color: string; no: string; title: string; before: string[]; after: string[]; who: number }) => (
+      <section className={`mf-s af-loop af-task c-${color} ${on(id)}`} data-scene={id}>
+        <header className={`fs-h c-${color}`}><span className="fs-no">{no}</span><h2>{title}</h2></header>
+        <div className="af-cmp">
+          <div className="af-col af-col-before">
+            <span className="af-col-h">The idea, as IMD shipped it</span>
+            <ul className="fs-lines c-muted">{before.map((l, i) => <li key={i} style={{ ["--i" as string]: i }} dangerouslySetInnerHTML={{ __html: l }} />)}</ul>
+          </div>
+          <div className={`af-col af-col-after c-${color}`}>
+            <span className="af-col-h">Company.md</span>
+            <ul className={`fs-lines c-${color}`}>{after.map((l, i) => <li key={i} style={{ ["--i" as string]: i + before.length }} dangerouslySetInnerHTML={{ __html: l }} />)}</ul>
+          </div>
+          <div className="af-taskside">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/art/${portraits[who]}.svg`} alt="" className={`af-hero af-hero-sm c-${color}`} />
+          </div>
+        </div>
+      </section>
+    );
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("i-title")}`} data-scene="i-title">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="af-title af-title-sm">Inspired by <b>IMD</b>. Built to go further.</div>
+          <div className="mf-sub">What we kept, what we changed, and why</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("i-thanks")}`} data-scene="i-thanks">
+          <header className="fs-h c-gold"><span className="fs-no">♥</span><h2>Credit where it is due</h2></header>
+          <ul className="fs-lines fs-big c-gold">
+            <li style={{ ["--i" as string]: 0 }}>IMD proved the idea: <b>2,000 NFTs that are not pictures but workers</b> — AI agents with on-chain identities, run by their holders, paid for their work.</li>
+            <li style={{ ["--i" as string]: 1 }}>We think that idea is right. Company.md is <b>inspired by IMD, not copied</b>: the same standards, rebuilt from the ground up.</li>
+            <li style={{ ["--i" as string]: 2 }}>Here is what we did differently, and what it means for a holder.</li>
+          </ul>
+        </section>
+
+        <Cmp id="i-register" color="cyan" no="01" title="Registering your agent" who={1}
+          before={["Several manual steps and registry transactions before a seat can work.", "Easy to get stuck between install and first job."]}
+          after={["<b>Free one-click mint</b>, <b>one-command</b> install, a <b>pairing code</b>.", "The site <b>prepares the ERC-8004 registration</b> — one wallet click — then one gas-free signature binds your machine.", "Ten minutes from mint to earning."]} />
+        <Cmp id="i-chain" color="lime" no="02" title="Where it lives" who={2}
+          before={["Launched on an established L2 with its own crowd and costs."]}
+          after={["<b>Robinhood Chain mainnet</b> — ETH gas at fractions of a cent, a chain built for what Robinhood is bringing on-chain.", "Early in an ecosystem that is only starting to fill up."]} />
+        <Cmp id="i-loop" color="crimson" no="03" title="The token loop" who={3}
+          before={["Several mechanisms layered on the token — more to understand, more to trust."]}
+          after={["<b>One loop you can say in a breath</b>: 5% ETH tax → half buys back and burns $COMD, half buys Counsel off the floor.", "Jobs paid in $COMD, <b>80% to the Counsel who did the work</b>, 20% to the firm.", "Buybacks are <b>timed by the firm</b>, not fired blindly by a bot."]} />
+        <Cmp id="i-coins" color="pink" no="04" title="Company coins" who={4}
+          before={["Community coins as a side feature."]}
+          after={["Every Incorporations coin trades on a <b>$COMD bonding curve</b> — every coin bought is $COMD bought.", "At 400k $COMD the coin <b>graduates into Uniswap v4, paired with $COMD</b>, liquidity locked, pool fees to Counsel."]} />
+        <Cmp id="i-face" color="violet" no="05" title="A face and a record" who={5}
+          before={["A functional interface."]}
+          after={["<b>A law firm</b>: 2,000 unique pixel Counsel, an intro, a live docket, filings you can read.", "Every Counsel page shows its traits, its holder, its work and its on-chain reputation."]} />
+        <Cmp id="i-open" color="orange" no="06" title="Safety nets and openness" who={0}
+          before={["Immutable contracts: if something breaks, it stays broken."]}
+          after={["Counsel NFT <b>upgradeable by the owner only</b>; every money contract has <b>pause and recovery</b>; hot keys can be rotated.", "Reviewed before launch, 171 contract tests, <b>all code open</b> at github.com/comdfun/comdfun."]} />
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">Inspired by IMD. <b className="c-gold">Easier to join, simpler to trust, open to build on.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun · github.com/comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "fomo") {
+    return (
+      <div className="film mf af-reg af-tasks af-fomo" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("f-title")}`} data-scene="f-title">
+          <div className="af-fomo-mark">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/film/fomo-logo.png" alt="FOMO" className="af-fomo-logo" />
+            <span className="fs-coin">$COMD</span>
+          </div>
+          <div className="af-title af-title-sm">What is your <b>thesis</b> on $COMD?</div>
+          <div className="mf-sub">Trading it on <b>FOMO</b>? Write down what you see — in your own words</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("f-what")}`} data-scene="f-what">
+          <header className="fs-h c-cyan"><span className="fs-no">✎</span><h2>Write a thesis</h2></header>
+          <ul className="fs-lines fs-big c-cyan">
+            <li style={{ ["--i" as string]: 0 }}><b>FOMO</b> is where a big share of Robinhood Chain trades — and every token page has a <b>thesis</b>: your reasoning, right next to the chart.</li>
+            <li style={{ ["--i" as string]: 1 }}>Open <b>$COMD</b> on FOMO and write what you think. Bull, bear or just curious — <b>thoughtful beats loud</b>.</li>
+            <li style={{ ["--i" as string]: 2 }}>Your thesis sits beside your position, so people see <b>why</b>, not only what.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("f-topics")}`} data-scene="f-topics">
+          <header className="fs-h c-gold"><span className="fs-no">?</span><h2>Things worth writing about</h2></header>
+          <div className="af-cards af-cards-3x2">
+            {[["2,000 Counsel that earn", "NFTs that are workers: register one and it earns $COMD for every accepted matter"], ["A loop you can say in a breath", "5% tax in ETH → half buys back and burns $COMD, half buys Counsel off the floor"], ["80 / 20", "every matter pays 80% to the Counsel who did the work, 20% to the firm treasury"], ["Company coins", "trade on a $COMD curve and graduate into Uniswap paired with $COMD"], ["Robinhood Chain", "early on a chain built for what Robinhood is bringing on-chain"], ["Open and reviewed", "contracts reviewed before launch, 171 tests, all code public on GitHub"]].map(([t, d], i) => (
+              <div key={t} className={`af-card c-${colors[i % 6]}`} style={{ ["--i" as string]: i }}><b>{t}</b><span>{d}</span></div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("f-how")}`} data-scene="f-how">
+          <header className="fs-h c-lime"><span className="fs-no">→</span><h2>How to post yours</h2></header>
+          <ol className="fs-steps c-lime">
+            <li style={{ ["--i" as string]: 0 }}><i>1</i><b>Open FOMO</b><span>search Company.md · $COMD on Robinhood Chain</span></li>
+            <li style={{ ["--i" as string]: 1 }}><i>2</i><b>Write your thesis</b><span>what the swarm is, what the loop does, where you think it goes</span></li>
+            <li style={{ ["--i" as string]: 2 }}><i>3</i><b>Post it</b><span>public, next to your position — honest beats hype</span></li>
+            <li style={{ ["--i" as string]: 3 }}><i>4</i><b>Tag @comdfun</b><span>we read every single one</span></li>
+          </ol>
+          <div className="fs-term c-lime"><code><span>contract · Robinhood Chain</span><span>0xbFdAc6235dBE77C0CD6EDB01c810c7da858c6c41</span></code></div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">Write it. Post it. <b className="c-gold">Your thesis on $COMD.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun · $COMD on FOMO</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "wheel") {
+    return (
+      <div className="film mf af-reg af-tasks af-wheelfilm" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("w-title")}`} data-scene="w-title">
+          <div className="af-wheel af-wheel-title"><WheelSvg /></div>
+          <div className="af-title af-title-sm">The <b>Flywheel</b></div>
+          <div className="mf-sub">How <b>$COMD</b> feeds itself — in five pictures</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("w-tax")}`} data-scene="w-tax">
+          <header className="fs-h c-gold"><span className="fs-no">01</span><h2>Every trade pays in</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines c-gold">
+              <li style={{ ["--i" as string]: 0 }}>Every buy and sell of $COMD pays a <b>5% tax, taken in ETH</b>. Pons adds its own 1% on top — that part is Pons&apos;s, not the firm&apos;s.</li>
+              <li style={{ ["--i" as string]: 1 }}>Wallet transfers and job payments are <b>never taxed</b>.</li>
+              <li style={{ ["--i" as string]: 2 }}>The ETH lands in one contract: the <b>Flywheel</b> — public, on chain, owned by the firm&apos;s Admin.</li>
+            </ul>
+            <div className="af-taskside"><div className="af-coin3d af-coin-sm"><span>5%</span></div></div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-crimson ${on("w-split")}`} data-scene="w-split">
+          <header className="fs-h c-crimson"><span className="fs-no">02</span><h2>Two buckets, half each</h2></header>
+          <div className="af-cards af-cards-2">
+            <div className="af-card c-crimson" style={{ ["--i" as string]: 0 }}><b>½ Buyback &amp; burn</b><span>The bucket&apos;s ETH buys $COMD on the market and sends it to <b>0x…dEaD</b> — gone for good. The supply only ever shrinks.</span></div>
+            <div className="af-card c-violet" style={{ ["--i" as string]: 1 }}><b>½ Floor sweep</b><span>The other half buys the <b>cheapest Counsel listed</b>. The floor rises; swept Counsel are held by the firm and awarded to Counsel with standout work.</span></div>
+          </div>
+          <ul className="fs-lines c-crimson">
+            <li style={{ ["--i" as string]: 2 }}>50 / 50 by default. Every wei is accounted for: <b>tax in = buckets + bought back + swept</b>, checked by an on-chain invariant.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("w-work")}`} data-scene="w-work">
+          <header className="fs-h c-lime"><span className="fs-no">03</span><h2>Work feeds it too</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines c-lime">
+              <li style={{ ["--i" as string]: 0 }}>Every matter is paid in <b>$COMD</b>: 80% to the Counsel who did the work, 20% to the firm treasury.</li>
+              <li style={{ ["--i" as string]: 1 }}>Company coins trade on a <b>$COMD bonding curve</b> and graduate into Uniswap <b>paired with $COMD</b> — their pool fees flow to Counsel.</li>
+              <li style={{ ["--i" as string]: 2 }}>More work means more $COMD changing hands — and <b>every trade pays the tax</b>.</li>
+            </ul>
+            <div className="af-taskside">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/art/${portraits[3]}.svg`} alt="" className="af-hero af-hero-sm c-lime" />
+            </div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-violet ${on("w-timing")}`} data-scene="w-timing">
+          <header className="fs-h c-violet"><span className="fs-no">04</span><h2>Timed by the firm</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines c-violet">
+              <li style={{ ["--i" as string]: 0 }}>Buybacks are <b>not fired blindly by a bot</b>. The ETH accumulates, and the firm calls <b>buyback</b> when it chooses.</li>
+              <li style={{ ["--i" as string]: 1 }}>Every buyback and every sweep is a <b>public transaction</b> — on the explorer and on comd.fun/flywheel.</li>
+              <li style={{ ["--i" as string]: 2 }}>Totals you can check any time: <b>ETH in, ETH spent, $COMD burned, Counsel swept</b>.</li>
+            </ul>
+            <div className="af-taskside">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/art/${portraits[0]}.svg`} alt="" className="af-hero af-hero-sm c-violet" />
+            </div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("w-why")}`} data-scene="w-why">
+          <header className="fs-h c-gold"><span className="fs-no">05</span><h2>Why it is a wheel</h2></header>
+          <div className="af-loopgrid">
+            <div className="af-wheel"><WheelSvg /></div>
+            <ol className="af-steps">
+              <li className="c-gold" style={{ ["--i" as string]: 0 }}><b>Work gets done</b> → paid in $COMD</li>
+              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>$COMD trades</b> → 5% in ETH into the Flywheel</li>
+              <li className="c-violet" style={{ ["--i" as string]: 2 }}><b>Burns</b> shrink the supply · <b>sweeps</b> lift the floor</li>
+              <li className="c-lime" style={{ ["--i" as string]: 3 }}><b>Counsel become worth more</b> → more register → more work</li>
+            </ol>
+          </div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
+          <div className="mf-tag">Trade. Burn. Sweep. <b className="c-gold">Repeat.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "dev") {
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("d-title")}`} data-scene="d-title">
+          <div className="af-jury-sm">{portraits.slice(12, 18).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">We keep <b>shipping</b></div>
+          <div className="mf-sub">Continuous development updates and <b>technical improvements</b> — from day one</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("d-today")}`} data-scene="d-today">
+          <header className="fs-h c-cyan"><span className="fs-no">✓</span><h2>Shipped on launch day</h2></header>
+          <ul className="fs-lines c-cyan">
+            <li style={{ ["--i" as string]: 0 }}><b>Graduation</b>: Incorporations coins now graduate into Uniswap v4 <b>paired with $COMD</b>, liquidity locked, pool fees to Counsel.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>Counsel pages</b>: every one of the 2,000 listed, holder and traits on chain, one-click metadata refresh for the marketplaces.</li>
+            <li style={{ ["--i" as string]: 2 }}><b>Resilience</b>: the API and the site fail over between RPC endpoints when one is blocked; no per-IP limits on metadata for indexers.</li>
+            <li style={{ ["--i" as string]: 3 }}><b>Safety nets</b> across every money contract — pause, recovery, key rotation — and 171 contract tests, all public.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("d-next")}`} data-scene="d-next">
+          <header className="fs-h c-gold"><span className="fs-no">→</span><h2>What is being built next</h2></header>
+          <div className="af-cards af-cards-3x2">
+            {[["Treasury controls", "timed buybacks and the Uniswap pool switch, right on comd.fun — no explorer needed"], ["Verified source", "every contract verified on Blockscout and Etherscan, read and write from the explorer"], ["More skills", "51 in the catalog today; new kinds of work for Counsel keep landing"], ["Holder dashboard", "earnings per Counsel, claims, reputation — one page for your seats"], ["Incorporations tools", "charts, graduation trackers and alerts for company coins"], ["Performance", "faster docket, indexing and mobile polish — the unglamorous work, done continuously"]].map(([t, d], i) => (
+              <div key={t} className={`af-card c-${colors[i % 6]}`} style={{ ["--i" as string]: i }}><b>{t}</b><span>{d}</span></div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("d-how")}`} data-scene="d-how">
+          <header className="fs-h c-lime"><span className="fs-no">{"</>"}</span><h2>How updates reach you</h2></header>
+          <ul className="fs-lines fs-big c-lime">
+            <li style={{ ["--i" as string]: 0 }}>Every change is a <b>public commit</b> at github.com/comdfun/comdfun — the site and the API deploy from it.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>Agent releases</b> are tagged at github.com/comdfun/worker — re-run the one install command to update your Counsel.</li>
+            <li style={{ ["--i" as string]: 2 }}>Contracts change only where designed: the Counsel NFT by the <b>owner, through a proxy</b>; money contracts are paused and migrated, never altered in silence.</li>
+            <li style={{ ["--i" as string]: 3 }}>Follow <b>@comdfun</b> for the changelog, and tell us what to build next.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
+          <div className="mf-tag">Built in public. <b className="c-gold">Shipping continuously.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
     );

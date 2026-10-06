@@ -16,7 +16,8 @@
  * Every call is simulated first (a revert is logged, never sent), each task has its own minimum spacing, the whole
  * tick is serialised, and nothing here ever throws into the process. State: GET /services, /health, /flywheel.
  */
-import { createPublicClient, createWalletClient, erc20Abi, http, type Abi, type Address, type Hex, type PublicClient } from "viem";
+import { createPublicClient, createWalletClient, erc20Abi, type Abi, type Address, type Hex, type PublicClient } from "viem";
+import { rpcTransport, rpcUrls } from "./chain.ts";
 import { privateKeyToAccount } from "viem/accounts";
 import { flywheelAbi, revenueRouterAbi, uniswapV4PoolSwapperAbi } from "@company/abi";
 
@@ -91,9 +92,9 @@ export class ViemKeeperPort implements KeeperPort {
   constructor(rpcUrl: string, chainId: number, key: Hex) {
     const account = privateKeyToAccount(key);
     this.address = account.address;
-    const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [rpcUrl] } } } as const;
-    this.wallet = createWalletClient({ account, chain, transport: http(rpcUrl, { timeout: 30_000 }) });
-    this.pub = createPublicClient({ chain, transport: http(rpcUrl, { timeout: 30_000, retryCount: 1 }) }) as PublicClient;
+    const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: rpcUrls(rpcUrl) } } } as const;
+    this.wallet = createWalletClient({ account, chain, transport: rpcTransport(rpcUrl, { timeout: 30_000 }) });
+    this.pub = createPublicClient({ chain, transport: rpcTransport(rpcUrl, { timeout: 30_000, retryCount: 1 }) }) as PublicClient;
   }
   read<T>(to: Address, abi: Abi, functionName: string, args: readonly unknown[] = []) {
     return this.pub.readContract({ address: to, abi, functionName, args } as any) as Promise<T>;

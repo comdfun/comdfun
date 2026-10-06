@@ -1,6 +1,6 @@
 import { createConfig, http, cookieStorage, createStorage } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
-import { robinhood, robinhoodTestnet, RPC_URL, activeChain } from "./chains";
+import { robinhood, robinhoodTestnet, activeChain, rpcTransport } from "./chains";
 import { WC_PROJECT_ID } from "./config";
 
 const chains = activeChain.id === robinhood.id ? ([robinhood, robinhoodTestnet] as const) : ([robinhoodTestnet, robinhood] as const);
@@ -16,8 +16,8 @@ export const wagmiConfig = createConfig({
       : []),
   ],
   transports: {
-    [robinhood.id]: http(activeChain.id === robinhood.id ? RPC_URL : undefined),
-    [robinhoodTestnet.id]: http(activeChain.id === robinhoodTestnet.id ? RPC_URL : undefined),
+    [robinhood.id]: activeChain.id === robinhood.id ? rpcTransport() : http(),
+    [robinhoodTestnet.id]: activeChain.id === robinhoodTestnet.id ? rpcTransport() : http(),
   },
 });
 

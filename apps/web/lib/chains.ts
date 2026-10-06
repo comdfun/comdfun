@@ -1,4 +1,4 @@
-import { defineChain } from "viem";
+import { defineChain, fallback, http } from "viem";
 import { CHAIN_ID } from "./config";
 
 export const robinhood = defineChain({
@@ -22,7 +22,15 @@ export const robinhoodTestnet = defineChain({
 
 export const CHAINS = [robinhood, robinhoodTestnet] as const;
 export const activeChain = CHAIN_ID === 4663 ? robinhood : robinhoodTestnet;
-export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || activeChain.rpcUrls.default.http[0];
+/** `NEXT_PUBLIC_RPC_URL` may list several endpoints (comma separated); the first is primary, the rest are fallbacks. */
+export const RPC_URLS: string[] = (process.env.NEXT_PUBLIC_RPC_URL || "").split(/[\s,]+/).map((u) => u.trim()).filter(Boolean);
+if (!RPC_URLS.length) RPC_URLS.push(activeChain.rpcUrls.default.http[0]);
+export const RPC_URL = RPC_URLS[0];
+/** viem transport over every configured endpoint, in order (no ranking): a blocked public RPC fails over to the next. */
+export function rpcTransport(opts: { timeout?: number } = {}) {
+  const ts = RPC_URLS.map((u) => http(u, { timeout: opts.timeout ?? 10_000, retryCount: 1 }));
+  return ts.length === 1 ? ts[0] : fallback(ts, { rank: false, retryCount: 0 });
+}
 
 /** Names for chain ids that appear in API data (oracle questions can read other chains). */
 export const CHAIN_NAMES: Record<number, string> = {
