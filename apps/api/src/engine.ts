@@ -23,6 +23,8 @@ import type { BundleRecord } from "./records.ts";
 void _isPremium;
 
 export const MAX_ATTEMPTS = 3;
+/** Runtime hand-backs (provider errors, timeouts) get more room than rejections: they are not verdicts on the work. */
+export const MAX_RUNTIME_ATTEMPTS = 6;
 export const MAX_REVISIONS = 1;
 
 export interface Session {
@@ -201,7 +203,10 @@ export class Engine {
     }
     if (meta?.tier === 1 && s.runtime.name !== "mock" && !s.tools.foundry) return "no foundry";
     if (node.premium && !s.premium) return "not on a premium runtime";
-    if (node.excluded.includes(s.tokenId)) return "excluded after a previous attempt";
+    if (node.excluded.includes(s.tokenId)) {
+      const until = node.excludedUntil?.[s.tokenId];
+      if (!until || until > iso(this.app.now())) return until ? "cooling down after a handed-back lease" : "excluded after a previous attempt";
+    }
     if (conflicts.has(s.wallet.toLowerCase())) return node.kind === "panel" ? "wallet already on this panel" : "wallet worked on this job (not independent)";
     return null;
   }
@@ -417,18 +422,27 @@ export class Engine {
     const node = job.nodes.find((n) => n.key === a.nodeKey) as NodeX | undefined;
     if (!node || node.leaseId !== a.leaseId || node.state !== "leased") return;
     this.app.event(state === "expired" ? "lease.expired" : "lease.handed_back", { jobId: job.id, nodeKey: node.key, tokenId: a.tokenId, leaseId: a.leaseId, attempt: node.attempt });
-    this.retryNode(job, node, a.tokenId, `${reason} (seat #${a.tokenId})`);
+    // a runtime hand-back (model provider down or unpaid, timeout, restart) is not a verdict on the seat: it may try
+    // again after a cooldown, so two online Counsel with a hiccup do not strand every matter on the docket
+    this.retryNode(job, node, a.tokenId, `${reason} (seat #${a.tokenId})`, true);
   }
 
-  private retryNode(job: JobX, node: NodeX, tokenId: string, reason: string) {
+  private retryNode(job: JobX, node: NodeX, tokenId: string, reason: string, cooldown = false) {
     if (!node.excluded.includes(tokenId)) node.excluded.push(tokenId);
+    if (cooldown) {
+      const minutes = Math.max(1, Number(this.app.cfg.storage.LEASE_RETRY_COOLDOWN_MINUTES ?? 20));
+      node.excludedUntil = { ...(node.excludedUntil ?? {}), [tokenId]: iso(this.app.now() + minutes * 60_000) };
+    } else if (node.excludedUntil?.[tokenId]) {
+      delete node.excludedUntil[tokenId]; // a rejection makes it permanent
+    }
     node.seat = null;
     node.wallet = null;
     node.leaseId = null;
     node.updatedAt = iso(this.app.now());
-    if (node.attempt >= MAX_ATTEMPTS) {
+    const cap = cooldown ? MAX_RUNTIME_ATTEMPTS : MAX_ATTEMPTS;
+    if (node.attempt >= cap) {
       node.state = "failed";
-      node.failureReason = `${reason}; ${MAX_ATTEMPTS} attempts used`;
+      node.failureReason = `${reason}; ${cap} attempts used`;
       this.jobs.save(job);
       this.app.event("node.failed", { jobId: job.id, nodeKey: node.key, reason: node.failureReason });
       if (node.kind === "panel") return this.afterPanelChange(job);

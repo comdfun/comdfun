@@ -186,6 +186,9 @@ export interface JobNode {
   /** accepted submission hash */
   submissionHash: string | null;
   excluded: string[];
+  /** tokenId → ISO time until which the exclusion holds; absent = permanent (a rejected result). A lease handed back
+   *  for a runtime reason (the holder's model provider failing, a timeout) only sidelines the seat for a cooldown. */
+  excludedUntil?: Record<string, string>;
 }
 
 export interface Attempt {
