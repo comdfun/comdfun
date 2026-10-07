@@ -116,6 +116,7 @@ export default async function FlywheelPage() {
           )}
           {s.burns.error && <p className="small muted" style={{ marginTop: 10 }}>Burn tracker: {s.burns.error}</p>}
           {s.fees?.error && <p className="small muted" style={{ marginTop: 6 }}>Fee tracker: {s.fees.error}</p>}
+          {s.fees?.internalUnavailable && <p className="small muted" style={{ marginTop: 6 }}>Fee tracker: the indexer in use cannot see contract payouts on this chain, so &quot;collected&quot; is a floor — add an Etherscan API key (<code>ETHERSCAN_API_KEY</code>) for the full figure.</p>}
         </Section>
       )}
 

@@ -31,7 +31,7 @@ export interface BurnSummary {
 
 export interface FeeSummary {
   tracked: boolean; reason?: string; wallets: number; source: "alchemy" | "etherscan" | "blockscout" | null;
-  received: string; receivedInternal: string; spent: string; balance: string | null; payouts: number; lastReceivedAt: string | null; scannedToBlock: number | null; error?: string;
+  received: string; receivedInternal: string; spent: string; balance: string | null; payouts: number; lastReceivedAt: string | null; scannedToBlock: number | null; internalUnavailable?: boolean; error?: string;
 }
 
 export interface FlywheelStats {

@@ -26,6 +26,8 @@ export type FeeSummary = {
   payouts: number;
   lastReceivedAt: string | null;
   scannedToBlock: number | null;
+  /** true when the source cannot see contract→wallet payouts (Alchemy without the internal category): received is a floor */
+  internalUnavailable?: boolean;
   error?: string;
 };
 
@@ -77,21 +79,27 @@ export class FeeTracker {
       payouts: this.payouts,
       lastReceivedAt: this.lastReceivedAt,
       scannedToBlock: this.scannedTo,
+      ...(this.internalUnavailable && this.source === "alchemy" ? { internalUnavailable: true } : {}),
       ...(this.error ? { error: this.error } : {}),
     };
   }
 
   // ---------------------------------------------------------------------------------------- sources
+  /** Alchemy has no "internal" category on some chains (Robinhood Chain among them); then only plain transfers are
+   *  visible and contract payouts are missed — `internalUnavailable` is set so the summary can say so. */
+  internalUnavailable = false;
   private async alchemy(wallet: Address, fromBlock: number): Promise<Transfer[]> {
     const url = this.alchemyUrl!;
     const out: Transfer[] = [];
+    let categories = ["external", "internal"];
     for (const dir of ["toAddress", "fromAddress"] as const) {
       let pageKey: string | undefined;
       for (let page = 0; page < 20; page++) {
-        const params: Record<string, unknown> = { fromBlock: `0x${fromBlock.toString(16)}`, toBlock: "latest", [dir]: wallet, category: ["external", "internal"], withMetadata: true, excludeZeroValue: true, maxCount: "0x3e8", order: "asc" };
+        const params: Record<string, unknown> = { fromBlock: `0x${fromBlock.toString(16)}`, toBlock: "latest", [dir]: wallet, category: categories, withMetadata: true, excludeZeroValue: true, maxCount: "0x3e8", order: "asc" };
         if (pageKey) params.pageKey = pageKey;
         const r = await this.app.fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "alchemy_getAssetTransfers", params: [params] }), signal: AbortSignal.timeout(20_000) });
         const j = (await r.json()) as { result?: { transfers: { hash: string; blockNum: string; from: string; to: string; value: number | null; category: string; metadata?: { blockTimestamp?: string }; uniqueId?: string }[]; pageKey?: string }; error?: { message: string } };
+        if (j.error && /internal.*not supported/i.test(j.error.message) && categories.includes("internal")) { categories = ["external"]; this.internalUnavailable = true; page--; continue; }
         if (j.error) throw new Error(`alchemy: ${j.error.message}`);
         for (const t of j.result?.transfers ?? []) {
           const wei = BigInt(Math.round((t.value ?? 0) * 1e6)) * 10n ** 12n; // value is ETH as a decimal; 6 decimals is plenty for a fee
