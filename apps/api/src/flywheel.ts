@@ -97,6 +97,8 @@ export class FlywheelView {
     const swapper = { address: swapperAddr, configured: swapperConfigured, onFlywheel: !isZero(flywheel?.swapper) };
     // every $COMD sent to the dead address (manual buybacks included) + buys by the buyback wallets; see burns.ts
     const burns = await this.app.burns.summary();
+    // ETH the fee wallet received from Pons (the creator tax) and spent on buybacks; see fees.ts
+    const fees = await this.app.fees.summary();
 
     const body = {
       chainId: cfg.chainId,
@@ -105,11 +107,12 @@ export class FlywheelView {
       pons,
       swapper,
       // Pons sets and collects the 5% tax; what reaches the Flywheel (receive()/notifyTax) is totalTaxIn
-      tax: { totalTaxIn: flywheel?.totals.taxIn ?? null, toFlywheel: flywheel?.totals.taxIn ?? null, source: "pons" },
+      tax: { totalTaxIn: flywheel?.totals.taxIn ?? null, toFlywheel: flywheel?.totals.taxIn ?? null, toFeeWallet: fees.tracked ? fees.received : null, collected: fees.tracked ? (BigInt(fees.received) + BigInt(flywheel?.totals.taxIn ?? "0")).toString() : (flywheel?.totals.taxIn ?? null), source: "pons" },
       flywheel, revenueRouter,
       // flat aliases kept from V2 for existing readers
       bps: flywheel?.bps ?? null, buckets: flywheel?.buckets ?? null, totals: flywheel?.totals ?? null, sweptTokenIds: flywheel?.sweptTokenIds ?? [], maxSweepPrice: flywheel?.maxSweepPrice ?? null,
       burns,
+      fees,
       events,
       errors,
       keeper: keeperView,

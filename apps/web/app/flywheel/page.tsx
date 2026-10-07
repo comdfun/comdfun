@@ -68,13 +68,13 @@ export default async function FlywheelPage() {
         <FlywheelStatsGrid s={s} />
       </div>
       {!s.configured && <p className="notice warn small" style={{ marginTop: 12 }}>{s.reason} Every total below starts at zero on deployment.</p>}
-      {s.configured && !s.swapper.configured && <p className="notice small" style={{ marginTop: 12 }}><strong>Buybacks start after graduation, once the pool is configured.</strong> Until then the buyback bucket accumulates ETH; floor sweeps run as soon as the sweep bucket can afford a Counsel. <a href={s.pons.url} target="_blank" rel="noreferrer">Trade on Pons</a></p>}
+      {s.configured && !s.swapper.configured && <p className="notice small" style={{ marginTop: 12 }}><strong>Until the Pons graduation the firm buys back and burns by hand</strong> from the tax Pons pays it{s.fees?.tracked && Number(s.fees.received) > 0 ? <> — <strong>{toUnits(s.fees.received).toFixed(3)} ETH</strong> collected so far</> : null}. The Flywheel contract takes over once the pool is configured; floor sweeps run as soon as the sweep bucket can afford a Counsel. <a href={s.pons.url} target="_blank" rel="noreferrer">Trade on Pons</a></p>}
       {s.source === "mock" && <p className="small muted" style={{ marginTop: 10 }}><span className="tag c-orange">mock</span> Fixture numbers until the contracts are live.</p>}
       <TreasuryControls />
 
       {s.burns?.tracked && (
         <Section num="§0" title="Buybacks & burns" id="burns" c="crimson">
-          <div className="grid g3 rv-kids">
+          <div className={`grid ${s.fees?.tracked ? "g4" : "g3"} rv-kids`}>
             <div className="folder rv c-crimson" data-tab="sent to 0x…dEaD · gone for good">
               <h3 style={{ color: "var(--c)" }}>$COMD burned</h3>
               <div className="num" style={{ fontSize: 40, lineHeight: 1, color: "var(--c)" }}><CountUp value={Math.round(toUnits(s.burns.burned))} format="int" /></div>
@@ -85,6 +85,13 @@ export default async function FlywheelPage() {
               <div className="num" style={{ fontSize: 40, lineHeight: 1, color: "var(--c)" }}><CountUp value={Math.round(toUnits(s.burns.bought))} format="int" /></div>
               <p className="small muted" style={{ margin: "8px 0 0" }}>{s.burns.wallets ? "by the firm's buyback wallet" : "buyback wallet not configured"}{Number(s.burns.burnedByFlywheel) > 0 ? ` · ${fmtNum(Math.round(toUnits(s.burns.burnedByFlywheel)))} via the Flywheel contract` : ""}</p>
             </div>
+            {s.fees?.tracked && (
+              <div className="folder rv c-gold" data-tab="paid by Pons to the firm">
+                <h3 style={{ color: "var(--c)" }}>ETH tax collected</h3>
+                <div className="num" style={{ fontSize: 40, lineHeight: 1, color: "var(--c)" }}><CountUp value={toUnits(s.fees.received)} format="fixed3" /> <span className="muted" style={{ fontSize: 18 }}>ETH</span></div>
+                <p className="small muted" style={{ margin: "8px 0 0" }}>{toUnits(s.fees.spent).toFixed(3)} ETH spent on buybacks · {s.fees.payouts} payout{s.fees.payouts === 1 ? "" : "s"}{s.fees.balance ? ` · ${toUnits(s.fees.balance).toFixed(3)} ETH in hand` : ""}{s.fees.source ? ` · via ${s.fees.source}` : ""}</p>
+              </div>
+            )}
             <div className="folder rv c-violet" data-tab="how it is counted">
               <h3 style={{ color: "var(--c)" }}>Read from the chain</h3>
               <p className="small muted" style={{ margin: 0 }}>Every $COMD <code>Transfer</code> to the dead address, by anyone, plus the buyback wallet&apos;s purchases — straight from the token&apos;s logs{s.burns.scannedToBlock ? <>, up to block {fmtNum(s.burns.scannedToBlock)}</> : null}. Until the Pons graduation the firm buys back by hand; afterwards the Flywheel does it and the numbers add up here.</p>
@@ -108,6 +115,7 @@ export default async function FlywheelPage() {
             </div>
           )}
           {s.burns.error && <p className="small muted" style={{ marginTop: 10 }}>Burn tracker: {s.burns.error}</p>}
+          {s.fees?.error && <p className="small muted" style={{ marginTop: 6 }}>Fee tracker: {s.fees.error}</p>}
         </Section>
       )}
 

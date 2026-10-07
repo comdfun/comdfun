@@ -4,7 +4,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { FlywheelStats } from "@/lib/flywheel";
-import { toUnits } from "@/lib/flywheel";
+import { toUnits, taxCollectedWei, burnedWei } from "@/lib/flywheel";
 import { CountUp } from "./fx/CountUp";
 
 type Px = [number, number, string];
@@ -114,8 +114,8 @@ export function FlywheelStatsGrid({ s, compact }: { s: FlywheelStats; compact?: 
   const portraits = s.sweptTokenIds.slice(-8).reverse();
   return (
     <div className="fw-stats rv-kids">
-      <div className="stat rv c-gold"><CountUp className="v" value={eth(s.totals.taxIn)} format="fixed2" /><span className="k">ETH tax collected</span></div>
-      <div className="stat rv c-crimson"><CountUp className="v" value={toUnits(s.totals.burned)} format="compact" /><span className="k">$COMD bought back &amp; burned (0x…dEaD)</span></div>
+      <div className="stat rv c-gold"><CountUp className="v" value={eth(taxCollectedWei(s).toString())} format="fixed2" /><span className="k">ETH tax collected{s.fees?.tracked ? "" : " by the Flywheel"}</span></div>
+      <div className="stat rv c-crimson"><CountUp className="v" value={toUnits(burnedWei(s).toString())} format="compact" /><span className="k">$COMD bought back &amp; burned (0x…dEaD){s.burns?.burnedPct ? ` · ${s.burns.burnedPct}%` : ""}</span></div>
       <div className="stat rv c-violet">
         <CountUp className="v" value={s.totals.swept} /><span className="k">Counsel NFTs swept</span>
         {portraits.length > 0 && (
@@ -145,7 +145,7 @@ export function FlywheelSection({ s }: { s: FlywheelStats }) {
         </p>
         <FlywheelStatsGrid s={s} compact />
         {!s.configured && <p className="small muted" style={{ marginTop: 10 }}>{s.reason} Totals start at zero on deployment.</p>}
-        {s.configured && !s.swapper.configured && <p className="small muted" style={{ marginTop: 10 }}>Buybacks start after graduation, once the pool is configured.</p>}
+        {s.configured && !s.swapper.configured && <p className="small muted" style={{ marginTop: 10 }}>{s.burns?.tracked && Number(s.burns.burned) > 0 ? <>Until the Pons graduation the firm buys back and burns <strong>by hand</strong> from the tax it collects — {s.burns.count} burn{s.burns.count === 1 ? "" : "s"} so far, every one a public transaction on <Link href="/flywheel">the flywheel page</Link>. The Flywheel contract takes over once the pool is configured.</> : <>Buybacks start after graduation, once the pool is configured.</>}</p>}
         {s.source === "mock" && <p className="small muted" style={{ marginTop: 10 }}><span className="tag c-orange">mock</span> Fixture numbers until the contracts are live.</p>}
         <div className="btn-row" style={{ marginTop: 18 }}>
           <Link className="btn primary gold" href="/swap">Trade $COMD ›</Link>

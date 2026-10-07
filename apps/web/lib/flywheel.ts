@@ -29,6 +29,11 @@ export interface BurnSummary {
   supply: string | null; burnedPct: string | null; count: number; burns: BurnRecord[]; error?: string;
 }
 
+export interface FeeSummary {
+  tracked: boolean; reason?: string; wallets: number; source: "alchemy" | "etherscan" | "blockscout" | null;
+  received: string; receivedInternal: string; spent: string; balance: string | null; payouts: number; lastReceivedAt: string | null; scannedToBlock: number | null; error?: string;
+}
+
 export interface FlywheelStats {
   configured: boolean;
   source: "api" | "chain" | "mock" | "none";
@@ -44,6 +49,7 @@ export interface FlywheelStats {
   revenueRouter: RevenueStats | null;
   events: FlywheelEvent[];
   burns?: BurnSummary | null;
+  fees?: FeeSummary | null;
   computedAt?: string;
 }
 
@@ -74,6 +80,7 @@ type ApiBody = {
   revenueRouter?: RevenueStats | null;
   events?: FlywheelEvent[];
   burns?: BurnSummary | null;
+  fees?: FeeSummary | null;
   computedAt?: string;
 };
 
@@ -93,6 +100,7 @@ function fromApi(a: ApiBody, source: FlywheelStats["source"]): FlywheelStats {
     revenueRouter: a.revenueRouter ?? null,
     events: a.events ?? [],
     burns: a.burns ?? null,
+    fees: a.fees ?? null,
     computedAt: a.computedAt,
   };
 }
@@ -149,3 +157,17 @@ export const toUnits = (v?: string | null, decimals = 18) => {
   if (!v) return 0;
   try { return Number(BigInt(v) / 10n ** BigInt(decimals - 6)) / 1e6; } catch { return 0; }
 };
+
+
+/** ETH the firm has collected in tax: what reached the Flywheel contract plus what Pons paid the fee wallet. */
+export function taxCollectedWei(s: FlywheelStats): bigint {
+  return BigInt(s.totals.taxIn || "0") + (s.fees?.tracked ? BigInt(s.fees.received || "0") : 0n);
+}
+/** $COMD burned: everything sent to the dead address when the tracker runs (it includes the Flywheel's own burns), else the contract's count. */
+export function burnedWei(s: FlywheelStats): bigint {
+  return s.burns?.tracked ? BigInt(s.burns.burned || "0") : BigInt(s.totals.burned || "0");
+}
+/** ETH spent buying back: the fee wallet's outgoing value (manual buybacks) plus the Flywheel's. */
+export function boughtBackWei(s: FlywheelStats): bigint {
+  return BigInt(s.totals.boughtBack || "0") + (s.fees?.tracked ? BigInt(s.fees.spent || "0") : 0n);
+}

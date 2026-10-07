@@ -11,6 +11,7 @@ import { SkillCatalog, defaultSkillsDir } from "./skills.ts";
 import { artModule } from "./art.ts";
 import { FlywheelView } from "./flywheel.ts";
 import { BurnTracker } from "./burns.ts";
+import { FeeTracker } from "./fees.ts";
 import { Engine } from "./engine.ts";
 import { Oracle } from "./oracle.ts";
 import { Launches, seedPolicies, syncPairingsWithFactory } from "./launches.ts";
@@ -75,6 +76,7 @@ export class App {
   readonly sites: Sites;
   readonly flywheel: FlywheelView;
   readonly burns: BurnTracker;
+  readonly fees: FeeTracker;
   readonly kv: KvLike;
   keeper!: Keeper;
   readonly limits: { reads: RateLimiter; paid: RateLimiter; quotes: RateLimiter };
@@ -118,6 +120,7 @@ export class App {
     this.sites = new Sites(this);
     this.flywheel = new FlywheelView(this);
     this.burns = new BurnTracker(this);
+    this.fees = new FeeTracker(this);
   }
 
   static async create(deps: AppDeps): Promise<App> {
