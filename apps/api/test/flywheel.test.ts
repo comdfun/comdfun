@@ -31,7 +31,8 @@ test("GET /flywheel (Pons mode): tax in, 2 buckets, swapper, revenue router, swe
     const f = (await get(h, "/flywheel")).body;
     assert.equal(f.configured, true);
     assert.deepEqual(f.errors, {});
-    assert.deepEqual(f.tax, { totalTaxIn: String(10n * E), toFlywheel: String(10n * E), source: "pons" });
+    // no fee wallet configured in this test: collected = what reached the Flywheel
+    assert.deepEqual(f.tax, { totalTaxIn: String(10n * E), toFlywheel: String(10n * E), toFeeWallet: null, collected: String(10n * E), source: "pons" });
     assert.deepEqual(f.pons, { url: "https://pons.test/token/comd" });
     assert.deepEqual(f.swapper, { address: SW, configured: false, onFlywheel: true });
     assert.deepEqual(f.flywheel.bps, { buyback: 5000, sweep: 5000 });
