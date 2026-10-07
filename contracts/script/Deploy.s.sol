@@ -48,7 +48,7 @@ import {SeaportAdapter} from "../src/marketplace/SeaportAdapter.sol";
 ///   POOL_MANAGER          mainnet default 0x8366…40951; testnet/local: deploys a v4 PoolManager if unset
 ///   SEAPORT               optional: deploys a SeaportAdapter for it and allowlists it in the Flywheel
 ///   MAX_SWEEP_PRICE       wei, default 0.5 ether
-///   COUNSEL_BASE_URI      default "https://api.comd.fun/agents/by-token/"
+///   COUNSEL_BASE_URI      default "https://api.comd.fun/counsel/" (plain ERC-721 metadata; the ERC-8004 file lives at /agents/by-token/)
 ///   ALLOW_ETH_PAIRING     default false: launches may only pair with $COMD. true also allowlists ETH (1–1000 ETH
 ///                         opening market cap). ADMIN can change the allowlist later with setPairedConfig.
 ///   WRITE_DEPLOYMENTS     default true: writes deployments/<chainId>.json
@@ -140,7 +140,7 @@ contract Deploy is Script {
         c.poolManager = vm.envOr("POOL_MANAGER", block.chainid == MAINNET ? MAINNET_POOL_MANAGER : address(0));
         c.seaport = vm.envOr("SEAPORT", address(0));
         c.maxSweepPrice = vm.envOr("MAX_SWEEP_PRICE", uint256(0.5 ether));
-        c.counselBaseURI = vm.envOr("COUNSEL_BASE_URI", string("https://api.comd.fun/agents/by-token/"));
+        c.counselBaseURI = vm.envOr("COUNSEL_BASE_URI", string("https://api.comd.fun/counsel/"));
         c.allowEthPairing = vm.envOr("ALLOW_ETH_PAIRING", false);
     }
 

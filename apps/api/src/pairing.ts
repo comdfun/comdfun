@@ -285,5 +285,19 @@ export class Pairing {
     return { ...doc, services, active: !!enrolled, x402Support: true, enrolled: !!seat?.agentId, paired: !!enrolled, online: !!this.app.engine.sessionForToken(String(tokenId)) };
   }
 
+  /** Plain ERC-721 metadata for marketplaces (the NFT's tokenURI): name, description, image, link, traits — and
+   *  nothing else. The ERC-8004 registration file (`/agents/by-token/{id}.json`, with `type`, `services`, `active`…)
+   *  is a different document: marketplaces that recognise an 8004 file render its agent fields instead of the
+   *  traits, so the two must not share a URL. */
+  async nftMetadata(tokenId: number) {
+    const cfg = this.app.cfg;
+    const doc = (await counselMetadata(tokenId, {
+      apiUrl: cfg.publicApiUrl, webUrl: cfg.publicWebUrl, chainId: cfg.chainId, tokenContract: cfg.counselNft?.toLowerCase() ?? "",
+      agentId: null, agentRegistry: null,
+    })) as unknown as Record<string, unknown>;
+    const keep = ["name", "description", "image", "external_url", "attributes", "background_color", "animation_url"];
+    return Object.fromEntries(keep.filter((k) => doc[k] !== undefined).map((k) => [k, doc[k]]));
+  }
+
   newId() { return randomUUID(); }
 }

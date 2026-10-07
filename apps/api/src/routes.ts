@@ -493,6 +493,10 @@ export function buildRouter(app: App): Router {
     return { status: 200, raw: b.bytes, headers: { "content-type": b.type, "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } };
   }, pub);
   r.get("/agents/by-token/:tokenId.json", async (q) => json(200, await app.pairing.registration(artId(q.params.tokenId)), { "access-control-allow-origin": "*", "cache-control": "public, max-age=60" }), pub);
+  // The NFT's tokenURI (CounselNFT.baseURI = …/counsel/): plain ERC-721 metadata with the traits, no ERC-8004 fields —
+  // OpenSea renders an 8004 registration file's agent fields (Active, Service, Trust Model) instead of `attributes`.
+  r.get("/counsel/collection.json", async () => json(200, await collectionDoc(app), { "access-control-allow-origin": "*", "cache-control": "public, max-age=300" }), pub);
+  r.get("/counsel/:tokenId.json", async (q) => json(200, await app.pairing.nftMetadata(artId(q.params.tokenId)), { "access-control-allow-origin": "*", "cache-control": "public, max-age=300" }), pub);
   // .svg = the bar card (portrait + nameplate) as SVG; ?portrait=1 for the bare 32×32 portrait
   r.get("/agents/by-token/:tokenId.svg", async (q) => ({ status: 200, raw: q.query.get("portrait") === "1" ? await counselPortraitSvg(artId(q.params.tokenId)) : await counselCardSvg(artId(q.params.tokenId)), headers: { "content-type": "image/svg+xml", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } }), pub);
   // .png = the bar card (renderCardPNG) — the metadata `image`

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import type { Abi, Hex } from "viem";
 import { contract } from "@/lib/contracts";
-import { ALLOWLIST_URL, MOCK } from "@/lib/config";
+import { ALLOWLIST_URL, API_URL, MOCK } from "@/lib/config";
 import { MOCK_CHAIN } from "@/lib/mock-chain";
 import { useRead } from "@/lib/useChain";
 import { units, fmtNum } from "@/lib/format";
@@ -118,6 +118,24 @@ export function Mint() {
             />
           </div>
           <span className="small muted">Re-sets the current base URI, which emits ERC-4906 <code>BatchMetadataUpdate(1, 2000)</code>: OpenSea and other marketplaces re-read every Counsel&apos;s traits and image. One transaction, cents of gas; use it whenever the metadata changes.</span>
+          {(() => {
+            const target = `${API_URL}/counsel/`;
+            const current = baseURI.value ?? "";
+            const done = current === target;
+            return (
+              <>
+                <div className="btn-row" style={{ marginTop: 4 }}>
+                  <TxButton
+                    label={done ? "Metadata URL already /counsel/ (current)" : "Switch metadata URL to /counsel/ (OpenSea traits fix)"}
+                    disabled={done || !baseURI.value}
+                    run={() => writeContractAsync({ address: nft.address!, abi: nft.abi as Abi, functionName: "setBaseURI", args: [target] } as never)}
+                    onDone={() => { baseURI.refetch(); celebrate("Base URI switched"); }}
+                  />
+                </div>
+                <span className="small muted">Current base URI: <code>{current || "—"}</code>. OpenSea treats the ERC-8004 registration file at <code>/agents/by-token/</code> as an agent card (Active · Service · Trust Model) and hides the traits; <code>/counsel/</code> serves plain ERC-721 metadata with the eleven traits. The registration file stays where it is for the IdentityRegistry.</span>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
