@@ -1,0 +1,69 @@
+name: health-alert
+# The firm pages its team. Every 10 minutes: GET api.comd.fun/health must say "ok" and www.comd.fun must answer 200.
+# When that stops being true the run FAILS — and GitHub emails the repository owner about a failed scheduled workflow
+# (Settings → Notifications → Actions). To avoid a mail every 10 minutes, it alerts on the change to degraded and
+# then once an hour while it stays degraded; recovery is logged in the run summary. State lives in two repository
+# variables (HEALTH_LAST, HEALTH_ALERTED_AT) that the workflow maintains itself.
+#
+# Run it by hand (Actions → health-alert → Run workflow) to see the current status in the summary.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write # the HEALTH_* repository variables
+
+concurrency: health-alert
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API: https://api.comd.fun
+      WEB: https://www.comd.fun
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check
+        run: |
+          set +e
+          now=$(date +%s)
+          body="$(curl -sS --max-time 20 "$API/health?t=$now")"; apicode=$?
+          web="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$WEB/?t=$now")"
+          set -e
+          status="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log(j.status||"unknown")}catch{console.log("unreachable")}})')"
+          degraded="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log((j.degraded||[]).join(", "))}catch{console.log("")}})')"
+          version="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).version||"")}catch{console.log("")}})')"
+          [ "$apicode" = 0 ] || status="unreachable"
+          state="ok"
+          [ "$status" = ok ] || state="api:$status"
+          [ "$web" = 200 ] || state="$state web:$web"
+          state="${state#ok }"
+          var() { gh api "repos/$GITHUB_REPOSITORY/actions/variables/$1" --jq .value 2>/dev/null || echo ""; }
+          setvar() {
+            if gh api "repos/$GITHUB_REPOSITORY/actions/variables/$1" >/dev/null 2>&1; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/actions/variables/$1" -f name="$1" -f value="$2" >/dev/null 2>&1 || true
+            else gh api -X POST "repos/$GITHUB_REPOSITORY/actions/variables" -f name="$1" -f value="$2" >/dev/null 2>&1 || true; fi
+          }
+          last="$(var HEALTH_LAST)"; alerted="$(var HEALTH_ALERTED_AT)"; alerted="${alerted:-0}"
+          {
+            echo "## Health · $(date -u +'%Y-%m-%d %H:%M UTC')"; echo
+            echo "| Check | Result |"; echo "|---|---|"
+            echo "| api.comd.fun/health | **$status** ${degraded:+(degraded: $degraded)} · $version |"
+            echo "| www.comd.fun | HTTP **$web** |"
+            echo "| previous | ${last:-—} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          setvar HEALTH_LAST "$state"
+          if [ "$state" != ok ]; then
+            if [ "$last" = ok ] || [ -z "$last" ] || [ $((now - alerted)) -gt 3600 ]; then
+              setvar HEALTH_ALERTED_AT "$now"
+              echo "::error::Company.md is degraded — $state${degraded:+ ($degraded)}. api/health: $status · web: HTTP $web"
+              echo "" >> "$GITHUB_STEP_SUMMARY"; echo "**ALERT** — degraded: \`$state\`. Runbook: DEPLOY.md §9; RPC: DEPLOY.md §2.6." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            echo "still degraded ($state); alerted $(( (now - alerted) / 60 )) min ago — no new alert"
+          elif [ -n "$last" ] && [ "$last" != ok ]; then
+            echo "recovered (was: $last)"; echo "" >> "$GITHUB_STEP_SUMMARY"; echo "**Recovered** (was \`$last\`)." >> "$GITHUB_STEP_SUMMARY"
+          fi
