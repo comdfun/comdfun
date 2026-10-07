@@ -95,6 +95,8 @@ export class FlywheelView {
       try { swapperConfigured = await r<boolean>(swapperAddr, uniswapV4PoolSwapperAbi, "configured"); } catch { swapperConfigured = true; /* another IBuybackSwapper without configured(): assume ready */ }
     }
     const swapper = { address: swapperAddr, configured: swapperConfigured, onFlywheel: !isZero(flywheel?.swapper) };
+    // every $COMD sent to the dead address (manual buybacks included) + buys by the buyback wallets; see burns.ts
+    const burns = await this.app.burns.summary();
 
     const body = {
       chainId: cfg.chainId,
@@ -107,6 +109,7 @@ export class FlywheelView {
       flywheel, revenueRouter,
       // flat aliases kept from V2 for existing readers
       bps: flywheel?.bps ?? null, buckets: flywheel?.buckets ?? null, totals: flywheel?.totals ?? null, sweptTokenIds: flywheel?.sweptTokenIds ?? [], maxSweepPrice: flywheel?.maxSweepPrice ?? null,
+      burns,
       events,
       errors,
       keeper: keeperView,

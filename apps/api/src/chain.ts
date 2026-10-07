@@ -57,6 +57,9 @@ export interface ChainReader {
   balance(address: Address, blockNumber?: number): Promise<bigint>;
   getCode(address: Address): Promise<Hex>;
   erc20Balance(token: Address, owner: Address): Promise<bigint>;
+  erc20TotalSupply(token: Address): Promise<bigint>;
+  /** Raw logs for an address + topic filter (chunked); optional — the BurnTracker is off without it. */
+  rawLogs?(address: Address, topics: (Hex | null)[], fromBlock: number, toBlock: number): Promise<RawLog[]>;
   erc20Allowance(token: Address, owner: Address, spender: Address): Promise<bigint>;
   ethBalance(address: Address): Promise<bigint>;
   /** RewardDistributor.unallocated(asset): balance not committed to posted roots. */
@@ -74,6 +77,7 @@ export interface ChainReader {
 }
 
 export interface ChainEvent { eventName: string; args: Record<string, unknown>; blockNumber: number; txHash: Hex; logIndex: number }
+export type RawLog = { topics: Hex[]; data: Hex; blockNumber: number; txHash: Hex; logIndex: number };
 
 export interface SettleArgs { auth: Permit2Authorization; signature: Hex; payTo: Address; amount: bigint }
 export interface TxResult { txHash: Hex; blockNumber: number; status: "success" | "reverted"; gasUsed: string }
@@ -221,9 +225,19 @@ export class ViemChain implements ChainReader {
     }
     return n;
   }
+  async rawLogs(address: Address, topics: (Hex | null)[], fromBlock: number, toBlock: number): Promise<RawLog[]> {
+    const out: RawLog[] = [];
+    const step = 10_000;
+    for (let a = Math.max(0, fromBlock); a <= toBlock; a += step) {
+      const logs = (await this.client.request({ method: "eth_getLogs", params: [{ address, topics, fromBlock: toHex(a), toBlock: toHex(Math.min(toBlock, a + step - 1)) }] as any })) as { topics: Hex[]; data: Hex; blockNumber: Hex; transactionHash: Hex; logIndex: Hex }[];
+      for (const l of logs) out.push({ topics: l.topics, data: l.data, blockNumber: Number(l.blockNumber), txHash: l.transactionHash, logIndex: Number(l.logIndex) });
+    }
+    return out;
+  }
   balance(address: Address, blockNumber?: number) { return this.client.getBalance({ address, blockNumber: blockNumber !== undefined ? BigInt(blockNumber) : undefined }); }
   async getCode(address: Address) { return ((await this.client.getCode({ address })) ?? "0x") as Hex; }
   erc20Balance(token: Address, owner: Address) { return this.client.readContract({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [owner] }); }
+  erc20TotalSupply(token: Address) { return this.client.readContract({ address: token, abi: erc20Abi, functionName: "totalSupply" }); }
   erc20Allowance(token: Address, owner: Address, spender: Address) { return this.client.readContract({ address: token, abi: erc20Abi, functionName: "allowance", args: [owner, spender] }); }
   ethBalance(address: Address) { return this.client.getBalance({ address }); }
   async rewardUnallocated(asset: Address) {
@@ -349,6 +363,7 @@ export class NoChain implements ChainReader {
   balance(): Promise<bigint> { return this.no(); }
   getCode(): Promise<Hex> { return this.no(); }
   erc20Balance(): Promise<bigint> { return this.no(); }
+  erc20TotalSupply(): Promise<bigint> { return this.no(); }
   erc20Allowance(): Promise<bigint> { return this.no(); }
   ethBalance(): Promise<bigint> { return this.no(); }
   rewardUnallocated(): Promise<bigint> { return this.no(); }
@@ -405,6 +420,7 @@ export class MockChain implements ChainReader {
   async balance(address: Address) { return this.balances.get(address.toLowerCase()) ?? 0n; }
   async getCode(address: Address) { return this.codes.get(address.toLowerCase()) ?? "0x"; }
   async erc20Balance(token: Address, owner: Address) { return this.tokenBalances.get(`${token.toLowerCase()}:${owner.toLowerCase()}`) ?? 10n ** 30n; }
+  async erc20TotalSupply(_token: Address) { return 10n ** 27n; }
   async erc20Allowance(token: Address, owner: Address, spender: Address) { return this.allowances.get(`${token.toLowerCase()}:${owner.toLowerCase()}:${spender.toLowerCase()}`) ?? 10n ** 30n; }
   async ethBalance() { return 10n ** 18n; }
   async rewardUnallocated(asset: Address) { return this.unallocated.get(asset.toLowerCase()) ?? 10n ** 30n; }

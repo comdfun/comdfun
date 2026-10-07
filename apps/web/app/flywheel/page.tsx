@@ -72,6 +72,45 @@ export default async function FlywheelPage() {
       {s.source === "mock" && <p className="small muted" style={{ marginTop: 10 }}><span className="tag c-orange">mock</span> Fixture numbers until the contracts are live.</p>}
       <TreasuryControls />
 
+      {s.burns?.tracked && (
+        <Section num="§0" title="Buybacks & burns" id="burns" c="crimson">
+          <div className="grid g3 rv-kids">
+            <div className="folder rv c-crimson" data-tab="sent to 0x…dEaD · gone for good">
+              <h3 style={{ color: "var(--c)" }}>$COMD burned</h3>
+              <div className="num" style={{ fontSize: 40, lineHeight: 1, color: "var(--c)" }}><CountUp value={Math.round(toUnits(s.burns.burned))} format="int" /></div>
+              <p className="small muted" style={{ margin: "8px 0 0" }}>{s.burns.burnedPct ? <><b>{s.burns.burnedPct}%</b> of the supply · </> : null}{s.burns.count} burn{s.burns.count === 1 ? "" : "s"}</p>
+            </div>
+            <div className="folder rv c-gold" data-tab="bought on the market with tax ETH">
+              <h3 style={{ color: "var(--c)" }}>$COMD bought back</h3>
+              <div className="num" style={{ fontSize: 40, lineHeight: 1, color: "var(--c)" }}><CountUp value={Math.round(toUnits(s.burns.bought))} format="int" /></div>
+              <p className="small muted" style={{ margin: "8px 0 0" }}>{s.burns.wallets ? "by the firm's buyback wallet" : "buyback wallet not configured"}{Number(s.burns.burnedByFlywheel) > 0 ? ` · ${fmtNum(Math.round(toUnits(s.burns.burnedByFlywheel)))} via the Flywheel contract` : ""}</p>
+            </div>
+            <div className="folder rv c-violet" data-tab="how it is counted">
+              <h3 style={{ color: "var(--c)" }}>Read from the chain</h3>
+              <p className="small muted" style={{ margin: 0 }}>Every $COMD <code>Transfer</code> to the dead address, by anyone, plus the buyback wallet&apos;s purchases — straight from the token&apos;s logs{s.burns.scannedToBlock ? <>, up to block {fmtNum(s.burns.scannedToBlock)}</> : null}. Until the Pons graduation the firm buys back by hand; afterwards the Flywheel does it and the numbers add up here.</p>
+            </div>
+          </div>
+          {s.burns.burns.length > 0 && (
+            <div className="table-wrap" style={{ marginTop: 20 }}>
+              <table className="table">
+                <thead><tr><th>When</th><th>Burned</th><th>By</th><th>Transaction</th></tr></thead>
+                <tbody>
+                  {s.burns.burns.map((b) => (
+                    <tr key={b.txHash}>
+                      <td>{b.at ? ago(b.at) : `block ${fmtNum(b.blockNumber)}`}</td>
+                      <td><span className="num">{fmtNum(Math.round(toUnits(b.amount)))}</span> $COMD</td>
+                      <td>{b.viaFlywheel ? <span className="ok">Flywheel</span> : "the firm, by hand"}</td>
+                      <td><a className="mono small" href={explorerUrl("tx", b.txHash)} target="_blank" rel="noreferrer">{short(b.txHash, 10, 6)} ↗</a></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {s.burns.error && <p className="small muted" style={{ marginTop: 10 }}>Burn tracker: {s.burns.error}</p>}
+        </Section>
+      )}
+
       <Section num="§1" title="The buckets" id="buckets" c="gold">
         <div className="grid g2 rv-kids">
           {([["buyback", "Buyback & burn", "crimson", "Keeper calls buyback(minOut): bucket ETH → $COMD through the swapper (Pons's Uniswap v4 pool, after graduation), then sent to the dead address 0x…dEaD."], ["sweep", "Floor sweep", "violet", "Keeper calls sweep(adapter, data, tokenId, maxPrice) on an allowlisted marketplace adapter; price capped by maxSweepPrice."]] as const).map(([k, t, c, d]) => (

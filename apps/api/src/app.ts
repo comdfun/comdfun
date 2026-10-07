@@ -10,6 +10,7 @@ import { MockChain, NoChain, ViemChain, ViemWriter, type ChainReader, type Chain
 import { SkillCatalog, defaultSkillsDir } from "./skills.ts";
 import { artModule } from "./art.ts";
 import { FlywheelView } from "./flywheel.ts";
+import { BurnTracker } from "./burns.ts";
 import { Engine } from "./engine.ts";
 import { Oracle } from "./oracle.ts";
 import { Launches, seedPolicies, syncPairingsWithFactory } from "./launches.ts";
@@ -73,6 +74,7 @@ export class App {
   readonly fuzz: Fuzz;
   readonly sites: Sites;
   readonly flywheel: FlywheelView;
+  readonly burns: BurnTracker;
   readonly kv: KvLike;
   keeper!: Keeper;
   readonly limits: { reads: RateLimiter; paid: RateLimiter; quotes: RateLimiter };
@@ -115,6 +117,7 @@ export class App {
     this.fuzz = new Fuzz(this);
     this.sites = new Sites(this);
     this.flywheel = new FlywheelView(this);
+    this.burns = new BurnTracker(this);
   }
 
   static async create(deps: AppDeps): Promise<App> {

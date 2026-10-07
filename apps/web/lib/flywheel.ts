@@ -22,6 +22,13 @@ export interface FlywheelEvent {
 export interface SwapperState { address: string | null; configured: boolean }
 export interface RevenueStats { totalToRewards: string; totalToTreasury: string; bps: { rewards: number; treasury: number } }
 
+export interface BurnRecord { txHash: string; amount: string; blockNumber: number; at: string | null; viaFlywheel: boolean }
+export interface BurnSummary {
+  tracked: boolean; wallets: number; fromBlock: number | null; scannedToBlock: number | null;
+  bought: string; burned: string; burnedByWallets: string; burnedByFlywheel: string;
+  supply: string | null; burnedPct: string | null; count: number; burns: BurnRecord[]; error?: string;
+}
+
 export interface FlywheelStats {
   configured: boolean;
   source: "api" | "chain" | "mock" | "none";
@@ -36,6 +43,7 @@ export interface FlywheelStats {
   pons: { url: string };
   revenueRouter: RevenueStats | null;
   events: FlywheelEvent[];
+  burns?: BurnSummary | null;
   computedAt?: string;
 }
 
@@ -65,6 +73,7 @@ type ApiBody = {
   maxSweepPrice?: string | null;
   revenueRouter?: RevenueStats | null;
   events?: FlywheelEvent[];
+  burns?: BurnSummary | null;
   computedAt?: string;
 };
 
@@ -83,6 +92,7 @@ function fromApi(a: ApiBody, source: FlywheelStats["source"]): FlywheelStats {
     pons: { url: a.pons?.url || PONS_URL },
     revenueRouter: a.revenueRouter ?? null,
     events: a.events ?? [],
+    burns: a.burns ?? null,
     computedAt: a.computedAt,
   };
 }

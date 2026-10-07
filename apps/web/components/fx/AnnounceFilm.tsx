@@ -603,6 +603,10 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
 
   if (kind === "burn" || kind === "burn2") {
     const again = kind === "burn2";
+    // figures from the Creator wallet's trades (manual buybacks on Pons, sent to 0x…dEaD)
+    const fig = again
+      ? { burned: "17.8M", total: "36.3M", pct: "3.63%", spent: "~$4.9K" }
+      : { burned: "18.5M", total: "18.5M", pct: "1.85%", spent: "~$2.5K" };
     return (
       <div className="film mf af-reg af-tasks af-burn" data-scene={scene}>
         <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
@@ -611,14 +615,15 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
         <section className={`mf-s af-rtitle af-coin ${on("x-title")}`} data-scene="x-title">
           <div className="af-coinwrap af-burnwrap"><div className="af-flames" aria-hidden="true"><i /><i /><i /><i /><i /></div><div className="af-coin3d"><span>$</span></div></div>
           <div className="af-title af-title-sm">{again ? "Another" : "First"} <b>buyback &amp; burn</b></div>
+          <div className="af-figure"><b>{fig.burned}</b> $COMD burned{again ? <> · <b>{fig.total}</b> so far</> : null}</div>
           <div className="mf-sub"><b>Completed</b> · on chain · Robinhood Chain</div>
         </section>
 
         <section className={`mf-s af-loop af-task c-crimson ${on("x-what")}`} data-scene="x-what">
           <header className="fs-h c-crimson"><span className="fs-no">🔥</span><h2>What just happened</h2></header>
           <ul className="fs-lines fs-big c-crimson">
-            <li style={{ ["--i" as string]: 0 }}>The ETH collected from the <b>5% trading tax</b> bought <b>$COMD</b> on the market{again ? " — again" : ""}.</li>
-            <li style={{ ["--i" as string]: 1 }}>Every token bought was sent to <b>0x…dEaD</b> — gone for good. The supply only ever shrinks.</li>
+            <li style={{ ["--i" as string]: 0 }}>The ETH collected from the <b>5% trading tax</b> bought <b>{fig.burned} $COMD</b> on the market ({fig.spent}){again ? " — again" : ""}.</li>
+            <li style={{ ["--i" as string]: 1 }}>Every token bought was sent to <b>0x…dEaD</b> — gone for good. <b>{fig.total} $COMD</b> burned so far: <b>{fig.pct}</b> of the supply, never coming back.</li>
             <li style={{ ["--i" as string]: 2 }}><b>Timed by the firm</b>, not fired by a bot. The transaction is public: verify it on the explorer, totals on comd.fun/flywheel.</li>
           </ul>
         </section>
@@ -629,7 +634,7 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
             <div className="af-wheel"><WheelSvg /></div>
             <ol className="af-steps">
               <li className="c-gold" style={{ ["--i" as string]: 0 }}><b>Trades</b> pay the 5% tax in ETH</li>
-              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>Half burns $COMD</b> — {again ? "done, again" : "done, for the first time"}</li>
+              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>Half burns $COMD</b> — {fig.burned} {again ? "this time, " + fig.total + " in all" : "done, for the first time"}</li>
               <li className="c-violet" style={{ ["--i" as string]: 2 }}><b>Half buys Counsel</b> off the floor — next</li>
               <li className="c-lime" style={{ ["--i" as string]: 3 }}><b>Work</b> is paid in $COMD → more trades → repeat</li>
             </ol>
@@ -640,7 +645,7 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <Svg svg={logo} className="ft-logo" />
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
-          <div className="mf-tag">{again ? "Another burn done." : "First burn done."} <b className="c-gold">{again ? "The loop keeps turning." : "Many more to come."}</b></div>
+          <div className="mf-tag">{fig.total} $COMD burned. <b className="c-gold">{again ? "The loop keeps turning." : "Many more to come."}</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
