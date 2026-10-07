@@ -60,6 +60,7 @@ export function Footer() {
           <nav aria-label="The firm" className="c-pink">
             <h4>The firm</h4>
             <Link href="/launch">Retain the firm</Link>
+            <Link href="/me">My Counsel</Link>
             <Link href="/mint">Mint a Counsel</Link>
             {MARKETPLACE_URL && <a href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea ›</a>}
             <Link href="/pair">Pair a machine</Link>

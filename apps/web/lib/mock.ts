@@ -802,6 +802,10 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       return ok({ count: seats.length, seats });
     }
     if (p === "/seats/owners") return ok({ owners: OWNERS.slice(0, MINTED + 1) });
+    if (p === "/seats/founding") {
+      const regs = [...ENROLLED].sort((a, b) => Number(SEAT_STATS[a].agentId) - Number(SEAT_STATS[b].agentId)).slice(0, 100);
+      return ok({ limit: 100, registered: ENROLLED.length, spotsLeft: Math.max(0, 100 - ENROLLED.length), seats: regs.map((t, i) => ({ tokenId: String(t), agentId: String(SEAT_STATS[t].agentId), rank: i + 1, owner: OWNERS[t], registeredAt: at((100 - i) * HOUR) })) });
+    }
     if (seg[0] === "seats" && seg[1]) {
       const s = seatDetail(Number(seg[1]));
       if (!s) return notFound("unknown_seat");
