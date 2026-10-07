@@ -13,6 +13,9 @@ const key = process.env.OPENSEA_API_KEY;
 if (!key) { console.error("OPENSEA_API_KEY is required (https://docs.opensea.io/reference/api-keys)"); process.exit(2); }
 const collection = opt("collection", "counsel-362029053");
 const from = Number(opt("from", "1")), to = Number(opt("to", "2000")), rps = Number(opt("rps", "2"));
+// --max N: stop after N successful refreshes (a free-tier key allows 30 writes per hour); on a persistent 429 the
+// run also stops. The last line printed is "NEXT <id>": the first id not yet refreshed, for the next run to pick up.
+const max = Number(opt("max", "0")) || Infinity;
 const H = { accept: "application/json", "x-api-key": key };
 
 const col = await fetch(`https://api.opensea.io/api/v2/collections/${collection}`, { headers: H });
@@ -22,19 +25,23 @@ const contract = c.contracts?.[0];
 if (!contract) { console.error("collection has no contract on OpenSea yet"); process.exit(1); }
 console.log(`${c.name}: ${contract.address} on chain "${contract.chain}" · refreshing ${from}..${to} at ${rps}/s`);
 
-let ok = 0, failed = 0;
+let ok = 0, failed = 0, next = from, limited = false;
 const t0 = Date.now();
-for (let id = from; id <= to; id++) {
+for (let id = from; id <= to && ok < max && !limited; id++) {
   const started = Date.now();
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = await fetch(`https://api.opensea.io/api/v2/chain/${contract.chain}/contract/${contract.address}/nfts/${id}/refresh`, { method: "POST", headers: H });
-    if (r.ok) { ok++; break; }
-    if (r.status === 429 && attempt < 3) { await new Promise((res) => setTimeout(res, 2_000 * attempt)); continue; }
-    failed++; console.error(`#${id}: ${r.status} ${(await r.text()).slice(0, 120)}`); break;
+    if (r.ok) { ok++; next = id + 1; break; }
+    if (r.status === 429) {
+      if (attempt < 3) { await new Promise((res) => setTimeout(res, 3_000 * attempt)); continue; }
+      limited = true; console.error(`#${id}: rate limited (429) — stopping here; resume from ${id}`); break;
+    }
+    failed++; next = id + 1; console.error(`#${id}: ${r.status} ${(await r.text()).slice(0, 120)}`); break;
   }
   if (id % 100 === 0) console.log(`${id}/${to} · ok ${ok} · failed ${failed} · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   const wait = 1000 / rps - (Date.now() - started);
   if (wait > 0) await new Promise((res) => setTimeout(res, wait));
 }
-console.log(`done: ${ok} refreshed, ${failed} failed`);
+console.log(`done: ${ok} refreshed, ${failed} failed${limited ? ", stopped by the rate limit" : ""}`);
+console.log(`NEXT ${next}`);
 process.exit(failed && !ok ? 1 : 0);

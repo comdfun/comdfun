@@ -1,8 +1,16 @@
 name: opensea-refresh
-# Make OpenSea re-read every Counsel's metadata (traits + image) through its API, item by item.
-# Needs the OPENSEA_API_KEY secret (free: https://docs.opensea.io/reference/api-keys). The on-chain path — the
-# "Refresh metadata on marketplaces" button on comd.fun/mint, which emits ERC-4906 BatchMetadataUpdate — is the first
-# thing to try; run this when OpenSea has not caught up after that.
+# Make OpenSea re-read every Counsel's metadata (traits + image) through its API, item by item. The on-chain path —
+# the "Refresh metadata on marketplaces" button on comd.fun/mint (ERC-4906 BatchMetadataUpdate) — is the first thing
+# to try; this is for when OpenSea has not caught up.
+#
+# Two ways to run it:
+#  - Manually (Actions → Run workflow): refreshes the given range in one go. With a full OpenSea key (repo secret
+#    OPENSEA_API_KEY, Settings → Developer on opensea.io) that is ~17 minutes for all 2,000.
+#  - Hourly (the schedule below): for OpenSea's instant free-tier key, which allows only 30 writes per hour — each run
+#    refreshes the next 30 Counsel and remembers where it got to in the repo variable OPENSEA_REFRESH_NEXT
+#    (2,000 Counsel ≈ 67 hours). If no OPENSEA_API_KEY secret is set, the run mints a free key itself
+#    (POST https://api.opensea.io/api/v2/auth/keys — no signup) and uses it for that run only.
+#   Disable the workflow (Actions → opensea-refresh → ··· → Disable) once the variable passes 2000.
 
 on:
   workflow_dispatch:
@@ -16,9 +24,17 @@ on:
       rps:
         description: "Requests per second"
         default: "2"
+      max:
+        description: "Stop after this many refreshes (0 = no cap; a free-tier key allows 30 per hour)"
+        default: "0"
+  schedule:
+    - cron: "11 * * * *"
 
 permissions:
   contents: read
+  actions: write # the OPENSEA_REFRESH_NEXT repository variable
+
+concurrency: opensea-refresh
 
 jobs:
   refresh:
@@ -29,10 +45,50 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Where to start
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          IN_FROM: ${{ inputs.from }}
+          IN_TO: ${{ inputs.to }}
+          IN_RPS: ${{ inputs.rps }}
+          IN_MAX: ${{ inputs.max }}
+        run: |
+          if [ "$EVENT" = schedule ]; then
+            next="$(gh api "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" --jq .value 2>/dev/null || echo 1)"
+            if [ "$next" -gt 2000 ]; then echo "all 2,000 refreshed (OPENSEA_REFRESH_NEXT=$next); disable this workflow" | tee -a "$GITHUB_STEP_SUMMARY"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+            { echo "from=$next"; echo "to=2000"; echo "rps=1"; echo "max=30"; echo "skip=false"; } >> "$GITHUB_OUTPUT"
+          else
+            { echo "from=${IN_FROM:-1}"; echo "to=${IN_TO:-2000}"; echo "rps=${IN_RPS:-2}"; echo "max=${IN_MAX:-0}"; echo "skip=false"; } >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Refresh on OpenSea
+        if: steps.plan.outputs.skip != 'true'
         env:
           OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
         run: |
-          [ -n "$OPENSEA_API_KEY" ] || { echo "::error::add the OPENSEA_API_KEY secret first (repo → Settings → Secrets → Actions)"; exit 1; }
-          node scripts/opensea-refresh.mjs --from "${{ inputs.from }}" --to "${{ inputs.to }}" --rps "${{ inputs.rps }}" | tee /tmp/refresh.log
-          { echo "## OpenSea refresh"; echo; echo '```'; tail -n 5 /tmp/refresh.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$OPENSEA_API_KEY" ]; then
+            echo "no OPENSEA_API_KEY secret: minting an instant free-tier key for this run (30 writes/hour)"
+            OPENSEA_API_KEY="$(curl -fsS -X POST https://api.opensea.io/api/v2/auth/keys | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).api_key))')"
+            [ -n "$OPENSEA_API_KEY" ] || { echo "::error::could not mint a free key"; exit 1; }
+            export OPENSEA_API_KEY
+          fi
+          set +e
+          node scripts/opensea-refresh.mjs --from "${{ steps.plan.outputs.from }}" --to "${{ steps.plan.outputs.to }}" --rps "${{ steps.plan.outputs.rps }}" --max "${{ steps.plan.outputs.max }}" | tee /tmp/refresh.log
+          code=$?
+          set -e
+          next="$(grep -E '^NEXT [0-9]+' /tmp/refresh.log | tail -n1 | awk '{print $2}')"
+          if [ "$EVENT" = schedule ] && [ -n "$next" ]; then
+            # remember the cursor for the next hourly run (create the variable on first use)
+            if gh api "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" >/dev/null 2>&1; then
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" -f name=OPENSEA_REFRESH_NEXT -f value="$next" >/dev/null
+            else
+              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/variables" -f name=OPENSEA_REFRESH_NEXT -f value="$next" >/dev/null
+            fi
+          fi
+          { echo "## OpenSea refresh ($EVENT)"; echo; echo '```'; tail -n 6 /tmp/refresh.log; echo '```'; [ -n "$next" ] && echo "Next id to refresh: **$next**"; } >> "$GITHUB_STEP_SUMMARY"
+          exit $code
