@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -43,6 +43,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   gm: [{ id: "g-title", at: 0 }, { id: "g-back", at: 4_500 }, { id: "end", at: 12_500 }],
   burn: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn2: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
+  burn3: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
   trades: [{ id: "td-title", at: 0 }, { id: "td-market", at: 4_500 }, { id: "td-why", at: 12_000 }, { id: "end", at: 19_000 }],
   fwtrack: [{ id: "fw-title", at: 0 }, { id: "fw-what", at: 4_500 }, { id: "fw-nums", at: 12_000 }, { id: "fw-how", at: 19_000 }, { id: "end", at: 26_000 }],
@@ -59,7 +60,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -604,12 +605,14 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     );
   }
 
-  if (kind === "burn" || kind === "burn2") {
-    const again = kind === "burn2";
+  if (kind === "burn" || kind === "burn2" || kind === "burn3") {
+    const again = kind !== "burn";
     // figures from the Creator wallet's trades (manual buybacks on Pons, sent to 0x…dEaD)
-    const fig = again
-      ? { burned: "17.8M", total: "36.3M", pct: "3.63%", spent: "~$4.9K" }
-      : { burned: "18.5M", total: "18.5M", pct: "1.85%", spent: "~$2.5K" };
+    const fig: { burned: string; burnedPct?: string; total: string; pct: string; spent: string | null } = kind === "burn3"
+      ? { burned: "17M", burnedPct: "1.7%", total: "53.3M", pct: "5.33%", spent: null }
+      : again
+        ? { burned: "17.8M", total: "36.3M", pct: "3.63%", spent: "~$4.9K" }
+        : { burned: "18.5M", total: "18.5M", pct: "1.85%", spent: "~$2.5K" };
     return (
       <div className="film mf af-reg af-tasks af-burn" data-scene={scene}>
         <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
@@ -618,14 +621,14 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
         <section className={`mf-s af-rtitle af-coin ${on("x-title")}`} data-scene="x-title">
           <div className="af-coinwrap af-burnwrap"><div className="af-flames" aria-hidden="true"><i /><i /><i /><i /><i /></div><div className="af-coin3d"><span>$</span></div></div>
           <div className="af-title af-title-sm">{again ? "Another" : "First"} <b>buyback &amp; burn</b></div>
-          <div className="af-figure"><b>{fig.burned}</b> $COMD burned{again ? <> · <b>{fig.total}</b> so far</> : null}</div>
+          <div className="af-figure"><b>{fig.burned}</b> $COMD burned{fig.burnedPct ? <> · <b>{fig.burnedPct}</b> of supply</> : null}{again ? <> · <b>{fig.total}</b> so far</> : null}</div>
           <div className="mf-sub"><b>Completed</b> · on chain · Robinhood Chain</div>
         </section>
 
         <section className={`mf-s af-loop af-task c-crimson ${on("x-what")}`} data-scene="x-what">
           <header className="fs-h c-crimson"><span className="fs-no">🔥</span><h2>What just happened</h2></header>
           <ul className="fs-lines fs-big c-crimson">
-            <li style={{ ["--i" as string]: 0 }}>The ETH collected from the <b>5% trading tax</b> bought <b>{fig.burned} $COMD</b> on the market ({fig.spent}){again ? " — again" : ""}.</li>
+            <li style={{ ["--i" as string]: 0 }}>The ETH collected from the <b>5% trading tax</b> bought <b>{fig.burned} $COMD</b> on the market{fig.spent ? ` (${fig.spent})` : ""}{again ? " — again" : ""}{fig.burnedPct ? <>: another <b>{fig.burnedPct} of the supply</b></> : null}.</li>
             <li style={{ ["--i" as string]: 1 }}>Every token bought was sent to <b>0x…dEaD</b> — gone for good. <b>{fig.total} $COMD</b> burned so far: <b>{fig.pct}</b> of the supply, never coming back.</li>
             <li style={{ ["--i" as string]: 2 }}><b>Timed by the firm</b>, not fired by a bot. The transaction is public: verify it on the explorer, totals on comd.fun/flywheel.</li>
           </ul>
@@ -637,7 +640,7 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
             <div className="af-wheel"><WheelSvg /></div>
             <ol className="af-steps">
               <li className="c-gold" style={{ ["--i" as string]: 0 }}><b>Trades</b> pay the 5% tax in ETH</li>
-              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>Half burns $COMD</b> — {fig.burned} {again ? "this time, " + fig.total + " in all" : "done, for the first time"}</li>
+              <li className="c-crimson" style={{ ["--i" as string]: 1 }}><b>Half burns $COMD</b> — {fig.burned} {again ? "this time, " + fig.total + " in all (" + fig.pct + ")" : "done, for the first time"}</li>
               <li className="c-violet" style={{ ["--i" as string]: 2 }}><b>Half buys Counsel</b> off the floor — next</li>
               <li className="c-lime" style={{ ["--i" as string]: 3 }}><b>Work</b> is paid in $COMD → more trades → repeat</li>
             </ol>
