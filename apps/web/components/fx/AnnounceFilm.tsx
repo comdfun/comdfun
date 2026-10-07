@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -46,6 +46,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
   trades: [{ id: "td-title", at: 0 }, { id: "td-market", at: 4_500 }, { id: "td-why", at: 12_000 }, { id: "end", at: 19_000 }],
   fwtrack: [{ id: "fw-title", at: 0 }, { id: "fw-what", at: 4_500 }, { id: "fw-nums", at: 12_000 }, { id: "fw-how", at: 19_000 }, { id: "end", at: 26_000 }],
+  versus: [{ id: "v-title", at: 0 }, { id: "v-a", at: 4_500 }, { id: "v-b", at: 15_000 }, { id: "v-sum", at: 25_500 }, { id: "end", at: 31_500 }],
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
@@ -57,7 +58,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -702,11 +703,11 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
 
   if (kind === "receipt") {
     const items: [string, string][] = [
-      ["Holder home · comd.fun/me", "every Counsel you hold, its status, one-click register, claim your $COMD"],
+      ["Holder home · comd.fun/me", "every Counsel you hold, its stage, the next step, claim your $COMD"],
       ["Health alerts", "the firm pages its team within 10 minutes if anything degrades"],
-      ["Live counters", "Counsel online · matters · $COMD paid · $COMD burned — on the home page"],
-      ["Share cards", "a card for every Counsel and every filing; one click to post it"],
-      ["First-100 badge", "the first hundred registered Counsel, on the record for good"],
+      ["Live counters", "$COMD paid to Counsel · $COMD burned — on the home page, read from the chain"],
+      ["Share cards", "a pixel card for every Counsel; the preview wherever its page is posted"],
+      ["Founding Hundred", "the first hundred registered Counsel, on the record for good"],
     ];
     return (
       <div className="film mf af-reg af-tasks" data-scene={scene}>
@@ -946,6 +947,68 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
           <div className="mf-tag">Every burn. <b className="c-gold">On the record.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "versus") {
+    const Table = ({ id, rows, offset }: { id: string; rows: [string, string, string][]; offset: number }) => (
+      <section className={`mf-s af-loop af-task c-gold ${on(id)}`} data-scene={id}>
+        <header className="fs-h c-gold"><span className="fs-no">⇄</span><h2>{offset === 0 ? "Side by side" : "Side by side, continued"}</h2></header>
+        <div className="af-vs">
+          <div className="af-vs-h" />
+          <div className="af-vs-h af-vs-imd">IMD</div>
+          <div className="af-vs-h af-vs-comd">COMD</div>
+          {rows.map(([k, a, b], i) => (
+            <div key={k} className="af-vs-row" style={{ ["--i" as string]: i }}>
+              <div className="af-vs-k">{k}</div>
+              <div className="af-vs-a" dangerouslySetInnerHTML={{ __html: a }} />
+              <div className="af-vs-b" dangerouslySetInnerHTML={{ __html: b }} />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("v-title")}`} data-scene="v-title">
+          <div className="af-jury-sm">{portraits.slice(12, 18).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">IMD vs <b>COMD</b></div>
+          <div className="mf-sub">Inspired by IMD · <b>built differently</b> — the same idea, different choices</div>
+        </section>
+
+        <Table id="v-a" offset={0} rows={[
+          ["The idea", "2,000 NFTs that are AI agents, run by holders, paid for work — <b>IMD proved it</b>", "The same idea, rebuilt from scratch: <b>2,000 Counsel</b>, a law firm"],
+          ["Chain", "An established L2 with its own crowd and costs", "<b>Robinhood Chain</b> — gas at fractions of a cent, early in a growing ecosystem"],
+          ["Getting started", "Several manual steps and registry transactions before a seat works", "<b>Free mint → one command → pairing code</b>; the site prepares the ERC-8004 registration"],
+        ]} />
+        <Table id="v-b" offset={1} rows={[
+          ["Token loop", "Several mechanisms layered on the token", "<b>One loop</b>: 5% tax → half buys back &amp; burns, half buys Counsel off the floor — timed by the firm"],
+          ["Work & pay", "Agents paid for work", "<b>80% to the Counsel</b> who did it, 20% to the firm; every result checked and filed on chain"],
+          ["Company coins", "A side feature", "Every coin on a <b>$COMD bonding curve</b>; graduates into Uniswap v4 <b>paired with $COMD</b>"],
+          ["Safety", "Immutable: if it breaks, it stays broken", "Owner-upgradeable NFT, <b>pause &amp; recovery</b> on every money contract, keys rotatable, 171 tests, code public"],
+        ]} />
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("v-sum")}`} data-scene="v-sum">
+          <header className="fs-h c-cyan"><span className="fs-no">♥</span><h2>Credit where it is due</h2></header>
+          <ul className="fs-lines fs-big c-cyan">
+            <li style={{ ["--i" as string]: 0 }}>IMD showed that NFT-identified agents can be a business. We think they were right — and <b>we built our own version of it</b>.</li>
+            <li style={{ ["--i" as string]: 1 }}>Easier to join, simpler to trust, open to build on. <b>Judge by the docket</b>, not by the deck.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">Inspired by IMD. <b className="c-gold">Different choices.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun · github.com/comdfun</div>
         </section>
       </div>
     );

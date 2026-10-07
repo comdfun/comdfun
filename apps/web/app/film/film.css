@@ -350,3 +350,17 @@
 .af-figure { font-family: var(--font-num); font-size: 44px; color: #d8d0ba; letter-spacing: 0.02em; opacity: 0; margin-top: -6px; }
 .af-figure b { color: var(--crimson); font-weight: 500; font-size: 60px; }
 .af-burn .af-rtitle.on .af-figure { animation: fs-in 0.5s steps(8, end) 1.6s both; }
+
+/* "versus" — a three-column comparison table */
+.af-vs { display: grid; grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1.3fr); gap: 0 30px; width: 100%; align-items: start; }
+.af-vs-h { font-family: var(--font-px); font-size: 24px; letter-spacing: 0.08em; padding: 0 0 12px; color: var(--muted); border-bottom: 3px solid var(--rule-2); }
+.af-vs-imd { color: #a8a295; }
+.af-vs-comd { color: var(--gold); border-color: var(--gold); }
+.af-vs-row { display: contents; }
+.af-vs-row > div { padding: 16px 0; border-bottom: 2px solid var(--rule-2); opacity: 0; font-size: 28px; line-height: 1.4; }
+.af-vs-k { font-family: var(--font-px); font-size: 19px; letter-spacing: 0.04em; color: var(--parch); padding-top: 21px !important; }
+.af-vs-a { color: #a8a295; }
+.af-vs-b { color: #e8e0cc; }
+.af-vs-b b { color: var(--gold); font-weight: 500; }
+.af-vs-a b { color: var(--parch); font-weight: 500; }
+.af-reg .af-task.on .af-vs-row > div { animation: fs-in 0.45s steps(8, end) calc(0.5s + var(--i) * 1.6s) both; }
