@@ -70,25 +70,45 @@ jobs:
           OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
+          FROM: ${{ steps.plan.outputs.from }}
+          TO: ${{ steps.plan.outputs.to }}
+          RPS: ${{ steps.plan.outputs.rps }}
+          MAX: ${{ steps.plan.outputs.max }}
         run: |
           if [ -z "$OPENSEA_API_KEY" ]; then
-            echo "no OPENSEA_API_KEY secret: minting an instant free-tier key for this run (30 writes/hour)"
-            OPENSEA_API_KEY="$(curl -fsS -X POST https://api.opensea.io/api/v2/auth/keys | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).api_key))')"
-            [ -n "$OPENSEA_API_KEY" ] || { echo "::error::could not mint a free key"; exit 1; }
+            echo "no OPENSEA_API_KEY secret: minting an instant free-tier key for this run"
+            for attempt in 1 2 3; do
+              resp="$(curl -sS -X POST -H 'accept: application/json' -w '\n%{http_code}' https://api.opensea.io/api/v2/auth/keys || true)"
+              code="$(printf '%s' "$resp" | tail -n1)"; body="$(printf '%s' "$resp" | sed '$d')"
+              if [ "$code" = 200 ] || [ "$code" = 201 ]; then
+                OPENSEA_API_KEY="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).api_key||""))')"
+                [ -n "$OPENSEA_API_KEY" ] && break
+              fi
+              echo "key mint attempt $attempt: HTTP $code ${body:0:160}"; sleep $((attempt * 20))
+            done
+            [ -n "$OPENSEA_API_KEY" ] || { echo "::error::could not mint a free key (OpenSea throttles key minting per IP; add a full key as the OPENSEA_API_KEY secret, or simply re-run later)"; exit 1; }
             export OPENSEA_API_KEY
           fi
-          set +e
-          node scripts/opensea-refresh.mjs --from "${{ steps.plan.outputs.from }}" --to "${{ steps.plan.outputs.to }}" --rps "${{ steps.plan.outputs.rps }}" --max "${{ steps.plan.outputs.max }}" | tee /tmp/refresh.log
-          code=$?
-          set -e
-          next="$(grep -E '^NEXT [0-9]+' /tmp/refresh.log | tail -n1 | awk '{print $2}')"
-          if [ -n "$next" ]; then
-            # remember the cursor for the next hourly run (create the variable on first use); manual runs count too
+          store() { # remember the cursor so the next run (hourly or manual) continues where this one stopped
             if gh api "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" >/dev/null 2>&1; then
-              gh api -X PATCH "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" -f name=OPENSEA_REFRESH_NEXT -f value="$next" >/dev/null
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" -f name=OPENSEA_REFRESH_NEXT -f value="$1" >/dev/null 2>&1 || echo "::warning::could not store the cursor ($1)"
             else
-              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/variables" -f name=OPENSEA_REFRESH_NEXT -f value="$next" >/dev/null
+              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/variables" -f name=OPENSEA_REFRESH_NEXT -f value="$1" >/dev/null 2>&1 || echo "::warning::could not store the cursor ($1)"
             fi
-          fi
-          { echo "## OpenSea refresh ($EVENT)"; echo; echo '```'; tail -n 6 /tmp/refresh.log; echo '```'; [ -n "$next" ] && echo "Next id to refresh: **$next**"; } >> "$GITHUB_STEP_SUMMARY"
+          }
+          # work in chunks of 100 and store the cursor after each, so a timeout or a rate limit never loses progress
+          cur="$FROM"; code=0; : > /tmp/refresh.log
+          while [ "$cur" -le "$TO" ]; do
+            chunk_to=$(( cur + 99 )); [ "$chunk_to" -gt "$TO" ] && chunk_to="$TO"
+            set +e
+            node scripts/opensea-refresh.mjs --from "$cur" --to "$chunk_to" --rps "$RPS" --max "$MAX" | tee -a /tmp/refresh.log
+            code=$?
+            set -e
+            next="$(grep -E '^NEXT [0-9]+' /tmp/refresh.log | tail -n1 | awk '{print $2}')"
+            [ -n "$next" ] && store "$next"
+            if [ -z "$next" ] || [ "$next" -le "$cur" ]; then echo "no progress from $cur (rate limited?) — stopping this run"; break; fi
+            cur="$next"
+            [ "$MAX" != 0 ] && break # a capped run (the hourly free-key mode) does one chunk
+          done
+          { echo "## OpenSea refresh ($EVENT)"; echo; echo '```'; grep -E 'done:|NEXT' /tmp/refresh.log | tail -n 4; echo '```'; [ -n "${next:-}" ] && echo "Next id to refresh: **$next**$( [ "$next" -gt 2000 ] && echo ' — all done; disable this workflow' )"; } >> "$GITHUB_STEP_SUMMARY"
           exit $code
