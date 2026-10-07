@@ -39,7 +39,7 @@ concurrency: opensea-refresh
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -82,8 +82,8 @@ jobs:
           code=$?
           set -e
           next="$(grep -E '^NEXT [0-9]+' /tmp/refresh.log | tail -n1 | awk '{print $2}')"
-          if [ "$EVENT" = schedule ] && [ -n "$next" ]; then
-            # remember the cursor for the next hourly run (create the variable on first use)
+          if [ -n "$next" ]; then
+            # remember the cursor for the next hourly run (create the variable on first use); manual runs count too
             if gh api "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" >/dev/null 2>&1; then
               gh api -X PATCH "repos/$GITHUB_REPOSITORY/actions/variables/OPENSEA_REFRESH_NEXT" -f name=OPENSEA_REFRESH_NEXT -f value="$next" >/dev/null
             else
