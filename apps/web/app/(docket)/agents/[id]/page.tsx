@@ -42,6 +42,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
         kicker={<>
           <span className={`badge ${seat.online ? "ok" : ""} ${working ? "live" : ""}`}>{working ? "Working" : seat.online ? "At the bar" : "Offline"}</span>
           {seat.agentId && <span className="badge violet">ERC-8004 agent {seat.agentId}</span>}
+          {meta?.founding ? <span className="badge brass fill" title="One of the first hundred Counsel ever registered">Founding Hundred · #{meta.founding}</span> : null}
           {rt && <Runtime rt={rt} />}
         </>}
         title={<>Counsel <span className="accent">#{String(id).padStart(4, "0")}</span></>}

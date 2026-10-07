@@ -282,8 +282,25 @@ export class Pairing {
     const docServices = (doc as unknown as { services?: unknown }).services;
     const base = Array.isArray(docServices) ? (docServices as { name: string; endpoint: string }[]) : [];
     const services = [...base, { name: "x402", endpoint: `${cfg.publicApiUrl}/requests/quote` }, { name: "agent", endpoint: `${cfg.publicApiUrl}/agents/${tokenId}` }];
-    return { ...doc, services, active: !!enrolled, x402Support: true, enrolled: !!seat?.agentId, paired: !!enrolled, online: !!this.app.engine.sessionForToken(String(tokenId)) };
+    const rank = this.founding().rank.get(String(tokenId));
+    const attributes = rank ? [...(((doc as unknown as { attributes?: unknown[] }).attributes) ?? []), { trait_type: "Founding Hundred", value: `#${rank}` }] : undefined;
+    return { ...doc, ...(attributes ? { attributes } : {}), services, active: !!enrolled, x402Support: true, enrolled: !!seat?.agentId, paired: !!enrolled, online: !!this.app.engine.sessionForToken(String(tokenId)), founding: rank ?? null };
   }
+
+  /** The first hundred Counsel ever registered (ERC-8004 agent ids are issued in order), ranked 1..100. On the
+   *  record for good: the rank is a trait in the metadata and a badge on the site. */
+  founding(): { limit: number; registered: number; spotsLeft: number; rank: Map<string, number>; seats: { tokenId: string; agentId: string; rank: number; owner: Address | null; registeredAt: string }[] } {
+    const now = this.app.now();
+    if (this.foundingCache && now - this.foundingCache.at < 15_000) return this.foundingCache.v;
+    const limit = 100;
+    const regs = this.seats.all().filter((x) => x.agentId !== null && x.agentId !== undefined && x.agentId !== "").sort((a, b) => Number(a.agentId) - Number(b.agentId) || a.updatedAt.localeCompare(b.updatedAt));
+    const rank = new Map<string, number>();
+    const seats = regs.slice(0, limit).map((x, i) => { rank.set(x.tokenId, i + 1); return { tokenId: x.tokenId, agentId: String(x.agentId), rank: i + 1, owner: x.owner, registeredAt: x.updatedAt }; });
+    const v = { limit, registered: regs.length, spotsLeft: Math.max(0, limit - regs.length), rank, seats };
+    this.foundingCache = { at: now, v };
+    return v;
+  }
+  private foundingCache: { at: number; v: ReturnType<Pairing["founding"]> } | null = null;
 
   /** Plain ERC-721 metadata for marketplaces (the NFT's tokenURI): name, description, image, link, traits — and
    *  nothing else. The ERC-8004 registration file (`/agents/by-token/{id}.json`, with `type`, `services`, `active`…)
@@ -296,7 +313,10 @@ export class Pairing {
       agentId: null, agentRegistry: null,
     })) as unknown as Record<string, unknown>;
     const keep = ["name", "description", "image", "external_url", "attributes", "background_color", "animation_url"];
-    return Object.fromEntries(keep.filter((k) => doc[k] !== undefined).map((k) => [k, doc[k]]));
+    const out = Object.fromEntries(keep.filter((k) => doc[k] !== undefined).map((k) => [k, doc[k]])) as Record<string, unknown>;
+    const rank = this.founding().rank.get(String(tokenId));
+    if (rank) out.attributes = [...((out.attributes as unknown[]) ?? []), { trait_type: "Founding Hundred", value: `#${rank}` }];
+    return out;
   }
 
   newId() { return randomUUID(); }

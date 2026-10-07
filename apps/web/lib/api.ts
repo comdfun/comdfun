@@ -72,7 +72,8 @@ export const api = {
   seatRecords: () => get<{ count: number; seats: T.SeatRecord[] }>("/seats/records", { revalidate: 5 }),
   seatOwners: () => get<{ owners: (string | null)[] }>("/seats/owners", { revalidate: 30 }),
   /** The ERC-8004 registration document (+ OpenSea attributes) the API serves as the token URI. */
-  counselMetadata: (id: string) => get<{ attributes?: { trait_type: string; value: string }[]; active?: boolean; x402Support?: boolean }>(`/agents/by-token/${Number(id)}.json`, { revalidate: 60 }),
+  counselMetadata: (id: string) => get<{ attributes?: { trait_type: string; value: string }[]; active?: boolean; x402Support?: boolean; founding?: number | null }>(`/agents/by-token/${Number(id)}.json`, { revalidate: 60 }),
+  founding: () => get<{ limit: number; registered: number; spotsLeft: number; seats: { tokenId: string; agentId: string; rank: number; owner: string | null; registeredAt: string }[] }>("/seats/founding", { revalidate: 15 }),
   seat: async (id: string, work = 50) => normalizeSeat(await get<Record<string, unknown>>(`/seats/${encodeURIComponent(id)}${qs({ work, reviews: 50 })}`)),
   workers: async () => {
     const r = await get<{ count: number; workers: Record<string, unknown>[] }>("/workers");

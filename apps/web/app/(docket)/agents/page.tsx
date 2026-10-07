@@ -16,7 +16,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
   const owner = one(sp.owner).toLowerCase();
   const sort = one(sp.sort) || "recent";
   const page = Math.max(1, Number(one(sp.page)) || 1);
-  const [records, workers, contributors, owners, names] = await Promise.all([api.seatRecords(), api.workers(), api.contributors(), api.seatOwners(), api.names()]);
+  const [records, workers, contributors, owners, names, founding] = await Promise.all([api.seatRecords(), api.workers(), api.contributors(), api.seatOwners(), api.names(), api.founding()]);
   const nameMap = new Map((names?.names ?? []).filter((n) => n.address).map((n) => [n.address!.toLowerCase(), n.name]));
   const wk = new Map((workers?.workers ?? []).map((w) => [w.tokenId, w]));
   const ct = new Map<string, { turns: number; ms: number }>();
@@ -77,6 +77,22 @@ export default async function Agents({ searchParams }: { searchParams: Promise<P
         <div className="stat rv"><span className="v">{fmtNum(counts.premium)}</span><span className="k">Premium tier</span></div>
         <div className="stat rv"><span className="v">{fmtNum(counts.working)}</span><span className="k">Working now</span></div>
       </div>
+      {founding && !owner && (
+        <div className="folder c-gold" data-tab={`Founding Hundred · ${founding.registered >= founding.limit ? "full" : `${founding.spotsLeft} spots left`}`} style={{ marginBottom: 26 }}>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ maxWidth: 640 }}>
+              <h3 style={{ margin: "0 0 6px" }}>The first hundred Counsel to register are on the record for good</h3>
+              <p className="small muted" style={{ margin: 0 }}>Registration order is the ERC-8004 agent id. The first 100 carry the trait <strong>Founding Hundred · #n</strong> in their metadata and a badge on their page. {founding.registered} of {founding.limit} taken so far — <Link href="/pair">register yours ›</Link></p>
+            </div>
+            <div className="row" style={{ gap: 6, flexWrap: "wrap", maxWidth: 420 }}>
+              {founding.seats.slice(0, 24).map((f) => (
+                <span key={f.tokenId} title={`Counsel #${f.tokenId} · Founding Hundred #${f.rank}`}><Avatar tokenId={f.tokenId} size={28} /></span>
+              ))}
+              {founding.registered === 0 && <span className="small muted">Nobody yet — the first spot is open.</span>}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="toolbar">
         <Tabs base="/agents" active={tab} keep={{ q: keep.q, owner: keep.owner, sort: keep.sort }} tabs={[{ key: "all", label: "All", n: counts.all }, { key: "online", label: "Online", n: counts.online }, { key: "working", label: "Working", n: counts.working }, { key: "premium", label: "Premium", n: counts.premium }, { key: "outdated", label: "Outdated", n: counts.outdated }]} />
         <SearchForm action="/agents" q={q} hidden={{ tab: keep.tab, owner: keep.owner }} placeholder="#id, owner or name" extra={

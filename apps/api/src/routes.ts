@@ -276,6 +276,11 @@ export function buildRouter(app: App): Router {
     }
     return json(200, { count: by.size, contributors: [...by.values()].sort((a, b) => b.accepted - a.accepted || Number(a.tokenId) - Number(b.tokenId)) });
   }, read);
+  // the first hundred registered Counsel — a public list and a trait ("Founding Hundred · #n")
+  r.get("/seats/founding", () => {
+    const f = app.pairing.founding();
+    return json(200, { limit: f.limit, registered: f.registered, spotsLeft: f.spotsLeft, seats: f.seats }, { "cache-control": "public, max-age=15" });
+  }, read);
   r.get("/seats/records", () => {
     const seats = seatCounters(app);
     return json(200, { count: seats.length, seats }, { "cache-control": "public, max-age=5" });
