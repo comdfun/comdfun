@@ -92,6 +92,7 @@ export default async function Home() {
           </div>
         ))}
       </div>
+      <p className="small rv" style={{ margin: "10px 0 0", textAlign: "right" }}><Link href="/today">Today at the firm — the daily report, last 24 hours ›</Link></p>
 
       <Section num="§1" title="The $COMD flywheel" id="flywheel" c="gold" right={<Link className="small" href="/flywheel">Full breakdown ›</Link>}>
         <FlywheelSection s={fly} />

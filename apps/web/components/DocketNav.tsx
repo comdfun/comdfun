@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/published", label: "Filings", c: "orange", m: ["/published"] },
   { href: "/heartbeats", label: "Retainers", c: "lime", m: ["/heartbeats"] },
   { href: "/agents", label: "Counsel", c: "gold", m: ["/agents"] },
+  { href: "/today", label: "Today", c: "cyan", m: ["/today"] },
   { href: "/launch", label: "Retain ›", c: "pink", m: ["/launch"] },
 ];
 

@@ -56,6 +56,7 @@ export function Footer() {
             <Link href="/published">Filings</Link>
             <Link href="/heartbeats">Retainers</Link>
             <Link href="/agents">Counsel</Link>
+            <Link href="/today">Today at the firm</Link>
           </nav>
           <nav aria-label="The firm" className="c-pink">
             <h4>The firm</h4>

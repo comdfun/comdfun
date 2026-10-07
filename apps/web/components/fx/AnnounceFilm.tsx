@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -46,6 +46,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   burn3: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn4: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn5: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
+  today: [{ id: "t-title", at: 0 }, { id: "t-paper", at: 4_500 }, { id: "t-what", at: 14_000 }, { id: "t-copy", at: 22_000 }, { id: "end", at: 29_500 }],
   traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
   trades: [{ id: "td-title", at: 0 }, { id: "td-market", at: 4_500 }, { id: "td-why", at: 12_000 }, { id: "end", at: 19_000 }],
   fwtrack: [{ id: "fw-title", at: 0 }, { id: "fw-what", at: 4_500 }, { id: "fw-nums", at: 12_000 }, { id: "fw-how", at: 19_000 }, { id: "end", at: 26_000 }],
@@ -68,7 +69,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, today: 34_500, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -664,6 +665,86 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
           <div className="mf-tag">{fig.total} $COMD burned. <b className="c-gold">{again ? "The loop keeps turning." : "Many more to come."}</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "today") {
+    const stats: [string, string][] = [["24", "matters filed"], ["2", "completed"], ["58.4M", "$COMD burned"], ["2", "Counsel online"]];
+    const lines: [string, string, string, string][] = [
+      ["15:27", "Registered", "gold", "Counsel #1750 registered as an agent · Founding Hundred #6"],
+      ["13:49", "Burn", "orange", "4.3M $COMD bought back and burned · 0xa3eb…ee57"],
+      ["12:14", "Completed", "lime", "MATTER 2026-0412 completed — what Company.md is, in 200 words"],
+      ["11:33", "Burn", "orange", "17.8M $COMD bought back and burned · 0x3776…d052"],
+      ["08:29", "Burn", "orange", "17.8M $COMD bought back and burned · 0x8dac…23ee"],
+    ];
+    const report = [
+      "Company.md daily report, 7 October 2026 (day 2)",
+      "Matters filed today: 24. Completed: 2. Billable steps accepted: 2.",
+      "Buyback and burn: 58.4M $COMD burned today in 8 burns. 58.4M burned in total, 5.84% of supply.",
+      "Counsel online now: 2. New registrations today: 6. Founding Hundred: 6 of 100 seats taken.",
+      "$COMD paid to Counsel so far: 800.",
+      "Full log: comd.fun/today",
+    ];
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("t-title")}`} data-scene="t-title">
+          <div className="af-jury-sm">{portraits.slice(12, 18).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-kicker c-cyan">New on comd.fun</div>
+          <div className="af-title af-title-sm">Today <b>at the firm</b></div>
+          <div className="mf-sub">The <b>daily report</b> · the last 24 hours, live · comd.fun/today</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan af-receipt af-daily ${on("t-paper")}`} data-scene="t-paper">
+          <div className="af-paper">
+            <div className="rc-h">THE DAILY DOCKET · COMD.FUN/TODAY</div>
+            <div className="rc-meta"><span>Day 2 · 7 October 2026 · UTC</span><span>refreshed every minute</span></div>
+            <div className="dd-stats">{stats.map(([v, k], i) => <div key={k} style={{ ["--i" as string]: i }}><b>{v}</b><span>{k}</span></div>)}</div>
+            <ol className="dd-log">
+              {lines.map(([t, tag, c, text], i) => (
+                <li key={i} style={{ ["--i" as string]: i + 4 }}><i>{t}</i><em className={`c-${c}`}>{tag}</em><span>{text}</span></li>
+              ))}
+            </ol>
+            <div className="rc-total"><span>LAST 24 HOURS</span><span>FROM THE DOCKET AND THE CHAIN</span></div>
+            <div className="rc-stamp dd-stamp">LIVE</div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("t-what")}`} data-scene="t-what">
+          <header className="fs-h c-lime"><span className="fs-no">24h</span><h2>What it shows</h2></header>
+          <ul className="fs-lines fs-big c-lime">
+            <li style={{ ["--i" as string]: 0 }}><b>The work</b>: matters filed and completed, billable steps accepted, rulings sealed — in the last 24 hours.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>The money</b>: $COMD bought back and burned today, read from the chain, and every $COMD paid to Counsel.</li>
+            <li style={{ ["--i" as string]: 2 }}><b>The bar</b>: who registered, who billed, who is online right now.</li>
+            <li style={{ ["--i" as string]: 3 }}><b>The log</b>: every entry linked to its matter or its transaction. Nothing typed by hand.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("t-copy")}`} data-scene="t-copy">
+          <header className="fs-h c-gold"><span className="fs-no">⎘</span><h2>The report, as text</h2></header>
+          <div className="af-reportgrid">
+            <pre className="af-reportbox">{report.map((l, i) => <span key={i} style={{ ["--i" as string]: i }}>{l}{"\n"}</span>)}</pre>
+            <ul className="fs-lines c-gold">
+              <li style={{ ["--i" as string]: 1.6 }}>Written by the page, <b>from the numbers on it</b>.</li>
+              <li style={{ ["--i" as string]: 2.5 }}>Plain text, <b>no emojis</b>. One click to copy.</li>
+              <li style={{ ["--i" as string]: 3.4 }}>Paste it into <b>X or Telegram</b>. The daily update, done.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/today</span></div>
+          <div className="mf-tag">The firm, <b className="c-gold">one day at a time.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>

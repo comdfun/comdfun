@@ -1329,3 +1329,24 @@ html.fx .wt-bar2 span { animation: wt-fill 0.9s steps(10, end) 0.2s both; transf
 .trait-k { font-family: var(--font-px); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .trait-v { font-size: 13.5px; color: var(--parch); }
 @media (max-width: 420px) { .trait-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------------------------------------------------------------------------------------------- /today — the daily report */
+.today-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .today-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.today-stats .stat .v { font-size: 30px; }
+.today-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 24px; align-items: start; margin-top: 8px; }
+@media (max-width: 900px) { .today-grid { grid-template-columns: 1fr; } }
+.today-side { display: grid; gap: 22px; position: sticky; top: 84px; }
+@media (max-width: 900px) { .today-side { position: static; } }
+.today-log { border-top: 2px solid var(--rule); }
+.today-log > li { display: grid; grid-template-columns: 44px auto auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0 10px 10px; border-left: 3px solid var(--c, var(--rule)); }
+.today-log > li > time { font-size: 12px; }
+.today-log > li > .t { min-width: 0; overflow-wrap: anywhere; }
+.today-log > li > .t a { color: inherit; }
+.today-log > li > .t a:hover { color: var(--c, var(--sig)); }
+.today-log > li > a > .av, .today-log > li > .av { width: 22px; height: 22px; }
+@media (max-width: 600px) { .today-log > li { grid-template-columns: 44px auto minmax(0, 1fr); } .today-log > li > a[title^="Counsel"] { display: none; } }
+.today-report { margin: 0 0 12px; padding: 14px; background: var(--bg); border: 2px dashed var(--rule); font-family: var(--font-mono); font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--parch); }
+.today-dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; margin: 0; }
+.today-dl dt { color: var(--muted); font-size: 13px; }
+.today-dl dd { margin: 0; font-family: var(--font-mono); text-align: right; }

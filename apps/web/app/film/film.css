@@ -438,3 +438,27 @@
 .af-http-line.res .af-http-head { color: var(--gold); } .af-http-line.req .af-http-head { color: var(--cyan); }
 .af-http-body { font-size: 23px; color: #c9c1ac; line-height: 1.45; }
 .af-reg .af-task.on .af-http-line { animation: fs-in 0.35s steps(6, end) calc(0.5s + var(--i) * 2.2s) both; }
+
+/* ---- today: the daily report -------------------------------------------------------------- */
+.af-kicker { font-family: var(--font-px); font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c, var(--cyan)); text-shadow: 3px 3px 0 #000; margin-bottom: 6px; opacity: 0; }
+.af-reg .af-rtitle.on .af-kicker { animation: fs-in 0.4s steps(6, end) 0.3s both; }
+.af-daily .af-paper { width: 1240px; padding: 36px 52px 40px; gap: 10px; }
+.af-daily .af-paper .rc-h { font-size: 24px; }
+.af-daily .dd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 8px 0 4px; }
+.af-daily .dd-stats div { border: 3px solid #0b0a10; padding: 12px 14px 8px; display: grid; gap: 2px; opacity: 0; background: #f3ecd6; }
+.af-daily .dd-stats b { font-family: var(--font-num); font-size: 44px; line-height: 1; color: #0b0a10; }
+.af-daily .dd-stats span { font-family: var(--font-px); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #4a4538; }
+.af-reg .af-task.on .dd-stats div { animation: fs-in 0.4s steps(6, end) calc(0.8s + var(--i) * 0.25s) both; }
+.af-daily .af-paper ol.dd-log { margin: 6px 0 96px; gap: 12px; }
+.af-daily .af-paper ol.dd-log li { grid-template-columns: 80px 150px 1fr; gap: 14px; align-items: center; }
+.af-daily .af-paper ol.dd-log li i { font-size: 26px; color: #4a4538; }
+.af-daily .af-paper ol.dd-log li em { font-family: var(--font-px); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; text-align: left; color: #0b0a10; border: 2px solid var(--c, #0b0a10); background: var(--c, transparent); padding: 5px 8px 3px; justify-self: start; }
+.af-daily .af-paper ol.dd-log li span { font-size: 22px; color: #1d1a16; }
+.af-reg .af-task.on .af-daily .af-paper li, .af-reg .af-task.on.af-daily .af-paper li { animation: fs-in 0.35s steps(6, end) calc(0.6s + var(--i) * 0.55s) both; }
+.af-daily .rc-stamp.dd-stamp { right: 70px; bottom: 96px; border-color: #1f7a3a; color: #1f7a3a; }
+.af-reg .af-task.on.af-daily .rc-stamp { animation: rc-stamp-in 0.45s steps(6, end) 5.6s both; }
+.af-reportgrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px; align-items: center; width: 100%; }
+.af-reportbox { margin: 0; padding: 30px 34px; background: #000; border: 4px dashed var(--rule-2); box-shadow: 14px 14px 0 #000; font-family: var(--font-mono); font-size: 25px; line-height: 1.55; color: var(--parch); white-space: pre-wrap; overflow-wrap: anywhere; opacity: 0; }
+.af-reportbox span { display: block; opacity: 0; }
+.af-reg .af-task.on .af-reportbox { animation: fs-in 0.4s steps(6, end) 0.2s both; }
+.af-reg .af-task.on .af-reportbox span { animation: fs-in 0.3s steps(5, end) calc(0.6s + var(--i) * 0.7s) both; }
