@@ -462,3 +462,7 @@
 .af-reportbox span { display: block; opacity: 0; }
 .af-reg .af-task.on .af-reportbox { animation: fs-in 0.4s steps(6, end) 0.2s both; }
 .af-reg .af-task.on .af-reportbox span { animation: fs-in 0.3s steps(5, end) calc(0.6s + var(--i) * 0.7s) both; }
+.af-cards-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.af-cards-4 .af-card { padding: 30px 26px; }
+.af-cards-4 .af-card b { font-size: 30px; }
+.af-cards-4 .af-card span { font-size: 21px; }
