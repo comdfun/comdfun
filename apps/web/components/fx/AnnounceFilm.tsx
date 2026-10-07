@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -43,6 +43,8 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   gm: [{ id: "g-title", at: 0 }, { id: "g-back", at: 4_500 }, { id: "end", at: 12_500 }],
   burn: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn2: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
+  traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
+  trades: [{ id: "td-title", at: 0 }, { id: "td-market", at: 4_500 }, { id: "td-why", at: 12_000 }, { id: "end", at: 19_000 }],
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
@@ -54,7 +56,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -785,6 +787,108 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag" dangerouslySetInnerHTML={{ __html: plan.tag }} />
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "traits") {
+    const TRAITS = ["Practice", "Headwear", "Skin", "Eyes", "Attire", "Neckwear", "Held", "Backdrop", "Chambers", "Founding Partner", "Scheme"];
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("tr-title")}`} data-scene="tr-title">
+          <div className="af-jury-sm">{portraits.slice(0, 6).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Traits are <b>live</b></div>
+          <div className="mf-sub">Metadata refreshed on <b>OpenSea</b> · every Counsel now shows what it wears</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("tr-what")}`} data-scene="tr-what">
+          <header className="fs-h c-gold"><span className="fs-no">✓</span><h2>Eleven traits per Counsel</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines fs-big c-gold">
+              <li style={{ ["--i" as string]: 0 }}>Every Counsel now carries its <b>eleven traits</b> on OpenSea — from Practice and Headwear to Chambers and Founding Partner.</li>
+              <li style={{ ["--i" as string]: 1 }}><b>Filter the collection</b> by trait, see how rare yours is, find the one that matches you.</li>
+              <li style={{ ["--i" as string]: 2 }}>No two Counsel are alike — <b>now the marketplace knows it too</b>.</li>
+            </ul>
+            <div className="af-taskside">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/art/${portraits[0]}.svg`} alt="" className="af-hero af-hero-sm c-gold" />
+              <div className="af-tags">{TRAITS.map((t, i) => <span key={t} className="fs-pill c-gold" style={{ ["--i" as string]: i }}>{t}</span>)}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("tr-how")}`} data-scene="tr-how">
+          <header className="fs-h c-cyan"><span className="fs-no">⟳</span><h2>How it was done</h2></header>
+          <ul className="fs-lines fs-big c-cyan">
+            <li style={{ ["--i" as string]: 0 }}>Metadata is served live by <b>comd.fun</b> — one source for the chain, the site and every marketplace.</li>
+            <li style={{ ["--i" as string]: 1 }}>An <b>ERC-4906</b> refresh on chain, then a per-item refresh through OpenSea&apos;s API — <b>all 2,000 Counsel</b>.</li>
+            <li style={{ ["--i" as string]: 2 }}>Still seeing old data on yours? Open it on OpenSea → <b>menu → Refresh metadata</b>. One click.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">opensea.io<span>/counsel</span></div>
+          <div className="mf-tag">2,000 Counsel. <b className="c-gold">2,000 trait sets.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "trades") {
+    return (
+      <div className="film mf af-reg af-tasks af-trades" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("td-title")}`} data-scene="td-title">
+          <div className="af-jury-sm">{portraits.slice(6, 12).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title">35<b>+</b></div>
+          <div className="mf-sub">open-market Counsel trades on <b>OpenSea</b> · day two</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("td-market")}`} data-scene="td-market">
+          <header className="fs-h c-lime"><span className="fs-no">⇄</span><h2>A market is forming</h2></header>
+          <ul className="fs-lines fs-big c-lime">
+            <li style={{ ["--i" as string]: 0 }}><b>35+ Counsel</b> have changed hands on OpenSea since the mint closed — real buyers, real prices, no team involved.</li>
+            <li style={{ ["--i" as string]: 1 }}>Close to a thousand holders; the floor is set by the market and <b>swept by the Flywheel</b>.</li>
+            <li style={{ ["--i" as string]: 2 }}>Every sale carries a <b>5% on-chain royalty</b> (ERC-2981) back to the firm.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("td-why")}`} data-scene="td-why">
+          <header className="fs-h c-cyan"><span className="fs-no">?</span><h2>Why a Counsel trades</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines fs-big c-cyan">
+              <li style={{ ["--i" as string]: 0 }}>It is not a picture: a registered Counsel <b>earns $COMD</b> for every accepted matter.</li>
+              <li style={{ ["--i" as string]: 1 }}>Register it, pair a machine, and it <b>joins the swarm</b> — or hold it and let the floor speak.</li>
+              <li style={{ ["--i" as string]: 2 }}>Missed the mint? <b>The collection is on OpenSea.</b></li>
+            </ul>
+            <div className="af-taskside">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/art/${portraits[9]}.svg`} alt="" className="af-hero af-hero-sm c-cyan" />
+            </div>
+          </div>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">opensea.io<span>/counsel</span></div>
+          <div className="mf-tag">35+ trades. <b className="c-gold">Day two.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
