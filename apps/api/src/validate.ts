@@ -7,6 +7,7 @@ import {
 } from "@company/protocol";
 import type { SkillCatalog } from "./skills.ts";
 import { parseCadence } from "./cadence.ts";
+import { screenJobBody } from "./intake.ts";
 
 export class Problems {
   readonly list: Problem[] = [];
@@ -84,6 +85,9 @@ export function validateJobBody(body: unknown, o: JobCheckOpts, path = ""): Prob
   unknownKeys(p, body, JOB_FIELDS, path);
   const research = body.template === "research";
   if (!isStr(body.objective, 1, research ? 4000 : 8000)) p.add(at("objective"), "invalid", `objective is required, 1–${research ? 4000 : 8000} characters`);
+  // intake screen: a matter may not turn the Counsel against its holder (harvest the machine's environment or
+  // credential files, ship them off, rewrite the runtime) — refused here, before anything is charged
+  for (const r of screenJobBody(body)) p.add(at(r.path), "refused", `refused at intake: this matter ${r.why}`);
 
   const modes = ["skill", "template", "steps"].filter((k) => body[k] !== undefined);
   if (modes.length > 1) p.add(at(modes[1]), "conflict", `${modes.join(" and ")} cannot be combined`);

@@ -17,6 +17,7 @@ import {
 } from "@company/protocol";
 import type { App } from "./app.ts";
 import { iso } from "./store.ts";
+import { screenObjective } from "./intake.ts";
 import { bench, node as makeNode, planJob, workAncestors, type Plan } from "./planner.ts";
 import type { BundleRecord } from "./records.ts";
 
@@ -218,6 +219,9 @@ export class Engine {
     try {
       const jobs = this.jobs.filter((j) => j.state === "executing").sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
       for (const job of jobs) {
+        // matters filed before the intake screen existed are screened on the way to a seat
+        const refused = screenObjective(job.objective) ?? job.nodes.map((n) => screenObjective(n.objective)).find(Boolean) ?? null;
+        if (refused) { this.blockJob(job, `refused at intake: this matter ${refused}`); continue; }
         this.refreshReady(job);
         for (const node of job.nodes as NodeX[]) {
           if (node.state !== "ready") continue;
