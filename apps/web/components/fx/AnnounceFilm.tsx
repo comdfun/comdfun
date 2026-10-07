@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -48,6 +48,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   burn5: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn6: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   burn7: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
+  burn8: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   matters: [{ id: "m-title", at: 0 }, { id: "m-docket", at: 4_500 }, { id: "m-day", at: 13_000 }, { id: "m-money", at: 21_000 }, { id: "end", at: 29_000 }],
   today: [{ id: "t-title", at: 0 }, { id: "t-paper", at: 4_500 }, { id: "t-what", at: 14_000 }, { id: "t-copy", at: 22_000 }, { id: "end", at: 29_500 }],
   traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
@@ -72,7 +73,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -617,10 +618,12 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     );
   }
 
-  if (kind === "burn" || kind === "burn2" || kind === "burn3" || kind === "burn4" || kind === "burn5" || kind === "burn6" || kind === "burn7") {
+  if (kind === "burn" || kind === "burn2" || kind === "burn3" || kind === "burn4" || kind === "burn5" || kind === "burn6" || kind === "burn7" || kind === "burn8") {
     const again = kind !== "burn";
     // figures from the Creator wallet's trades (manual buybacks on Pons, sent to 0x…dEaD)
-    const fig: { burned: string; burnedPct?: string; total: string; pct: string; spent: string | null } = kind === "burn7"
+    const fig: { burned: string; burnedPct?: string; total: string; pct: string; spent: string | null } = kind === "burn8"
+      ? { burned: "10M", burnedPct: "1%", total: "91.5M", pct: "9.15%", spent: null }
+      : kind === "burn7"
       ? { burned: "6.5M", burnedPct: "0.65%", total: "81.5M", pct: "8.15%", spent: null }
       : kind === "burn6"
       ? { burned: "8M", burnedPct: "0.8%", total: "75M", pct: "7.5%", spent: null }
