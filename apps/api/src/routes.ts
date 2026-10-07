@@ -12,7 +12,7 @@ import { Router, bearerOf, clientIp, errorRes, json, parseBefore, parseLimit, pa
 import type { JobX } from "./engine.ts";
 import type { AssuranceRecord, DocumentRecord, FeedbackBatch, LaunchRecord, OracleRecord, OrderRecord, PolicyRecord, RewardEpoch, ScheduleRecord, SeatRecord, SiteRecord, WorkflowRecord } from "./records.ts";
 import { iso } from "./store.ts";
-import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselPortraitSvg, validTokenId } from "./art.ts";
+import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselShareCardPng, counselPortraitSvg, validTokenId } from "./art.ts";
 import { ARTIFACT_LIMIT, BUNDLE_LIMIT } from "./device.ts";
 import { pairPage } from "./pairpage.ts";
 
@@ -511,6 +511,16 @@ export function buildRouter(app: App): Router {
     const png = await counselCardPng(id, scale);
     if (!png) return { status: 302, headers: { location: `/agents/by-token/${id}.svg` } };
     return { status: 200, raw: png, headers: { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "public, max-age=86400" } };
+  }, pub);
+
+  // Share card: the Open Graph image of comd.fun/agents/{id} and the "Share on X" picture — status line from live state
+  r.get("/agents/by-token/:tokenId/share.png", async (q): Promise<Res> => {
+    const id = artId(q.params.tokenId);
+    const reg = await app.pairing.registration(id) as { enrolled?: boolean; paired?: boolean; online?: boolean; founding?: number | null };
+    const bits = [reg.enrolled ? "Registered" : "Minted · not registered yet", reg.founding ? `Founding Hundred #${reg.founding}` : "", reg.online ? "at the bar now" : reg.paired ? "paired" : ""].filter(Boolean);
+    const png = await counselShareCardPng(id, { status: bits.join(" · ") });
+    if (!png) return { status: 302, headers: { location: `/agents/by-token/${id}.png` } };
+    return { status: 200, raw: png, headers: { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "public, max-age=600" } };
   }, pub);
 
   // ------------------------------------------------------------------------------------------ bundles, artifacts, fuzz

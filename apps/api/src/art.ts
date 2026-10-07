@@ -20,6 +20,7 @@ interface ArtModule {
   renderCard(tokenId: number, opts?: { width?: number }): { svg: string; attributes: { trait_type: string; value: string }[]; name: string };
   renderCounsel(tokenId: number, opts?: { size?: number }): { svg: string; attributes: { trait_type: string; value: string }[]; name: string };
   renderCardPNG(tokenId: number, scale?: number): Buffer;
+  renderShareCardPNG?(tokenId: number, o?: { status?: string; facts?: string[]; url?: string }): Buffer;
   renderCounselPNG(tokenId: number, scale?: number): Buffer;
   metadata(tokenId: number, o: MetadataInput): Record<string, unknown> & { attributes: { trait_type: string; value: string }[] };
   collectionMetadata?(o: { apiUrl?: string; webUrl?: string; feeRecipient?: string }): Record<string, unknown>;
@@ -56,6 +57,12 @@ export async function counselCardSvg(tokenId: number): Promise<string> {
 export async function counselCardPng(tokenId: number, scale = 8): Promise<Buffer | null> {
   const m = await artModule();
   return m ? m.renderCardPNG(tokenId, scale) : null;
+}
+
+/** 1200×630 share / Open Graph card (portrait, name, traits, a status line, the link). */
+export async function counselShareCardPng(tokenId: number, o: { status?: string; facts?: string[]; url?: string } = {}): Promise<Buffer | null> {
+  const m = await artModule();
+  return m?.renderShareCardPNG ? m.renderShareCardPNG(tokenId, o) : null;
 }
 
 /** The 32×32 portrait (no nameplate) for small avatars. */

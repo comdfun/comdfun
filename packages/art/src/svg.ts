@@ -41,7 +41,7 @@ export { PRACTICE_COLOR, PRACTICE_CODE } from "./counsel.js";
 export { Raster } from "./raster.js";
 export {
   logoMark, logoHorizontal, logoStacked, squareProfile, appleTouch, favicon,
-  heroBanner, ogBanner, discordBanner, xHeader, mark64, mark32, mark16, monoMark, type Asset,
+  heroBanner, ogBanner, discordBanner, xHeader, mark64, mark32, mark16, monoMark, shareCard, type Asset,
 } from "./brandkit.js";
 export { composeFigure } from "./counsel.js";
 export { ARCADE } from "./palette.js";

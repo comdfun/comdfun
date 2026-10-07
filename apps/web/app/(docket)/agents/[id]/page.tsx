@@ -6,7 +6,7 @@ import { ago, caption, counselName, duration, fmtNum, short } from "@/lib/format
 import { avatarUrl } from "@/lib/links";
 import { chainName, explorerUrl, activeChain } from "@/lib/chains";
 import { addressOf } from "@/lib/contracts";
-import { MARKETPLACE_URL } from "@/lib/config";
+import { MARKETPLACE_URL, API_URL, SITE_URL, MOCK } from "@/lib/config";
 import { runtimeLabel } from "@/lib/normalize";
 import { PageHead, Badge, Section, Avatar, Runtime } from "@/components/ui";
 import { RStamp } from "@/components/fx/Stamps";
@@ -15,7 +15,17 @@ import { ClaimRewards } from "@/components/ClaimRewards";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  return { title: counselName((await params).id) };
+  const { id } = await params;
+  const name = counselName(id);
+  // the share card (portrait, traits, status) is the preview wherever this page is posted
+  const image = MOCK ? `/art/${Number(id)}.svg` : `${API_URL}/agents/by-token/${Number(id)}/share.png`;
+  const description = `${name} — one of 2,000 NFT-identified agents at Company.md on Robinhood Chain. Register it, pair a machine, and it earns $COMD for accepted work.`;
+  return {
+    title: name,
+    description,
+    openGraph: { title: `${name} · Company.md`, description, url: `${SITE_URL}/agents/${Number(id)}`, images: [{ url: image, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title: `${name} · Company.md`, description, images: [image] },
+  };
 }
 
 export default async function Agent({ params }: { params: Promise<{ id: string }> }) {
@@ -121,6 +131,10 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
               <dt>ERC-8004</dt><dd>{seat.agentId ? <>agent {seat.agentId}{identity && <> · <a className="ext" href={explorerUrl("token", `${identity}/instance/${seat.agentId}`, chainId)} target="_blank" rel="noreferrer">registry</a></>}</> : <span className="muted">not registered</span>}</dd>
               <dt>ERC-721</dt><dd>#{id} on {chainName(chainId)}{nftAddr && <> · <a className="ext" href={explorerUrl("token", `${nftAddr}/instance/${id}`, chainId)} target="_blank" rel="noreferrer">Blockscout</a></>}</dd>
               {MARKETPLACE_URL && (<><dt>Marketplace</dt><dd><a className="ext" href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea</a></dd></>)}
+              <dt>Share</dt><dd>
+                <a className="ext" href={`https://x.com/intent/post?${new URLSearchParams({ text: `${counselName(id)} at Company.md — ${seat.agentId ? "registered and earning $COMD" : "one of 2,000 NFT-identified agents"} on Robinhood Chain`, url: `${SITE_URL}/agents/${Number(id)}` }).toString()}`} target="_blank" rel="noreferrer">Share on X</a>
+                {" · "}<a className="ext" href={MOCK ? `/art/${Number(id)}.svg` : `${API_URL}/agents/by-token/${Number(id)}/share.png`} target="_blank" rel="noreferrer">card ↗</a>
+              </dd>
               <dt>Last seen</dt><dd>{seat.online ? <span className="ok">now</span> : seat.lastSeenAt ? ago(seat.lastSeenAt) : "—"}</dd>
               {seat.wallClockMs != null && (<><dt>Time worked</dt><dd>{duration(seat.wallClockMs)}</dd></>)}
               <dt>Accepted</dt><dd><span className="num" style={{ fontSize: 20 }}>{fmtNum(seat.accepted)}</span></dd>

@@ -7,6 +7,8 @@ import { drawText, textWidth } from "./font.js";
 import { drawTitle, titleWidth, titleHeight, drawText7, text7Width, type Ramp } from "./font7.js";
 import { mark64, mark32, mark16, monoMark, bayer } from "./mark.js";
 import { composeFigure } from "./counsel.js";
+import { composeCard, CARD_W, CARD_H } from "./card.js";
+import { traitsOf, counselName, chambersName } from "./traits.js";
 
 export { mark64, mark32, mark16, monoMark };
 
@@ -499,3 +501,48 @@ export function xHeader(): Asset {
 }
 
 export { spread };
+
+// ── share card ──────────────────────────────────────────────────────────────────────────────
+/** 1200×630 (240×126 at unit 5) card for a single Counsel: the bar card on the left, name, traits and a status line on
+ *  the right. Used as the Open Graph image of comd.fun/agents/{id} and for "Share on X". `status` is one short line
+ *  ("Registered · Founding Hundred #12", "Minted · not registered yet"); `facts` up to four short strings. */
+export function shareCard(tokenId: number, o: { status?: string; facts?: string[]; url?: string } = {}): Asset {
+  const W = 240, H = 126;
+  const r = nightScene({ w: W, h: H, horizon: H, seed: `share-${tokenId}` });
+  // left: the bar card (64×80) with a brass plinth
+  const cardX = 8, cardY = 23;
+  r.rect(cardX - 2, cardY - 2, CARD_W + 4, CARD_H + 4, A.goldDk);
+  r.blit(composeCard(tokenId), cardX, cardY, 1);
+  // right: a black plate (no stars behind type), name as an arcade title, status, traits in the 3×5 face
+  const tx = cardX + CARD_W + 10;
+  r.rect(tx - 5, 17, W - tx + 1, 96, A.black);
+  const name = counselName(tokenId).toUpperCase();
+  drawTitle(r, name, tx, 22, { k: 1, ramp: TITLE_RAMP, shadow: A.violetDk, depth: 1, outline: A.black });
+  let y = 36;
+  const maxChars = Math.floor((W - tx - 8) / 4); // 3×5 face advances 4px per glyph
+  const wrap = (s: string): string[] => {
+    const out: string[] = [];
+    let line = "";
+    for (const part of s.split(" · ")) {
+      const next = line ? `${line} · ${part}` : part;
+      if (next.length > maxChars && line) { out.push(line); line = part; } else line = next;
+    }
+    if (line) out.push(line);
+    return out.map((l) => l.slice(0, maxChars));
+  };
+  if (o.status) for (const l of wrap(o.status.toUpperCase()).slice(0, 2)) { drawText(r, l, tx, y, A.lime, 1); y += 8; }
+  y += 2;
+  const t = traitsOf(tokenId);
+  const facts = o.facts ?? [`${t.practice} · ${chambersName(tokenId)}`, `${t.headwear} · ${t.eyes} · ${t.attire}`, `${t.neckwear} · holds ${t.held} · ${t.backdrop}`];
+  for (const f of facts.slice(0, 4)) { if (y > 70) break; drawText(r, f.toUpperCase().slice(0, maxChars), tx, y, A.parchment, 1); y += 8; }
+  // bottom: wordmark, url in the 7px face (the 3×5 face has no readable N), tagline
+  title(r, tx + 46, 80, 1, TITLE_RAMP);
+  const url = (o.url ?? `comd.fun/agents/${tokenId}`).toUpperCase();
+  if (text7Width(url, 1) <= W - tx - 2) drawText7(r, url, tx, 94, A.cyan, 1);
+  else { drawText7(r, "COMD.FUN", tx, 94, A.cyan, 1); drawText(r, url.replace(/^COMD\.FUN/, ""), tx + text7Width("COMD.FUN", 1) + 2, 96, A.cyan, 1); }
+  drawText(r, "NFT-IDENTIFIED SWARM / ROBINHOOD CHAIN", tx, 105, A.parchLo, 1);
+  // rainbow rail
+  const RAIL = [A.gold, A.orange, A.crimson, A.pink, A.violet, A.cyan, A.lime];
+  for (let x = 0; x < W; x += 6) r.rect(x, H - 2, 6, 2, RAIL[(x / 6) % RAIL.length]);
+  return { r, unit: 5 };
+}

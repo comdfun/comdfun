@@ -1,6 +1,7 @@
 // @company/art — Company.md pixel Counsel generator, bar cards, logo, wordmark, icons, ERC-8004 metadata.
 // Import "@company/art/svg" in browsers (no node:zlib); this entry adds PNG output.
 import { encodePNG } from "./png.js";
+import { shareCard } from "./brandkit.js";
 import { composeCounsel, composeCard } from "./svg.js";
 import { assertTokenId } from "./traits.js";
 
@@ -17,4 +18,11 @@ export function renderCounselPNG(tokenId: number, scale = 10): Buffer {
 export function renderCardPNG(tokenId: number, scale = 8): Buffer {
   assertTokenId(tokenId);
   return encodePNG(composeCard(tokenId), scale);
+}
+
+/** 1200×630 share / Open Graph card for one Counsel (see brandkit.shareCard). */
+export function renderShareCardPNG(tokenId: number, o: { status?: string; facts?: string[]; url?: string } = {}): Buffer {
+  assertTokenId(tokenId);
+  const a = shareCard(tokenId, o);
+  return encodePNG(a.r, a.unit);
 }
