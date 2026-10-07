@@ -11,7 +11,7 @@ import { Typewriter } from "@/components/fx/Typewriter";
 import { CountUp } from "@/components/fx/CountUp";
 import { Pipeline } from "@/components/Pipeline";
 import { FlywheelSection } from "@/components/Flywheel";
-import { getFlywheel } from "@/lib/flywheel";
+import { getFlywheel, toUnits } from "@/lib/flywheel";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +50,9 @@ export default async function Home() {
     { v: h?.oraclesDoneLastDay, k: "Rulings sealed · 24h", ico: "seal", f: "int" as const },
     { v: swarm?.counts.jobs, k: "Matters filed", ico: "document", f: "int" as const },
     { v: swarm?.counts.launchesLive, k: "Incorporations live", ico: "briefcase", f: "int" as const },
+    // live from the chain: every $COMD paid out to Counsel (RevenueRouter) and every $COMD sent to the dead address
+    { v: fly.revenueRouter ? Math.round(toUnits(fly.revenueRouter.totalToRewards)) : null, k: "$COMD paid to Counsel", ico: "coin", f: "compact" as const },
+    { v: fly.burns?.tracked ? Math.round(toUnits(fly.burns.burned)) : null, k: `$COMD burned${fly.burns?.burnedPct ? ` · ${fly.burns.burnedPct}%` : ""}`, ico: "token", f: "compact" as const },
   ];
   const js = swarm?.counts.jobStates ?? {};
   return (

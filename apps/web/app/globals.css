@@ -509,6 +509,8 @@ a.folder:hover { transform: translate(-3px, -3px); box-shadow: 1px 1px 0 var(--c
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
 .stat { --c: var(--sig); position: relative; padding: 14px 16px 12px; background: var(--ink-1); border: 2px solid var(--rule); border-top: 4px solid var(--c); overflow: hidden; }
 .stats > .stat:nth-child(6n+1) { --c: var(--gold); --c-sh: var(--gold-sh); }
+.stats > .stat:nth-child(7) { --c: var(--gold); --c-sh: var(--gold-sh); }
+.stats > .stat:nth-child(8) { --c: var(--crimson); --c-sh: var(--crimson-sh); }
 .stats > .stat:nth-child(6n+2) { --c: var(--cyan); --c-sh: var(--cyan-sh); }
 .stats > .stat:nth-child(6n+3) { --c: var(--pink); --c-sh: var(--pink-sh); }
 .stats > .stat:nth-child(6n+4) { --c: var(--violet); --c-sh: var(--violet-sh); }
