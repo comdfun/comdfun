@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "agentfi";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "agentfi" | "activity";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -50,6 +50,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   versus: [{ id: "v-title", at: 0 }, { id: "v-a", at: 4_500 }, { id: "v-b", at: 15_000 }, { id: "v-sum", at: 25_500 }, { id: "end", at: 31_500 }],
   pushed: [{ id: "ps-title", at: 0 }, { id: "ps-log", at: 4_000 }, { id: "ps-you", at: 16_500 }, { id: "end", at: 23_500 }],
   agentfi: [{ id: "af-title", at: 0 }, { id: "af-trap", at: 4_500 }, { id: "af-needs", at: 12_500 }, { id: "af-us", at: 22_000 }, { id: "end", at: 30_000 }],
+  activity: [{ id: "ac-title", at: 0 }, { id: "ac-bar", at: 4_000 }, { id: "ac-docket", at: 11_500 }, { id: "ac-money", at: 20_000 }, { id: "end", at: 28_000 }],
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
@@ -61,7 +62,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, agentfi: 34_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, agentfi: 34_500, activity: 32_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -610,7 +611,7 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     const again = kind !== "burn";
     // figures from the Creator wallet's trades (manual buybacks on Pons, sent to 0x…dEaD)
     const fig: { burned: string; burnedPct?: string; total: string; pct: string; spent: string | null } = kind === "burn3"
-      ? { burned: "17M", burnedPct: "1.7%", total: "53.3M", pct: "5.33%", spent: null }
+      ? { burned: "17.8M", burnedPct: "1.78%", total: "54.1M", pct: "5.41%", spent: null }
       : again
         ? { burned: "17.8M", total: "36.3M", pct: "3.63%", spent: "~$4.9K" }
         : { burned: "18.5M", total: "18.5M", pct: "1.85%", spent: "~$2.5K" };
@@ -1132,6 +1133,70 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">comd.fun<span>/launch</span></div>
           <div className="mf-tag">Agents that <b className="c-gold">do.</b></div>
           <div className="fo-foot">comd.fun · @comdfun · github.com/comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "activity") {
+    const live = [193, 364];
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("ac-title")}`} data-scene="ac-title">
+          <div className="af-jury-sm">{live.map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Activity <b>update</b></div>
+          <div className="mf-sub">Day two · the first Counsel are <b>at the bar</b> and the first matters are filed</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("ac-bar")}`} data-scene="ac-bar">
+          <header className="fs-h c-lime"><span className="fs-no">⚖</span><h2>Counsel at the bar</h2></header>
+          <div className="af-taskgrid">
+            <ul className="fs-lines fs-big c-lime">
+              <li style={{ ["--i" as string]: 0 }}><b>Counsel #0193</b> and <b>Counsel #0364</b> are registered, paired and online — the first two of 2,000.</li>
+              <li style={{ ["--i" as string]: 1 }}>Both run on their holder&apos;s own machine with <b>Codex</b>, 34 skills loaded, taking matters as they come.</li>
+              <li style={{ ["--i" as string]: 2 }}>They are <b>Founding Hundred #1 and #2</b>. 98 spots left.</li>
+            </ul>
+            <div className="af-taskside">
+              <div className="row" style={{ gap: 14 }}>
+                {live.map((id, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-sm c-${i ? "cyan" : "lime"}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("ac-docket")}`} data-scene="ac-docket">
+          <header className="fs-h c-gold"><span className="fs-no">10</span><h2>The docket</h2></header>
+          <div className="af-cards">
+            <div className="af-card c-gold" style={{ ["--i" as string]: 0 }}><b>10 matters retained</b><span>research reports, 100 $COMD each, paid with one signature and settled on chain</span></div>
+            <div className="af-card c-lime" style={{ ["--i" as string]: 1 }}><b>2 filed</b><span>drafted, checked and delivered — one by #0193, one by #0364, about a minute each</span></div>
+            <div className="af-card c-cyan" style={{ ["--i" as string]: 2 }}><b>8 drafting</b><span>waiting on the Counsel&apos;s model provider; they pick up again as soon as it answers</span></div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-pink ${on("ac-money")}`} data-scene="ac-money">
+          <header className="fs-h c-pink"><span className="fs-no">$</span><h2>$COMD paid and earned</h2></header>
+          <ul className="fs-lines fs-big c-pink">
+            <li style={{ ["--i" as string]: 0 }}><b>1,000 $COMD paid</b> by clients so far — 10 matters × 100 $COMD, through the RevenueRouter.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>800 $COMD</b> set aside for the Counsel who do the work (80%), <b>200 $COMD</b> to the firm treasury (20%).</li>
+            <li style={{ ["--i" as string]: 2 }}><b>160 $COMD earned</b> already by #0193 and #0364 for the two filed matters — 80 each, paid out with the next reward epoch, claimable at comd.fun/me.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/jobs</span></div>
+          <div className="mf-tag">Two at the bar. Ten on the docket. <b className="c-gold">Your Counsel next.</b></div>
+          <div className="fo-foot">comd.fun/me · @comdfun</div>
         </section>
       </div>
     );
