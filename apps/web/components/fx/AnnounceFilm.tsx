@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -45,6 +45,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   burn2: [{ id: "x-title", at: 0 }, { id: "x-what", at: 4_500 }, { id: "x-loop", at: 12_500 }, { id: "end", at: 19_500 }],
   traits: [{ id: "tr-title", at: 0 }, { id: "tr-what", at: 4_500 }, { id: "tr-how", at: 12_500 }, { id: "end", at: 19_500 }],
   trades: [{ id: "td-title", at: 0 }, { id: "td-market", at: 4_500 }, { id: "td-why", at: 12_000 }, { id: "end", at: 19_000 }],
+  fwtrack: [{ id: "fw-title", at: 0 }, { id: "fw-what", at: 4_500 }, { id: "fw-nums", at: 12_000 }, { id: "fw-how", at: 19_000 }, { id: "end", at: 26_000 }],
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
@@ -56,7 +57,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -894,6 +895,56 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">opensea.io<span>/counsel</span></div>
           <div className="mf-tag">35+ trades. <b className="c-gold">Day two.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "fwtrack") {
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("fw-title")}`} data-scene="fw-title">
+          <div className="af-wheel af-wheel-title"><WheelSvg /></div>
+          <div className="af-title af-title-sm">Flywheel <b>updated</b></div>
+          <div className="mf-sub">Now tracking <b>every buyback and burn</b> — straight from the chain</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-crimson ${on("fw-what")}`} data-scene="fw-what">
+          <header className="fs-h c-crimson"><span className="fs-no">🔥</span><h2>What the page shows now</h2></header>
+          <ul className="fs-lines fs-big c-crimson">
+            <li style={{ ["--i" as string]: 0 }}><b>$COMD burned</b> — every transfer to 0x…dEaD, by anyone, with the share of supply it took out.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>$COMD bought back</b> — what the firm bought on the market with the tax ETH.</li>
+            <li style={{ ["--i" as string]: 2 }}>A <b>table of every burn</b>: when, how much, and the transaction — one click to verify.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("fw-nums")}`} data-scene="fw-nums">
+          <header className="fs-h c-gold"><span className="fs-no">Σ</span><h2>The numbers so far</h2></header>
+          <div className="af-cards">
+            <div className="af-card c-crimson" style={{ ["--i" as string]: 0 }}><b>36.3M $COMD burned</b><span>3.63% of the supply, gone for good · two burns: 18.5M and 17.8M</span></div>
+            <div className="af-card c-gold" style={{ ["--i" as string]: 1 }}><b>~$7.4K of buybacks</b><span>bought on the market with tax ETH, timed by the firm</span></div>
+            <div className="af-card c-lime" style={{ ["--i" as string]: 2 }}><b>Day two</b><span>the loop has turned twice; floor sweeps are next</span></div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("fw-how")}`} data-scene="fw-how">
+          <header className="fs-h c-cyan"><span className="fs-no">⛓</span><h2>Read, not typed</h2></header>
+          <ul className="fs-lines fs-big c-cyan">
+            <li style={{ ["--i" as string]: 0 }}>The page reads the <b>token&apos;s own transfer logs</b> — nothing is entered by hand, nothing can be inflated.</li>
+            <li style={{ ["--i" as string]: 1 }}>Until the Pons graduation the firm buys back by hand; after it, the <b>Flywheel contract</b> does — and both show up in the same table.</li>
+            <li style={{ ["--i" as string]: 2 }}>Open <b>comd.fun/flywheel</b> any time. Every number has a transaction behind it.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/flywheel</span></div>
+          <div className="mf-tag">Every burn. <b className="c-gold">On the record.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
