@@ -364,3 +364,20 @@
 .af-vs-b b { color: var(--gold); font-weight: 500; }
 .af-vs-a b { color: var(--parch); font-weight: 500; }
 .af-reg .af-task.on .af-vs-row > div { animation: fs-in 0.45s steps(8, end) calc(0.5s + var(--i) * 1.6s) both; }
+
+/* "pushed" — a terminal window with git log */
+.af-git { width: 100%; max-width: 1560px; background: #000; border: 4px solid var(--rule-2); box-shadow: 14px 14px 0 #000; opacity: 0; }
+.af-reg .af-task.on .af-git { animation: fs-in 0.45s steps(8, end) 0.1s both; }
+.af-git-bar { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #0d0b16; border-bottom: 3px solid var(--rule-2); font-family: var(--font-px); font-size: 16px; letter-spacing: 0.06em; color: var(--muted); }
+.af-git-bar i { width: 14px; height: 14px; border-radius: 50%; background: var(--crimson); display: inline-block; }
+.af-git-bar i:nth-child(2) { background: var(--gold); } .af-git-bar i:nth-child(3) { background: var(--lime); margin-right: 10px; }
+.af-git-body { padding: 26px 30px 30px; display: grid; gap: 16px; font-family: var(--font-mono); font-size: 28px; line-height: 1.4; color: var(--parch); }
+.af-git-cmd { color: var(--muted); opacity: 0; }
+.af-git-line { display: grid; grid-template-columns: 150px minmax(0, 1fr) 40px; gap: 18px; align-items: baseline; opacity: 0; }
+.af-git-hash { color: var(--gold); }
+.af-git-msg b { color: var(--lime); font-weight: 500; }
+.af-git-ok { color: var(--lime); text-align: right; }
+.af-git-tail { color: var(--lime); }
+.af-git-cursor { display: inline-block; width: 16px; height: 30px; background: var(--lime); margin-left: 8px; vertical-align: -4px; animation: af-blink 0.9s steps(1, end) infinite; }
+@keyframes af-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.af-reg .af-task.on .af-git-cmd, .af-reg .af-task.on .af-git-line { animation: fs-in 0.3s steps(6, end) calc(0.6s + var(--i) * 1.5s) both; }
