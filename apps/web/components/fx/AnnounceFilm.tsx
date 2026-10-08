@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  hack: [
+    { id: "h-title", at: 0 }, { id: "h-prize", at: 5_000 }, { id: "h-rules", at: 14_500 }, { id: "h-judge", at: 25_000 }, { id: "end", at: 32_500 },
+  ],
   upgrade: [
     { id: "u-title", at: 0 }, { id: "u-intake", at: 4_500 }, { id: "u-ledger", at: 12_000 }, { id: "u-lease", at: 19_500 }, { id: "u-watch", at: 27_000 }, { id: "end", at: 34_000 },
   ],
@@ -80,7 +83,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -924,6 +927,70 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "hack") {
+    const ladder: [string, string, string][] = [
+      ["1st", "$1,500", "+ one Counsel NFT"],
+      ["2nd", "$1,000", ""],
+      ["3rd", "$750", ""],
+      ["4th / 5th", "$500", "each"],
+      ["6th – 10th", "$150", "each"],
+    ];
+    return (
+      <div className="film mf af-reg af-tasks af-contest af-hack" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("h-title")}`} data-scene="h-title">
+          <div className="af-jury-sm">{portraits.slice(0, 6).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" className={`af-hero af-hero-card af-hero-row c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">COMD <b>Hackathon</b></div>
+          <div className="mf-sub">Organised and funded by the community · <b>judged by the Counsel</b></div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("h-prize")}`} data-scene="h-prize">
+          <header className="fs-h c-gold"><span className="fs-no">$</span><h2>$5,000 in rewards to winners</h2></header>
+          <div className="af-prize">
+            <div className="af-prize-fig"><b>$5,000</b><span>worth of $COMD</span></div>
+            <ol className="af-ladder">
+              {ladder.map(([place, amt, note], i) => (
+                <li key={place} style={{ ["--i" as string]: i }}><span className="al-p">{place}</span><b className="al-a">{amt}</b><span className="al-n">{note}</span></li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("h-rules")}`} data-scene="h-rules">
+          <header className="fs-h c-cyan"><span className="fs-no">→</span><h2>To qualify</h2></header>
+          <ol className="fs-steps c-cyan">
+            <li style={{ ["--i" as string]: 0 }}><i>1</i><b>Build it through the firm</b><span>retain Company.md at comd.fun/launch during the build period — at least one matter from your project on the record</span></li>
+            <li style={{ ["--i" as string]: 1 }}><i>2</i><b>Build something meaningful</b><span>a custom contract, a hook, an agent, a tool — anything beyond a plain token. Your project does not need a token to win</span></li>
+            <li style={{ ["--i" as string]: 2 }}><i>3</i><b>Give it its own X account</b><span>one dedicated account for the project, not your personal one</span></li>
+            <li style={{ ["--i" as string]: 3 }}><i>4</i><b>Submit before the deadline</b><span>reply to the pinned post on @comdfun with your repo, the project&apos;s X account and your matter ids</span></li>
+          </ol>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("h-judge")}`} data-scene="h-judge">
+          <header className="fs-h c-lime"><span className="fs-no">⚖</span><h2>Judged by the Counsel</h2></header>
+          <ul className="fs-lines fs-big c-lime">
+            <li style={{ ["--i" as string]: 0 }}>A panel of Counsel reads <b>every submission</b>, cross-examines the work, and the ruling is <b>published on the record</b> — not decided in a DM.</li>
+            <li style={{ ["--i" as string]: 1 }}><b>Built, not promised.</b> Working beats ambitious; a small thing that runs beats a large thing that does not.</li>
+            <li style={{ ["--i" as string]: 2 }}>Builds open <b>now</b>. Submissions close <b>22 October, 23:59 UTC</b>. Winners announced on <b>@comdfun</b>.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">comd.fun<span>/launch</span></div>
+          <div className="mf-tag">Two weeks. <b className="c-gold">$5,000 in $COMD.</b> Judged on the record.</div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>
