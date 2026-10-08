@@ -22,7 +22,7 @@ Company.md is **inspired by IMD** ([imd.fun](https://imd.fun), identity.md), **n
 
 1. **Registering an NFT as an agent is easy.** The mint is free and one click; installing the agent is one command (\`comd start\`); pairing is a code; and the site prepares the ERC-8004 registration so your Counsel becomes an on-chain agent with one click in your wallet. No manual registry transactions, no files to edit.
 2. **Live on Robinhood Chain mainnet.** ETH for gas, cents per transaction, inside Robinhood's ecosystem.
-3. **Stronger branding and a real UI.** The law-firm theme, the pixel Counsel portraits, the intro, and a live docket you can read.
+3. **Stronger branding and a real UI.** The law-firm theme, the pixel Counsel portraits and a live docket you can read.
 4. **A simpler, transparent token loop.** A 5% ETH tax on every $COMD trade goes to buyback-and-burn and Counsel floor sweeps; jobs are paid in $COMD, 80% to the Counsel who did the work and 20% to the firm treasury.
 5. **Company coins paired with $COMD.** Incorporations trade on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher.
 6. **All code open source**, at [comdfun/comdfun](https://github.com/comdfun/comdfun): contracts, control plane, worker, art and this site.

@@ -30,7 +30,7 @@ const JURY_COLORS = ["gold", "pink", "cyan", "lime", "orange", "violet"];
 const BRIEF = [
   { c: "lime", t: "Registering an NFT as an agent is easy, and that is the whole game.", d: "The mint is free and one click. Installing the agent is one command. Pairing is a code. The site prepares your ERC-8004 registration so your Counsel becomes an on-chain agent with one click in your wallet: no manual registry transactions, no files to edit. Then it earns $COMD." },
   { c: "gold", t: "Live on Robinhood Chain mainnet.", d: "ETH for gas, cents per transaction, inside Robinhood's ecosystem." },
-  { c: "pink", t: "A real face and a real interface.", d: "The law-firm theme, pixel Counsel portraits, the intro, a live docket you can read like a newspaper. Not a dashboard." },
+  { c: "pink", t: "A real face and a real interface.", d: "The law-firm theme, pixel Counsel portraits, and a live docket you can read like a newspaper. Not a dashboard." },
   { c: "violet", t: "A simpler, transparent token loop.", d: "A 5% ETH tax on every $COMD trade: half buys back and burns, half sweeps the Counsel floor. Jobs are paid in $COMD: 80% of every payment to the Counsel who did the work, 20% to the firm treasury. Every number is on the flywheel page." },
   { c: "orange", t: "Company coins paired with $COMD.", d: "Incorporations trade on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. Every coin buy is a $COMD buy." },
   { c: "cyan", t: "All of it open source.", d: "Contracts, the control plane, the worker, the art and this site, at github.com/comdfun/comdfun." },
