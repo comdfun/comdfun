@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  soon: [
+    { id: "s-title", at: 0 }, { id: "s-1", at: 5_500 }, { id: "s-2", at: 12_500 }, { id: "s-3", at: 19_500 }, { id: "s-4", at: 26_500 }, { id: "end", at: 33_500 },
+  ],
   hack: [
     { id: "h-title", at: 0 }, { id: "h-prize", at: 5_000 }, { id: "h-rules", at: 14_500 }, { id: "h-judge", at: 25_000 }, { id: "end", at: 32_500 },
   ],
@@ -83,7 +86,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -928,6 +931,71 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "soon") {
+    const items: { id: string; color: string; no: string; head: React.ReactNode; body: React.ReactNode; facts: React.ReactNode[]; who: number }[] = [
+      {
+        id: "s-1", color: "gold", no: "01", who: 0,
+        head: <>The <b>hackathon</b> opens</>,
+        body: <>Organised and funded by the community, judged by a panel of Counsel. <b>$5,000 in $COMD</b> across ten places, first place also takes a Counsel NFT. Build it through the firm and your entry is on the record.</>,
+        facts: [<>$5,000 in <b>$COMD</b></>, <><b>10</b> places</>, <>closes <b>22 Oct</b></>],
+      },
+      {
+        id: "s-2", color: "cyan", no: "02", who: 1,
+        head: <>A board for <b>every entry</b></>,
+        body: <>A page at <b>comd.fun/hackathon</b> with the rules, the prize ladder and a live list of submitted projects — each one linked to the matters it filed, so the judging can be checked by anyone.</>,
+        facts: [<><b>comd.fun</b>/hackathon</>, <>entries <b>on the record</b></>],
+      },
+      {
+        id: "s-3", color: "lime", no: "03", who: 2,
+        head: <>A <b>token-gated</b> room</>,
+        body: <>One Telegram for holders, verified by wallet rather than by hand. Hold a <b>Counsel</b> or hold <b>$COMD</b> and you are in; sell and the room lets you go. No approvals, no lists.</>,
+        facts: [<>Telegram</>, <>wallet <b>verified</b></>, <>Counsel <b>or</b> $COMD</>],
+      },
+      {
+        id: "s-4", color: "violet", no: "04", who: 3,
+        head: <>The firm <b>retains itself</b></>,
+        body: <>The <b>20% treasury</b> starts filing its own matters on the docket. The firm becomes its own client, and everything it builds with its own money ships <b>in the open</b>, on the same record as everyone else’s work.</>,
+        facts: [<><b>20%</b> treasury</>, <>its own <b>client</b></>, <>public <b>record</b></>],
+      },
+    ];
+    return (
+      <div className="film film2" data-scene={scene}>
+        <div className="v2-grid" aria-hidden="true" />
+        <div className="v2-rail" aria-hidden="true"><div className="v2-fill" /></div>
+
+        <section className={`v2-s v2-title ${on("s-title")}`} data-scene="s-title">
+          <div className="v2-eyebrow">Company.md · $COMD · Robinhood Chain</div>
+          <h1>Coming up <b>this week</b></h1>
+          <p className="v2-strap">Four things the firm is shipping in the next seven days.</p>
+          <div className="v2-wall">{portraits.slice(14, 20).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+        </section>
+
+        {items.map((it) => (
+          <section key={it.id} className={`v2-s v2-item c-${it.color} ${on(it.id)}`} data-scene={it.id}>
+            <div className="v2-copy">
+              <div className="v2-no"><s /><i>{it.no}</i><span>This week</span></div>
+              <h2>{it.head}</h2>
+              <p className="v2-body">{it.body}</p>
+              <ul className="v2-facts">{it.facts.map((f, i) => <li key={i} style={{ ["--i" as string]: i }}>{f}</li>)}</ul>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/art/${portraits[it.who]}-card.svg`} alt="" className="v2-card" />
+          </section>
+        ))}
+
+        <section className={`v2-s v2-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="v2-word">Company<span>.md</span></div>
+          <div className="v2-tag">Four things, seven days, <b>all of it on the record.</b></div>
+          <div className="v2-foot">comd.fun · @comdfun</div>
         </section>
       </div>
     );

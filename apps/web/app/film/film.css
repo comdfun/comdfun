@@ -506,3 +506,67 @@
 .af-ladder .al-a { font-size: 40px; }
 .af-hack .af-prize-fig b { font-size: 58px; }
 .af-hack .af-prize-fig { padding: 38px 40px 32px; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   .film2 — the quiet style. The site stopped being pixel in the overhaul; this
+   is the film to match it: IBM Plex Sans, 1px rules, 8px radii, no offset
+   shadows, no steps() motion. The Counsel art is the one thing that stays
+   pixel, because that is the token's own picture.
+   ───────────────────────────────────────────────────────────────────────────── */
+.film.film2, .film.film2 * { --font-display: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif; --font-px: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif; --font-num: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace; }
+.film.film2 { background: #050409; font-family: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.film.film2 *, .film.film2 *::before, .film.film2 *::after { box-shadow: none; text-shadow: none; }
+
+/* a faint grid instead of drifting stars */
+.v2-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(243,235,211,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(243,235,211,.035) 1px, transparent 1px); background-size: 120px 120px, 120px 120px; }
+.v2-grid::after { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 70% at 30% 40%, transparent 0%, rgba(5,4,9,.85) 100%); }
+
+/* the progress rail: one hairline at the top, a gold segment that advances */
+.v2-rail { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(243,235,211,.1); }
+.v2-fill { position: absolute; left: 0; top: 0; height: 100%; width: 6%; background: var(--gold); transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
+.film2[data-scene="s-1"] .v2-fill { width: 24%; }
+.film2[data-scene="s-2"] .v2-fill { width: 44%; }
+.film2[data-scene="s-3"] .v2-fill { width: 64%; }
+.film2[data-scene="s-4"] .v2-fill { width: 84%; }
+.film2[data-scene="end"] .v2-fill { width: 100%; }
+
+/* scenes */
+.v2-s { position: absolute; inset: 0; display: none; align-content: center; justify-items: start; gap: 30px; padding: 110px 150px; }
+.v2-s.on { display: grid; animation: v2-in 0.7s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes v2-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes v2-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* title card */
+.v2-title { justify-items: center; text-align: center; align-content: center; gap: 26px; }
+.v2-eyebrow { font-family: var(--font-mono), monospace; font-size: 19px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) 0.1s both; }
+.v2-title h1 { margin: 0; font-size: 104px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; color: var(--parch); opacity: 0; animation: v2-up 0.8s cubic-bezier(.2,.7,.2,1) 0.25s both; }
+.v2-title h1 b { font-weight: 600; color: var(--gold); }
+.v2-strap { margin: 0; max-width: 1000px; font-size: 27px; line-height: 1.45; color: #b8b1a2; opacity: 0; animation: v2-up 0.8s cubic-bezier(.2,.7,.2,1) 0.45s both; }
+.v2-wall { display: flex; gap: 18px; margin-top: 14px; }
+.v2-wall img { width: 136px; height: 170px; border: 1px solid rgba(243,235,211,.18); border-radius: 8px; background: #07060a; image-rendering: pixelated; opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) calc(0.6s + var(--i) * 0.1s) both; }
+
+/* item scenes */
+.v2-item { grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto; align-content: center; align-items: center; gap: 80px; }
+.v2-copy { display: grid; gap: 24px; justify-items: start; max-width: 1150px; }
+.v2-no { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono), monospace; font-size: 18px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); opacity: 0; animation: v2-up 0.6s cubic-bezier(.2,.7,.2,1) 0.1s both; }
+.v2-no i { font-style: normal; color: var(--c); }
+.v2-no s { text-decoration: none; display: block; width: 46px; height: 1px; background: var(--c); }
+.v2-item h2 { margin: 0; font-size: 68px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.06; color: var(--parch); opacity: 0; animation: v2-up 0.75s cubic-bezier(.2,.7,.2,1) 0.22s both; }
+.v2-item h2 b { font-weight: 600; color: var(--c); }
+.v2-body { margin: 0; font-size: 28px; line-height: 1.5; color: #b8b1a2; opacity: 0; animation: v2-up 0.75s cubic-bezier(.2,.7,.2,1) 0.42s both; }
+.v2-body b { color: var(--parch); font-weight: 500; }
+.v2-facts { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.v2-facts li { font-family: var(--font-mono), monospace; font-size: 18px; color: #cfc8b6; border: 1px solid rgba(243,235,211,.18); border-radius: 999px; padding: 9px 16px; opacity: 0; animation: v2-up 0.6s cubic-bezier(.2,.7,.2,1) calc(0.62s + var(--i) * 0.12s) both; }
+.v2-facts li b { color: var(--c); font-weight: 600; }
+.v2-card { width: 100%; border: 1px solid rgba(243,235,211,.18); border-radius: 10px; background: #07060a; image-rendering: pixelated; opacity: 0; animation: v2-up 0.8s cubic-bezier(.2,.7,.2,1) 0.3s both; }
+
+/* closing card */
+.v2-end { justify-items: center; text-align: center; gap: 22px; }
+.v2-end .ft-logo { width: 120px; height: 120px; color: var(--gold); opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) 0.1s both; }
+.v2-end .ft-logo svg { width: 100%; height: 100%; display: block; }
+.v2-word { font-size: 74px; font-weight: 600; letter-spacing: -0.035em; color: var(--parch); opacity: 0; animation: v2-up 0.75s cubic-bezier(.2,.7,.2,1) 0.25s both; }
+.v2-word span { color: var(--gold); }
+.v2-tag { font-size: 29px; color: #b8b1a2; opacity: 0; animation: v2-up 0.75s cubic-bezier(.2,.7,.2,1) 0.45s both; }
+.v2-tag b { color: var(--gold); font-weight: 600; }
+.v2-foot { font-family: var(--font-mono), monospace; font-size: 20px; letter-spacing: 0.14em; color: var(--muted); margin-top: 10px; opacity: 0; animation: v2-up 0.75s cubic-bezier(.2,.7,.2,1) 0.62s both; }
+@media (max-width: 1500px) { .v2-item { grid-template-columns: minmax(0, 1fr) 240px; gap: 50px; } .v2-item h2 { font-size: 58px; } }
