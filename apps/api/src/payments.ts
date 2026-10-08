@@ -15,7 +15,9 @@ export interface Settler {
   readonly mode: "mock" | "chain";
   readonly spender: Address;
   settle(p: PaymentPayload, amount: bigint, payTo: Address): Promise<SettleOutcome>;
-  gasWallet(): Promise<{ address: Address; balanceEth: string; low: boolean }>;
+  /** `low` is only ever true when the balance was actually read. An unreadable balance is `unknown`, not low:
+   *  reporting an RPC outage as "the gas wallet is empty" sent us looking in the wrong place for two days. */
+  gasWallet(): Promise<{ address: Address; balanceEth: string; low: boolean; unknown: boolean; error?: string }>;
 }
 
 /** Permit2 signature must recover to `from` over PermitWitnessTransferFrom{permitted, spender, nonce, deadline, witness}. */
@@ -47,7 +49,7 @@ export class MockSettler implements Settler {
     this.settled.push({ from: getAddress(a.from), amount, payTo, txHash });
     return { ok: true, txHash, blockNumber: 1 };
   }
-  async gasWallet() { return { address: this.spender, balanceEth: "0", low: false }; }
+  async gasWallet() { return { address: this.spender, balanceEth: "0", low: false, unknown: false }; }
 }
 
 export class ChainSettler implements Settler {
@@ -91,9 +93,10 @@ export class ChainSettler implements Settler {
   async gasWallet() {
     try {
       const wei = await this.reader.ethBalance(this.spender);
-      return { address: this.spender, balanceEth: formatEther(wei), low: wei < 5n * 10n ** 15n };
-    } catch {
-      return { address: this.spender, balanceEth: "unknown", low: true };
+      return { address: this.spender, balanceEth: formatEther(wei), low: wei < 5n * 10n ** 15n, unknown: false };
+    } catch (e) {
+      // The balance could not be read — almost always no working RPC. Say that, rather than claiming it is low.
+      return { address: this.spender, balanceEth: "unknown", low: false, unknown: true, error: (e as Error).message.slice(0, 200) };
     }
   }
 }

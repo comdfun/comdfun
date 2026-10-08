@@ -870,12 +870,18 @@ export async function health(app: App) {
   const degraded: string[] = [];
   const dbOk = await app.store.healthy().catch(() => false);
   if (!dbOk) degraded.push("database");
-  let chain: { configured: boolean; ok: boolean; blockNumber: number | null; chainId: number } = { configured: app.chain.configured, ok: false, blockNumber: null, chainId: app.cfg.chainId };
+  // `degraded: ["chain"]` on its own told us nothing for two days while every RPC endpoint was refusing us. Carry the
+  // reason: a 403 is a bot wall (the public endpoint), a 429 is a metered endpoint out of credit, a timeout is neither.
+  let chain: { configured: boolean; ok: boolean; blockNumber: number | null; chainId: number; error?: string } = { configured: app.chain.configured, ok: false, blockNumber: null, chainId: app.cfg.chainId };
   if (app.chain.configured) {
     try {
       const n = await Promise.race([app.chain.blockNumber(), new Promise<number>((_, rej) => setTimeout(() => rej(new Error("timeout")), 3000).unref())]);
       chain = { ...chain, ok: true, blockNumber: n };
-    } catch { degraded.push("chain"); }
+    } catch (e) {
+      const m = (e as Error).message;
+      chain = { ...chain, error: m.slice(0, 300) };
+      degraded.push(/\b403\b|forbidden/i.test(m) ? "chain_rpc_forbidden" : /\b429\b|rate limit|too many/i.test(m) ? "chain_rpc_rate_limited" : "chain");
+    }
   } else degraded.push("chain_not_configured");
   if (!app.paymentsEnabled) degraded.push("payments_disabled");
   if (app.settler.mode === "mock") degraded.push("payments_mock");
@@ -893,6 +899,8 @@ export async function health(app: App) {
   const now = app.now();
   const st = app.services.status();
   const gas = await app.settler.gasWallet().catch(() => null);
+  if (gas?.unknown) degraded.push("gas_balance_unreadable");
+  else if (gas?.low) degraded.push("settler_low_gas");
   const pendingByChain: Record<string, number> = {};
   for (const l of app.store.c<LaunchRecord>("launches").filter((x) => x.status === "deploying" || x.status === "attesting")) pendingByChain[l.chainId] = (pendingByChain[l.chainId] ?? 0) + 1;
   return {
