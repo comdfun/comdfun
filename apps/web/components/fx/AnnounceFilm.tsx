@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  burn10: [
+    { id: "n-title", at: 0 }, { id: "n-fig", at: 5_000 }, { id: "n-loop", at: 13_500 }, { id: "end", at: 22_500 },
+  ],
   soon: [
     { id: "s-title", at: 0 }, { id: "s-1", at: 5_500 }, { id: "s-2", at: 12_500 }, { id: "s-3", at: 19_500 }, { id: "s-4", at: 26_500 }, { id: "end", at: 33_500 },
   ],
@@ -86,7 +89,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -931,6 +934,74 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "burn10") {
+    const fig = { burned: "10M", burnedPct: "1%", total: "113M", pct: "11.3%" };
+    const stats: [string, string, string, string][] = [
+      [fig.burned, "$COMD", "This buyback", "gold"],
+      [fig.total, "$COMD", "Burned in all", "gold"],
+      [fig.pct, "", "Of total supply", "gold"],
+    ];
+    return (
+      <div className="film film2" data-scene={scene}>
+        <div className="v2-grid" aria-hidden="true" />
+        <div className="v2-rail" aria-hidden="true"><div className="v2-fill" /></div>
+
+        <section className={`v2-s v2-title ${on("n-title")}`} data-scene="n-title">
+          <div className="v2-eyebrow">Buyback &amp; burn · $COMD · Robinhood Chain</div>
+          <h1>Another <b>1%</b> bought back and burnt</h1>
+          <p className="v2-strap">Ten million $COMD bought on the open market and sent to the dead address. <b style={{ color: "var(--parch)", fontWeight: 500 }}>11.3% of the supply is now gone for good.</b></p>
+          <div className="v2-wall">{portraits.slice(20, 26).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-gold ${on("n-fig")}`} data-scene="n-fig">
+          <div className="v2-no"><s /><i>On the record</i><span>every burn is a transaction</span></div>
+          <div className="v2-stats">
+            {stats.map(([n, unit, label], i) => (
+              <div key={label} className="v2-stat" style={{ ["--i" as string]: i }}>
+                <b>{n}{unit && <em>{unit}</em>}</b>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="v2-barwrap">
+            <div className="v2-bar"><i style={{ ["--pct" as string]: fig.pct }} /></div>
+            <div className="v2-barcap"><span>0%</span><span><b>{fig.pct}</b> of supply burned</span><span>100%</span></div>
+          </div>
+          <div className="v2-note">Counted from the token&apos;s own transfer logs to 0x…dEaD · comd.fun/flywheel</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-gold ${on("n-loop")}`} data-scene="n-loop">
+          <div className="v2-no"><s /><i>The loop</i><span>why this keeps happening</span></div>
+          <div className="v2-flow">
+            <div className="v2-step c-cyan" style={{ ["--i" as string]: 0 }}>
+              <em>01</em><b>Every trade pays in</b>
+              <span><b>2.5% of volume</b> goes to the Flywheel, and Pons adds its own <b>1%</b> on top. Nobody has to opt in.</span>
+            </div>
+            <div className="v2-step c-lime" style={{ ["--i" as string]: 1 }}>
+              <em>02</em><b>Half of it buys $COMD back</b>
+              <span>Bought on the <b>open market</b>, like anyone else. The buybacks are manual, timed by the owner — not a bot on a schedule.</span>
+            </div>
+            <div className="v2-step c-gold" style={{ ["--i" as string]: 2 }}>
+              <em>03</em><b>Burnt to the dead address</b>
+              <span>Sent to <b>0x…dEaD</b>, where it cannot come back. The <b>20% treasury</b> is kept, not burned — it pays for the work.</span>
+            </div>
+          </div>
+          <div className="v2-note">The other half is swept to the Counsel who did the work · comd.fun/flywheel</div>
+        </section>
+
+        <section className={`v2-s v2-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="v2-word">Company<span>.md</span></div>
+          <div className="v2-tag"><b>{fig.pct} of the supply</b> bought back and burnt.</div>
+          <div className="v2-foot">comd.fun/flywheel · @comdfun</div>
         </section>
       </div>
     );
