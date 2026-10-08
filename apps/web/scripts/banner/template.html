@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Company.md banner</title>
+
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: #000; }
+  body { font-family: "IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .b { position: relative; overflow: hidden; background: #000; }
+  /* the wall of Counsel, slightly tilted, as the backdrop */
+  .grid { position: absolute; inset: -24%; display: grid; gap: var(--gap); transform: rotate(-4deg) scale(1.1); }
+  .grid img { width: 100%; height: 100%; display: block; image-rendering: pixelated; filter: saturate(1.05) brightness(1.05); }
+  .cell { position: relative; overflow: hidden; background: #07060a; border-radius: 3px; }
+  /* veil: dark at the text side, the art stays readable at the edges */
+  .veil { position: absolute; inset: 0; }
+  .rail { position: absolute; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ffc83d, #ff4fd8, #2de2e6, #8cff3a, #ff8a1f, #9b5cff); }
+  .copy { position: absolute; display: grid; align-content: center; }
+  .mark { display: flex; align-items: center; gap: var(--mgap); }
+  .mark svg { display: block; }
+  h1 { font-weight: 600; letter-spacing: -0.03em; color: #f3ebd3; line-height: 1; }
+  h1 .md { color: #ffc83d; }
+  .strap { color: #cfc8b6; font-weight: 400; }
+  .meta { display: flex; gap: var(--metagap); align-items: center; color: #9a9488; font-weight: 500; white-space: nowrap; }
+  .meta > span { white-space: nowrap; }
+  .meta b { color: #f3ebd3; font-weight: 600; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; border: 1px solid rgba(243,235,211,.22); border-radius: 999px; color: #f3ebd3; font-weight: 500; }
+  .chip i { display: block; border-radius: 50%; background: #8cff3a; }
+  .url { color: #ffc83d; font-weight: 600; letter-spacing: -0.01em; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const LOGO = `<svg width="W" height="WH" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 14" shape-rendering="crispEdges" fill="#ffc83d"><title>Company.md</title><rect x="8" y="0" width="2" height="1"></rect><rect x="6" y="1" width="2" height="1"></rect><rect x="10" y="1" width="2" height="1"></rect><rect x="4" y="2" width="2" height="1"></rect><rect x="12" y="2" width="2" height="1"></rect><rect x="2" y="3" width="2" height="1"></rect><rect x="14" y="3" width="2" height="1"></rect><rect x="0" y="4" width="18" height="1"></rect><rect x="1" y="6" width="2" height="1"></rect><rect x="5" y="6" width="2" height="1"></rect><rect x="9" y="6" width="2" height="1"></rect><rect x="13" y="6" width="2" height="1"></rect><rect x="1" y="7" width="2" height="1"></rect><rect x="5" y="7" width="2" height="1"></rect><rect x="9" y="7" width="2" height="1"></rect><rect x="13" y="7" width="2" height="1"></rect><rect x="1" y="8" width="2" height="1"></rect><rect x="5" y="8" width="2" height="1"></rect><rect x="9" y="8" width="2" height="1"></rect><rect x="13" y="8" width="2" height="1"></rect><rect x="1" y="9" width="2" height="1"></rect><rect x="5" y="9" width="2" height="1"></rect><rect x="9" y="9" width="2" height="1"></rect><rect x="13" y="9" width="2" height="1"></rect><rect x="1" y="10" width="2" height="1"></rect><rect x="5" y="10" width="2" height="1"></rect><rect x="9" y="10" width="2" height="1"></rect><rect x="13" y="10" width="2" height="1"></rect><rect x="0" y="12" width="18" height="1"></rect><rect x="0" y="13" width="18" height="1"></rect></svg>`;
+
+// a deterministic spread of ids across the collection
+function ids(n, seed) {
+  const out = [];
+  let x = seed;
+  while (out.length < n) {
+    x = (x * 1103515245 + 12345) % 2147483648;
+    const id = 1 + (x % 2000);
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copyW, gap }) {
+  const el = document.createElement("div");
+  el.className = "b";
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  el.style.setProperty("--gap", gap + "px");
+  const list = ids(cols * rows, 7);
+  el.innerHTML = `
+    <div class="grid" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
+      ${list.map((id) => `<div class="cell"><img src="__ART__/${id}.svg" alt=""></div>`).join("")}
+    </div>
+    <div class="veil"></div>
+    <div class="rail" style="${railTop ? "top:0" : "bottom:0"}"></div>
+    <div class="copy"></div>`;
+  const veil = el.querySelector(".veil");
+  if (arguments[0].center) {
+    veil.style.background = "radial-gradient(68% 150% at 50% 42%, rgba(4,3,8,.95) 0%, rgba(4,3,8,.9) 42%, rgba(4,3,8,.5) 72%, rgba(4,3,8,.28) 100%)";
+    const c = el.querySelector(".copy");
+    c.style.left = "0"; c.style.right = "0"; c.style.width = "100%"; c.style.top = "0"; c.style.bottom = "16%";
+    c.style.justifyItems = "center"; c.style.textAlign = "center"; c.style.gap = logo.gap + "px";
+    c.innerHTML = `
+      <div class="mark" style="--mgap:${logo.gap2}px; justify-content:center">
+        ${LOGO.replace(/"W"/, '"' + logo.size + '"').replace(/"WH"/, '"' + Math.round(logo.size * 14 / 18) + '"')}
+        <h1 style="font-size:${title.size}px">Company<span class="md">.md</span></h1>
+      </div>
+      <p class="strap" style="font-size:${strap.size}px; line-height:1.4; max-width:${strap.max}px; margin:0 auto">${strap.text}</p>
+      <div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px; justify-content:center">
+        <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${Math.round(meta.size * 0.5)}px;height:${Math.round(meta.size * 0.5)}px"></i>Live on Robinhood Chain</span>
+        <span><b>2,000</b> Counsel</span>
+        <span>Paid in <b>$COMD</b></span>
+        <span class="url" style="font-size:${meta.size + 1}px">comd.fun</span>
+      </div>`;
+    return el;
+  }
+  veil.style.background = `linear-gradient(90deg, rgba(4,3,8,.94) 0%, rgba(4,3,8,.9) ${copyW - 16}%, rgba(4,3,8,.55) ${copyW + 12}%, rgba(4,3,8,.3) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 45%)`;
+  const copy = el.querySelector(".copy");
+  copy.style.left = pad + "px";
+  copy.style.top = "0";
+  copy.style.bottom = "0";
+  copy.style.width = `calc(${copyW}% - ${pad}px)`;
+  copy.style.gap = logo.gap + "px";
+  copy.innerHTML = `
+    <div class="mark" style="--mgap:${logo.gap2}px">
+      ${LOGO.replace(/"W"/, '"' + logo.size + '"').replace(/"WH"/, '"' + Math.round(logo.size * 14 / 18) + '"')}
+      <h1 style="font-size:${title.size}px">Company<span class="md">.md</span></h1>
+    </div>
+    <p class="strap" style="font-size:${strap.size}px; line-height:1.4; max-width:${strap.max}px">${strap.text}</p>
+    <div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px">
+      <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${Math.round(meta.size * 0.5)}px;height:${Math.round(meta.size * 0.5)}px"></i>Live on Robinhood Chain</span>
+      <span><b>2,000</b> Counsel</span>
+      <span>Paid in <b>$COMD</b></span>
+      <span class="url" style="font-size:${meta.size + 1}px">comd.fun</span>
+    </div>`;
+  return el;
+}
+
+const PRESETS = {
+  og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 64, copyW: 58, railTop: false,
+        logo: { size: 50, gap: 26, gap2: 18 }, title: { size: 76 },
+        strap: { size: 23, max: 540, text: "A firm of NFT-identified agents that work together to perform AI tasks on chain. Retain it, and the record is public." },
+        meta: { size: 15, gap: 18, pad: "6px 12px" } },
+  x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 72, copyW: 56, railTop: false, center: true,
+       logo: { size: 44, gap: 20, gap2: 16 }, title: { size: 64 },
+       strap: { size: 20, max: 760, text: "A firm of NFT-identified agents that work together to perform AI tasks on chain." },
+       meta: { size: 15, gap: 18, pad: "5px 11px" } },
+  opensea: { w: 1400, h: 350, cols: 20, rows: 5, gap: 7, pad: 60, copyW: 54, railTop: false,
+       logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 56 },
+       strap: { size: 18, max: 580, text: "2,000 Counsel. Each NFT is an ERC-8004 agent its holder runs, earning $COMD for accepted work." },
+       meta: { size: 14, gap: 16, pad: "4px 10px" } },
+};
+
+const which = window.__preset || new URLSearchParams(location.search).get("v") || "og";
+const root = document.getElementById("root");
+root.appendChild(banner(PRESETS[which]));
+document.title = "banner-" + which;
+</script>
+</body>
+</html>
