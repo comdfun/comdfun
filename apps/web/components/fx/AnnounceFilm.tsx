@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  upgrade: [
+    { id: "u-title", at: 0 }, { id: "u-intake", at: 4_500 }, { id: "u-ledger", at: 12_000 }, { id: "u-lease", at: 19_500 }, { id: "u-watch", at: 27_000 }, { id: "end", at: 34_000 },
+  ],
   receipt: [{ id: "r-title", at: 0 }, { id: "r-paper", at: 4_500 }, { id: "end", at: 17_500 }],
   working: [
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 10_500 }, { id: "p-2", at: 16_500 }, { id: "p-3", at: 22_500 }, { id: "p-4", at: 28_500 }, { id: "end", at: 34_500 },
@@ -77,7 +80,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -921,6 +924,53 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
+          <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "upgrade") {
+    const Item = ({ id, color, no, title, lines, who }: { id: string; color: string; no: string; title: string; lines: string[]; who: number }) => (
+      <section className={`mf-s af-loop af-task c-${color} ${on(id)}`} data-scene={id}>
+        <header className={`fs-h c-${color}`}><span className="fs-no">{no}</span><h2>{title}</h2></header>
+        <div className="af-taskgrid">
+          <ul className={`fs-lines c-${color}`}>{lines.map((l, i) => <li key={i} style={{ ["--i" as string]: i }} dangerouslySetInnerHTML={{ __html: l }} />)}</ul>
+          <div className="af-taskside">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/art/${portraits[who]}-card.svg`} alt="" className={`af-hero af-hero-card c-${color}`} />
+          </div>
+        </div>
+      </section>
+    );
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("u-title")}`} data-scene="u-title">
+          <div className="af-jury-sm">{portraits.slice(36, 42).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}.svg`} alt="" className={`af-hero af-hero-xs c-${colors[i % 6]}`} style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Back end <b>upgrade</b></div>
+          <div className="mf-sub">Four changes to the machinery behind <b>comd.fun</b></div>
+        </section>
+
+        <Item id="u-intake" color="cyan" no="01" title="An intake screen on every matter" who={10}
+          lines={["Anyone can file work. Some of what arrived was not work at all: instructions dressed up as a matter, written to make a Counsel read its holder's <b>keys and credentials</b> and send them away.", "Every matter is now <b>screened at filing</b> and again before it is handed out. Those are <b>refused at the door</b> — and the ones already on the docket were blocked.", "The screen matches the mechanics, not the topic: ordinary work on keys, auth and secrets still passes."]} />
+        <Item id="u-ledger" color="lime" no="02" title="A burn total that cannot shrink" who={11}
+          lines={["The tracker re-read the chain from a <b>moving starting point</b>, so older burns slid out of view and the running total <b>fell</b> — it was reading 2% against a real 10%+.", "The burns, the buybacks and the scan position are now <b>written down and reloaded</b>. The figure only goes up, and the starting block can be pinned exactly.", "Every line on the flywheel page is still a <b>transaction you can open</b>."]} />
+        <Item id="u-lease" color="gold" no="03" title="One hiccup no longer strands the docket" who={12}
+          lines={["A Counsel that handed a matter back for a <b>runtime reason</b> — a model provider returning 402, a timeout, a restart — used to lose that seat for good.", "Now the seat is <b>set aside for twenty minutes</b> and the matter gets <b>six attempts instead of three</b>. A bad minute at a provider costs minutes, not the day's work.", "A Counsel that <b>refuses</b> a matter is still refused permanently. That part was deliberate."]} />
+        <Item id="u-watch" color="violet" no="04" title="Watched, and in the open" who={13}
+          lines={["The firm checks its own <b>health every ten minutes</b> and pages its team when anything degrades; chain access <b>fails over</b> rather than going dark.", "Contract tests, end-to-end runs through a real chain and unit suites run on <b>every push</b>, and have to be green before anything deploys.", "Each of these four is a <b>public commit</b> you can read, with the reason it was made written next to it."]} />
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
+          <div className="mf-tag">The front of the firm is the part you see. <b className="c-gold">This is the part that has to hold.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
         </section>
       </div>

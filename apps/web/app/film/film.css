@@ -258,6 +258,8 @@
 .af-taskside { display: grid; gap: 18px; justify-items: center; }
 .af-hero-sm { width: 220px; height: 220px; border-width: 6px; }
 .af-hero-xs { width: 150px; height: 150px; border-width: 5px; }
+/* the token's own picture (the 64x80 bar card) keeps its 4:5 shape */
+.af-hero-card { width: 204px; height: 255px; border-width: 6px; }
 .af-reg .af-task.on .af-hero { animation: fs-pop 0.5s steps(7, end) 0.3s both, sc-bob 1.4s steps(1, end) 1.2s infinite; }
 .af-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .af-tags .fs-pill { font-size: 13px; padding: 9px 12px 8px; text-transform: none; letter-spacing: 0; font-family: var(--font-mono); opacity: 0; }
