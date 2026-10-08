@@ -2,6 +2,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { icon } from "@/lib/art";
 import { counselName } from "@/lib/format";
+import { avatarUrl, cardUrl } from "@/lib/links";
 import { MOCK, API_URL } from "@/lib/config";
 import { DocketFeed } from "@/components/DocketFeed";
 import { Svg } from "@/components/Svg";
@@ -78,7 +79,7 @@ export default async function Home() {
             {jury.map((id, i) => (
               <Link key={id} href={`/agents/${id}`} className={`c-${JURY_COLORS[i % 6]}`} title={counselName(id)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/art/${id}.svg`} alt={counselName(id)} width={160} height={160} loading="eager" />
+                <img src={cardUrl(id)} alt={counselName(id)} width={192} height={240} loading="eager" />
                 <span>#{String(id).padStart(4, "0")}</span>
               </Link>
             ))}
@@ -111,7 +112,7 @@ export default async function Home() {
 
       <div className="grid" style={{ gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)", gap: 32 }} data-stack-at="900">
         <Section num="§3" title="Live docket" id="listen" c="pink">
-          <DocketFeed initial={swarm?.events ?? []} avatarBase={MOCK ? "/art/{id}.svg" : `${API_URL}/agents/by-token/{id}.svg`} />
+          <DocketFeed initial={swarm?.events ?? []} avatarBase={MOCK ? "/art/{id}.svg" : `${API_URL}/agents/by-token/{id}.svg?portrait=1`} />
         </Section>
         <div>
           <Section num="§4" title="Counsel at the bar" id="jury" c="gold" right={<Link className="small" href="/agents">All Counsel ›</Link>}>
@@ -121,7 +122,7 @@ export default async function Home() {
                   {row.map((id, i) => (
                     <Link key={id} href={`/agents/${id}`} className={`juror c-${JURY_COLORS[(i + ri * 3) % 6]}`} title={counselName(id)} style={{ ["--dl" as string]: `${((i * 7 + ri * 3) % 10) / 10}s` }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/art/${id}.svg`} alt={counselName(id)} width={76} height={76} loading="lazy" />
+                      <img src={avatarUrl(id)} alt={counselName(id)} width={76} height={76} loading="lazy" />
                       <span className="jn">#{String(id).padStart(4, "0")}</span>
                     </Link>
                   ))}

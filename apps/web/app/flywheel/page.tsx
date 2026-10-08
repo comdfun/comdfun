@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getFlywheel, toUnits, type FlywheelEvent } from "@/lib/flywheel";
 import { addressOf } from "@/lib/contracts";
 import { explorerUrl } from "@/lib/chains";
+import { cardUrl } from "@/lib/links";
 import { ago, fmtNum, short } from "@/lib/format";
 import { PageHead, Section, Badge } from "@/components/ui";
 import { TaxStage, FlywheelStatsGrid } from "@/components/Flywheel";
@@ -159,7 +160,7 @@ export default async function FlywheelPage() {
             {s.sweptTokenIds.map((id) => (
               <Link key={id} href={`/agents/${id}`} className="rv">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/art/${id}.svg`} alt={`Counsel #${id}`} width={112} height={112} loading="lazy" />
+                <img src={cardUrl(id)} alt={`Counsel #${id}`} width={112} height={140} loading="lazy" />
                 <span className="docket" style={{ color: "var(--violet)" }}>#{String(id).padStart(4, "0")}</span>
               </Link>
             ))}

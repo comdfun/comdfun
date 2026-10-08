@@ -5,6 +5,7 @@ import { Svg } from "@/components/Svg";
 import { PageHead } from "@/components/ui";
 import { WheelDiagram } from "@/components/Flywheel";
 import { counselName } from "@/lib/format";
+import { cardUrl } from "@/lib/links";
 import { GITHUB_URL, GITHUB_REPO } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -77,7 +78,7 @@ export default function WhatIsThisPage() {
             <div className="wt-jury" aria-hidden="true">
               {PORTRAITS.map((id, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={id} src={`/art/${id}.svg`} alt={counselName(id)} width={56} height={56} loading="lazy" style={{ ["--dl" as string]: `${(i * 0.17) % 1}s` }} />
+                <img key={id} src={cardUrl(id)} alt={counselName(id)} width={56} height={70} loading="lazy" style={{ ["--dl" as string]: `${(i * 0.17) % 1}s` }} />
               ))}
             </div>
           </div>

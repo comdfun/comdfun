@@ -11,8 +11,8 @@
   .b { position: relative; overflow: hidden; background: #000; }
   /* the wall of Counsel, slightly tilted, as the backdrop */
   .grid { position: absolute; inset: -24%; display: grid; gap: var(--gap); transform: rotate(-4deg) scale(1.1); }
-  .grid img { width: 100%; height: 100%; display: block; image-rendering: pixelated; filter: saturate(1.05) brightness(1.05); }
-  .cell { position: relative; overflow: hidden; background: #07060a; border-radius: 3px; }
+  .grid img { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; filter: saturate(1.05) brightness(1.05); }
+  .cell { position: relative; overflow: hidden; background: #07060a; border-radius: 3px; aspect-ratio: 4 / 5; }
   /* veil: dark at the text side, the art stays readable at the edges */
   .veil { position: absolute; inset: 0; }
   .rail { position: absolute; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ffc83d, #ff4fd8, #2de2e6, #8cff3a, #ff8a1f, #9b5cff); }
@@ -56,7 +56,7 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
   const list = ids(cols * rows, 7);
   el.innerHTML = `
     <div class="grid" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
-      ${list.map((id) => `<div class="cell"><img src="__ART__/${id}.svg" alt=""></div>`).join("")}
+      ${list.map((id) => `<div class="cell"><img src="__ART__/${id}-card.svg" alt=""></div>`).join("")}
     </div>
     <div class="veil"></div>
     <div class="rail" style="${railTop ? "top:0" : "bottom:0"}"></div>

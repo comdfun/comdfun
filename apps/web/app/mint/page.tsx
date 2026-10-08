@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead, Section } from "@/components/ui";
 import { Mint } from "@/components/Mint";
-import { avatarUrl } from "@/lib/links";
+import { cardUrl } from "@/lib/links";
 import { counselName } from "@/lib/format";
 import { CONTACT_EMAIL, MARKETPLACE_URL } from "@/lib/config";
 
@@ -19,7 +19,7 @@ export default function MintPage() {
             {SAMPLE.map((id) => (
               <Link key={id} href={`/agents/${id}`} className="rv">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={avatarUrl(id)} alt={counselName(id)} width={128} height={128} loading="lazy" />
+                <img src={cardUrl(id)} alt={counselName(id)} width={128} height={160} loading="lazy" />
                 <span className="docket">#{String(id).padStart(4, "0")}</span>
               </Link>
             ))}

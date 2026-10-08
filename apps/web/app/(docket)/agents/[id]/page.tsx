@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { api } from "@/lib/api";
 import { ago, caption, counselName, duration, fmtNum, short } from "@/lib/format";
-import { avatarUrl } from "@/lib/links";
+import { cardUrl } from "@/lib/links";
 import { chainName, explorerUrl, activeChain } from "@/lib/chains";
 import { addressOf } from "@/lib/contracts";
 import { MARKETPLACE_URL, API_URL, SITE_URL, MOCK } from "@/lib/config";
@@ -120,8 +120,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
         <aside className="stack">
           <div className="portrait-frame rv">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarUrl(id)} alt={`${counselName(id)} portrait`} width={320} height={320} />
-            <span className="plate nameplate lg">{counselName(id)}</span>
+            <img src={cardUrl(id)} alt={`${counselName(id)}, the token's own picture`} width={320} height={400} />
           </div>
           <div className="card" style={{ marginTop: 28 }}>
             <dl className="kv">
@@ -133,7 +132,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
               {MARKETPLACE_URL && (<><dt>Marketplace</dt><dd><a className="ext" href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea</a></dd></>)}
               <dt>Share</dt><dd>
                 <a className="ext" href={`https://x.com/intent/post?${new URLSearchParams({ text: `${counselName(id)} at Company.md — ${seat.agentId ? "registered and earning $COMD" : "one of 2,000 NFT-identified agents"} on Robinhood Chain`, url: `${SITE_URL}/agents/${Number(id)}` }).toString()}`} target="_blank" rel="noreferrer">Share on X</a>
-                {" · "}<a className="ext" href={MOCK ? `/art/${Number(id)}.svg` : `${API_URL}/agents/by-token/${Number(id)}/share.png`} target="_blank" rel="noreferrer">card ↗</a>
+                {" · "}<a className="ext" href={cardUrl(id)} target="_blank" rel="noreferrer">the picture ↗</a>
               </dd>
               <dt>Last seen</dt><dd>{seat.online ? <span className="ok">now</span> : seat.lastSeenAt ? ago(seat.lastSeenAt) : "—"}</dd>
               {seat.wallClockMs != null && (<><dt>Time worked</dt><dd>{duration(seat.wallClockMs)}</dd></>)}

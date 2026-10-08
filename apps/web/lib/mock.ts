@@ -511,7 +511,7 @@ function seatDetail(tokenId: number) {
   const rows = work
     .map(({ j, n }) => ({ jobId: j.id, nodeKey: n.key, skill: n.skill ?? n.role, state: n.state === "accepted" ? "accepted" : n.state === "rejected" ? "rejected" : n.state === "failed" ? "failed" : n.state === "running" ? "leased" : "submitted", attempt: n.attempt, leasedAt: at(Date.now() - Date.parse(n.updatedAt!) + int(5, 40, rr) * MIN), finishedAt: n.state === "running" ? null : n.updatedAt!, submissionHash: hex(64, rr), failure: n.failureReason ?? null, objective: j.objective.slice(0, 200) }))
     .sort((a, b) => Date.parse(b.leasedAt) - Date.parse(a.leasedAt));
-  const base = { tokenId: String(tokenId), owner: OWNERS[tokenId], image: `/art/${tokenId}.svg`, metadata: `/agents/by-token/${tokenId}.json` };
+  const base = { tokenId: String(tokenId), owner: OWNERS[tokenId], image: `/art/${tokenId}-card.svg`, metadata: `/agents/by-token/${tokenId}.json` };
   if (!s) return { ...base, agentId: null, online: false, lastSeenAt: null, version: null, runtime: null, attempts: 0, accepted: 0, rejected: 0, failed: 0, pending: 0, lastWorkedAt: null, work: [], reviews: [], collaborators: [] };
   return {
     ...base,

@@ -1557,3 +1557,20 @@ html.no-motion .rv { opacity: 1 !important; }
 /* the rate in the middle of the ring */
 .fw-wheel { position: relative; container-type: inline-size; }
 .fw-hub { position: absolute; left: 50%; top: 50%; width: 52%; aspect-ratio: 1; transform: translate(-50%, -50%); display: grid; align-content: center; justify-items: center; text-align: center; }
+
+/* ---- the token's own picture (the 64×80 bar card): 4:5, never squashed ---- */
+.wall a { aspect-ratio: 4 / 5; border: 0; border-radius: 4px; background: #000; }
+.wall a img { object-fit: contain; }
+.wall a:hover { transform: translateY(-3px); }
+.wall a span { display: none; }
+.gallery a .docket { color: var(--muted); }
+.gallery { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.gallery img { aspect-ratio: 4 / 5; object-fit: contain; background: #000; }
+.portrait-frame img { aspect-ratio: 4 / 5; object-fit: contain; }
+.portrait-frame { border: 0; background: none; }
+.wt-jury img, .fw-swept img { aspect-ratio: 4 / 5; object-fit: contain; }
+.fw-swept img { width: 26px; height: auto; }
+/* the folder/dossier tab is a static pill: as a grid item it must not stretch */
+.folder::before, .dossier[data-tab]::before { justify-self: start; align-self: start; width: fit-content; }
+/* the NFT card carries its own number, so the caption under it is redundant */
+.gallery a .docket { display: none; }

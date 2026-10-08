@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import type { FlywheelStats } from "@/lib/flywheel";
 import { toUnits, taxCollectedWei, burnedWei } from "@/lib/flywheel";
 import { CountUp } from "./fx/CountUp";
+import { avatarUrl } from "@/lib/links";
 
 type Px = [number, number, string];
 const C = { gold: "#ffc83d", goldHi: "#ffe598", goldDk: "#b07a00", goldSh: "#4f3600", crim: "#ff3b5c", crimDk: "#b0123a", vio: "#9b5cff", vioDk: "#5b2bc4", vioHi: "#c9a8ff", lime: "#8cff3a", limeDk: "#49a812", parch: "#f3ebd3", hub: "#2a2433", fill: "#120f18", fill2: "#17131f", cyan: "#2de2e6", cyanDk: "#0f8f96", cyanHi: "#b8fbfc", orange: "#ff8a1f", orangeDk: "#b35500", rule: "#3a3346" };
@@ -145,7 +146,7 @@ export function FlywheelStatsGrid({ s, compact }: { s: FlywheelStats; compact?: 
             {portraits.slice(0, compact ? 5 : 8).map((id) => (
               <Link key={id} href={`/agents/${id}`} title={`Counsel #${String(id).padStart(4, "0")}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/art/${id}.svg`} alt="" width={26} height={26} loading="lazy" />
+                <img src={avatarUrl(id)} alt="" width={26} height={26} loading="lazy" />
               </Link>
             ))}
           </span>

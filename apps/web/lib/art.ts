@@ -1,6 +1,7 @@
 // Server-side adapter over @company/art (or icons-fallback when the package is absent). Server components render
 // SVG strings; client components receive them as props, so the art package never enters the browser bundle.
-import * as Pkg from "@company/art";
+// the real generator lives in the workspace package; the subpath entry is browser-safe (no node:zlib)
+import * as Pkg from "@company/art/svg";
 import * as Fallback from "./icons-fallback";
 
 type AnyFn = (...a: unknown[]) => unknown;
@@ -58,13 +59,22 @@ export function wordmark(): string {
   return normalize(callSvg("wordmarkSvg", { height: 16, color: "currentColor" }) ?? Fallback.wordmarkSvg());
 }
 
-/** Portrait SVG for a token id (used by the /art route in mock mode; live mode reads the API image). */
+/** The 32×32 Counsel portrait (the square crop of the token art). */
 export function counselSvg(tokenId: number): string {
   const fn = pkg.renderCounsel as ((id: number, o?: { size?: number }) => { svg: string }) | undefined;
   try {
     if (fn) return fn(tokenId, { size: 256 }).svg;
   } catch {}
   return Fallback.renderCounsel(tokenId, { size: 256 }).svg;
+}
+
+/** The 64×80 bar card — the image the NFT's metadata points at, nameplate and all. Falls back to the portrait. */
+export function counselCardSvg(tokenId: number): string {
+  const fn = pkg.renderCard as ((id: number, o?: { width?: number }) => { svg: string }) | undefined;
+  try {
+    if (fn) return fn(tokenId, { width: 256 }).svg;
+  } catch {}
+  return counselSvg(tokenId);
 }
 
 export const ART_SOURCE = process.env.NEXT_PUBLIC_ART_SOURCE || "fallback";

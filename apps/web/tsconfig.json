@@ -26,6 +26,7 @@
         "../../packages/abi/src/index.ts"
       ],
       "@company/art": [
+        "../../packages/art/src/index.ts",
         "./lib/icons-fallback.ts"
       ]
     },
