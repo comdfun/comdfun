@@ -1,23 +1,11 @@
 import { GITHUB_URL, GITHUB_REPO } from "@/lib/config";
 
-/** A 9×8 pixel cat's head: ears, two eye gaps, a chin. */
-const CAT: [number, number][] = [
-  [1, 0], [7, 0],
-  [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1],
-  [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [8, 2],
-  [0, 3], [1, 3], [3, 3], [4, 3], [5, 3], [7, 3], [8, 3],
-  [0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
-  [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5],
-  [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
-  [3, 7], [4, 7], [5, 7],
-];
-
-/** The code on GitHub (NEXT_PUBLIC_GITHUB_URL, default github.com/comdfun/comdfun): a pixel glyph plus the repo where there is room. */
+/** The code on GitHub (NEXT_PUBLIC_GITHUB_URL, default github.com/comdfun/comdfun): the mark plus the repo where there is room. */
 export function GitHubLink({ className = "", label = false, text }: { className?: string; label?: boolean; text?: string }) {
   return (
     <a className={`xlink ghlink ${className}`} href={GITHUB_URL} target="_blank" rel="noreferrer" aria-label={`Company.md on GitHub (${GITHUB_REPO})`} title={`${GITHUB_REPO} on GitHub`}>
-      <svg viewBox="0 0 9 8" width="16" height="14" shapeRendering="crispEdges" aria-hidden="true">
-        {CAT.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" />)}
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.07-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.15 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8" />
       </svg>
       {label && <span>{text ?? GITHUB_REPO}</span>}
     </a>

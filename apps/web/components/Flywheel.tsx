@@ -120,12 +120,8 @@ export function TaxStage({ s, labels = "short" }: { s: FlywheelStats; labels?: "
     <div className="fw-stage rv">
       <div className="fw-wheel">
         <WheelDiagram taxBps={s.taxBps} buybackBps={s.bps.buyback} sweepBps={s.bps.sweep} />
-        {/* the badge sits exactly on the gear's hub; its size and type scale with the wheel (container units) */}
-        <div
-          className="fw-hub"
-          aria-hidden="true"
-          style={{ left: `${(HUB.cx / HUB.w) * 100}%`, top: `${(HUB.cy / HUB.h) * 100}%`, width: `${((HUB.r * 2) / HUB.w) * 100}%` }}
-        >
+        {/* the rate sits in the middle of the ring; CSS places and scales it (container units) */}
+        <div className="fw-hub" aria-hidden="true">
           <b>{(s.taxBps / 100).toFixed(0)}%</b><span>tax</span>
         </div>
       </div>

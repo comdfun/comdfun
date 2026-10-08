@@ -1516,3 +1516,44 @@ html.no-motion .rv { opacity: 1 !important; }
 .btn.primary[disabled] { color: #6f6a60; background: var(--ink-2); }
 /* founding-hundred strip: portraits large enough to read */
 .wt-jury img, .founding-strip img { width: 40px; height: 40px; }
+
+/* ---- QA pass ---- */
+/* the hamburger: three bars (the old one leaned on an offset shadow) */
+.nav-toggle .burger { position: relative; width: 16px; height: 2px; border-radius: 1px; background: currentColor; display: block; }
+.nav-toggle .burger::before, .nav-toggle .burger::after { content: ""; position: absolute; left: 0; width: 16px; height: 2px; border-radius: 1px; background: currentColor; }
+.nav-toggle .burger::before { top: -5px; }
+.nav-toggle .burger::after { top: 5px; }
+/* contact block: its own spacing again */
+.contact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 12px 14px; }
+.contact-h { width: 100%; }
+.contact.big { padding: 16px 18px; }
+.contact.big .contact-mail { font-size: 17px; }
+/* the flywheel's labels sit on the ring, not in a row under it */
+.fw-tag { position: absolute; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--c, var(--gold)) 45%, transparent); background: color-mix(in srgb, var(--c, var(--gold)) 12%, #05040a); color: var(--c, var(--gold)); white-space: nowrap; }
+.fw-tag.t-in { left: 50%; top: -4px; transform: translateX(-50%); --c: var(--gold); }
+.fw-tag.t-burn { left: 50%; bottom: -4px; top: auto; transform: translateX(-50%); display: block; }
+.fw-tag.t-sweep { left: 0; bottom: 36%; right: auto; }
+.fw-tag.t-rew { right: 0; left: auto; bottom: 36%; }
+.fw-stage { position: relative; padding: 34px 0 44px; }
+/* the ring: no orbiting dot, no dotted halo */
+.fwr-track, .fwr-orbit { display: none; }
+.fw-hub b { line-height: 1; }
+.fw-hub span { margin-top: 4px; }
+/* pills never stretch inside a flex row */
+.badge, .tag, .stamp, .rstamp, .nameplate, .docket, .seal { flex: 0 0 auto; }
+/* a Counsel id in a table is a link, not a brass plate */
+.table .nameplate, .rows .nameplate, .feed .nameplate { background: transparent; color: var(--gold); padding: 0; font-weight: 500; border-radius: 0; }
+.table a.nameplate:hover, .rows a.nameplate:hover { background: transparent; color: #ffd968; text-decoration: underline; }
+/* diagram rails: solid hairlines rather than dashes */
+.wt-track, .wt-step::before, .pipeline .track { border-style: solid; }
+/* the ticker's left edge: the label is opaque and the fade is wide enough to hide the hand-off */
+.ticker .tk-label { padding: 0 16px; min-width: 132px; }
+.ticker .tk-view::after { width: 48px; }
+/* small inputs keep a usable width */
+.inline-field input, .inline-field select { min-width: 160px; }
+/* empty states read left-aligned, like the rest of the page */
+.empty { text-align: left; padding: 36px 0; }
+.empty .px { font-size: 17px; }
+/* the rate in the middle of the ring */
+.fw-wheel { position: relative; container-type: inline-size; }
+.fw-hub { position: absolute; left: 50%; top: 50%; width: 52%; aspect-ratio: 1; transform: translate(-50%, -50%); display: grid; align-content: center; justify-items: center; text-align: center; }
