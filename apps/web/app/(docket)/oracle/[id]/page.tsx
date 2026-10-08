@@ -27,14 +27,14 @@ export default async function OracleDetail({ params }: { params: Promise<{ id: s
     <>
       <LiveRefresh active={["assessing", "reproducing", "queued", "pending"].includes(o.status)} />
       <PageHead crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "Rulings", href: "/oracle" }, { label: docketNo("Ruling", o.id, o.createdAt) }]} kicker={<><span className="docket">{docketNo("Ruling", o.id, o.createdAt)}</span><Badge tone={st.tone} live={st.live} fill>{st.label}</Badge><span className="badge cyan">{chainName(o.chainId)}</span></>}
-        title={<span className="pix" style={{ fontSize: "clamp(20px, 3vw, 30px)", display: "block", textTransform: "none", lineHeight: 1.3, textShadow: "none" }}>{o.question}</span>} />
+        title={<span className="pix" style={{ fontSize: "clamp(20px, 3vw, 30px)", display: "block", textTransform: "none", lineHeight: 1.3 }}>{o.question}</span>} />
       <div className="two-col">
         <div>
           <div className="folder c-violet" data-tab="The ruling" style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
             {o.status === "attested" ? <Seal big label="Sealed" /> : <Badge tone={st.tone} live={st.live} title={st.title}>{st.label}</Badge>}
             <div style={{ flex: 1, minWidth: 200 }}>
               <div className="label">The answer</div>
-              <div className="num" style={{ fontSize: 52, lineHeight: 1, color: "var(--violet)", textShadow: "4px 4px 0 var(--violet-sh)", wordBreak: "break-word" }}>{o.agreement?.answer ?? o.computed?.answer ?? "—"}</div>
+              <div className="num" style={{ fontSize: 52, lineHeight: 1, color: "var(--violet)", wordBreak: "break-word" }}>{o.agreement?.answer ?? o.computed?.answer ?? "—"}</div>
               {o.agreement && <div className="small muted">{o.agreement.agreed} of {o.panelSize} counsel agreed · quorum {o.quorum}{o.toleranceBps != null ? ` · tolerance ${o.toleranceBps} bps` : ""}</div>}
               {o.failure && <div className="small err-text">{o.failure}</div>}
             </div>

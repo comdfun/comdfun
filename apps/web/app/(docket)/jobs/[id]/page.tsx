@@ -74,7 +74,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       <PageHead
         crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "Matters", href: "/jobs" }, { label: docketNo("Matter", job.id, job.createdAt) }]}
         kicker={<><span className="docket">{docketNo("Matter", job.id, job.createdAt)}</span><Badge tone={stage.tone} title={stage.title} live={stage.live} fill>{stage.label}</Badge>{job.state === "completed" && <RStamp>On the record</RStamp>}</>}
-        title={<span className="pix" style={{ fontSize: "clamp(20px, 3vw, 30px)", display: "block", textTransform: "none", lineHeight: 1.3, textShadow: "none" }}><span className="caption-in-re"><span className="inre" style={{ fontSize: 14 }}>In re:</span></span>{caption(job.objective, 140)}</span>}
+        title={<span className="pix" style={{ fontSize: "clamp(20px, 3vw, 30px)", display: "block", textTransform: "none", lineHeight: 1.3 }}><span className="caption-in-re"><span className="inre" style={{ fontSize: 14 }}>In re:</span></span>{caption(job.objective, 140)}</span>}
       />
       <div style={{ marginBottom: 28 }}><Pipeline current={pos.at} failed={pos.failed} /></div>
       <div className="two-col">

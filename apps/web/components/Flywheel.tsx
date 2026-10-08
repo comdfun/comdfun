@@ -81,6 +81,32 @@ export function WheelSvg({ className }: { className?: string }) {
   );
 }
 
+/* ------------------------------------------------------------------------------- the site's wheel (vector)
+   A ring split into the two buckets of the 5% ETH tax, with the rate in the middle. The pixel gear above is
+   kept for the announcement films; the site uses this one. */
+const RING = { cx: 100, cy: 100, r: 72, w: 14 } as const;
+function arc(from: number, to: number, r = RING.r) {
+  const p = (a: number) => [RING.cx + r * Math.cos((a - 90) * Math.PI / 180), RING.cy + r * Math.sin((a - 90) * Math.PI / 180)];
+  const [x1, y1] = p(from), [x2, y2] = p(to);
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+
+export function WheelDiagram({ taxBps = 500, buybackBps = 5000, sweepBps = 5000 }: { taxBps?: number; buybackBps?: number; sweepBps?: number }) {
+  const total = buybackBps + sweepBps || 1;
+  const split = (buybackBps / total) * 360;
+  const gap = 6;
+  return (
+    <svg className="fw-ring" viewBox="0 0 200 200" role="img" aria-label={`The ${(taxBps / 100).toFixed(0)}% ETH tax, split between buyback-and-burn and Counsel floor sweeps`}>
+      <circle cx={RING.cx} cy={RING.cy} r={RING.r + 24} className="fwr-track" />
+      <circle cx={RING.cx} cy={RING.cy} r={RING.r} className="fwr-base" strokeWidth={RING.w} />
+      <path d={arc(gap / 2, split - gap / 2)} className="fwr-burn" strokeWidth={RING.w} strokeLinecap="round" />
+      <path d={arc(split + gap / 2, 360 - gap / 2)} className="fwr-sweep" strokeWidth={RING.w} strokeLinecap="round" />
+      <circle cx={RING.cx} cy={RING.cy} r={RING.r - RING.w - 6} className="fwr-inner" />
+      <g className="fwr-orbit"><circle cx={RING.cx} cy={RING.cy - RING.r - 24} r={4} className="fwr-dot" /></g>
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------------------------------------ stats */
 
 const eth = (v?: string | null) => toUnits(v);
@@ -93,7 +119,7 @@ export function TaxStage({ s, labels = "short" }: { s: FlywheelStats; labels?: "
   return (
     <div className="fw-stage rv">
       <div className="fw-wheel">
-        <WheelSvg />
+        <WheelDiagram taxBps={s.taxBps} buybackBps={s.bps.buyback} sweepBps={s.bps.sweep} />
         {/* the badge sits exactly on the gear's hub; its size and type scale with the wheel (container units) */}
         <div
           className="fw-hub"

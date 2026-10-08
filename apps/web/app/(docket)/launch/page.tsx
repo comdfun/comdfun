@@ -28,7 +28,7 @@ export default async function Launch({ searchParams }: { searchParams: Promise<P
         <RetainFlow icons={iconSet(ICONS)} caps={caps} initial={mode === "retainer" || mode === "heartbeat" ? "retainer" : mode === "topup" ? "topup" : mode} scheduleId={one(sp.schedule) || undefined} />
         <aside className="stack sticky-side">
           <div className="folder c-pink rv" data-tab="Engagement letter">
-            <div className="mint-price" style={{ color: "var(--pink)", textShadow: "4px 4px 0 var(--pink-sh)" }}>100 COMD<small>per request · per run for retainers</small></div>
+            <div className="mint-price" style={{ color: "var(--pink)" }}>100 COMD<small>per request · per run for retainers</small></div>
             <dl className="kv" style={{ marginTop: 14 }}>
               <dt>Chain</dt><dd>Robinhood Chain <span className="muted">(4663)</span>; testnet 46630 selectable</dd>
               <dt>Payment</dt><dd>One Permit2 signature + one quote approval. The firm pays the gas.</dd>

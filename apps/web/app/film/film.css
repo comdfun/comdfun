@@ -1,3 +1,13 @@
+/* The films keep the arcade look: the pixel faces are re-declared here, scoped to the film page, because the site
+   itself now runs on IBM Plex Sans. Everything below is unchanged. */
+.film, .film * {
+  --font-display: "Press Start 2P", "Silkscreen", monospace;
+  --font-px: "Silkscreen", "Press Start 2P", monospace;
+  --font-pix: "Pixelify Sans", "Silkscreen", monospace;
+  --font-num: "VT323", "Silkscreen", monospace;
+}
+.film img, .film svg { image-rendering: pixelated; image-rendering: crisp-edges; }
+.film-fontload { position: fixed; left: -9999px; top: 0; font-size: 20px; opacity: 0.01; pointer-events: none; z-index: -1; }
 /* The explainer film (components/fx/Film.tsx): a 1920×1080 stage, scenes switched by class, all motion in CSS. */
 .film { position: fixed; inset: 0; background: #000; color: var(--parch); overflow: hidden; font-family: var(--font-mono); z-index: 1000; }
 .film .c-gold { --c: var(--gold); } .film .c-cyan { --c: var(--cyan); } .film .c-pink { --c: var(--pink); } .film .c-lime { --c: var(--lime); }

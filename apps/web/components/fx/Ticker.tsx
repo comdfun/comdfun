@@ -43,7 +43,7 @@ export function Ticker({ initial }: { initial: SwarmEvent[] }) {
     });
   return (
     <div className="ticker" role="region" aria-label="Live docket">
-      <div className="tk-label"><i aria-hidden="true" />Live<span>&nbsp;docket</span></div>
+      <div className="tk-label"><i aria-hidden="true" /><span>Live docket</span></div>
       <div className="tk-view">
         <div className="tk-track" style={{ ["--tk-dur" as string]: `${Math.max(40, list.length * 7)}s` }}>
           <span className="row" style={{ gap: 0, flexWrap: "nowrap" }}>{row("a")}</span>

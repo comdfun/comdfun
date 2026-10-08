@@ -1,44 +1,14 @@
 import Link from "next/link";
 import { activeChain } from "@/lib/chains";
-import { hashInt } from "@/lib/format";
 import { CONTACT_EMAIL, X_URL, GITHUB_URL, MARKETPLACE_URL } from "@/lib/config";
 import { Wordmark, XLink } from "./Header";
 import { GitHubLink } from "./GitHubLink";
 import { OpenSeaLink } from "./OpenSeaLink";
 
-const COLORS = ["crimson", "violet", "cyan", "gold", "lime", "orange", "pink"] as const;
-const TITLES = ["Contracts", "Torts", "Evidence", "Equity", "Admiralty", "Trusts", "Procedure", "Remedies", "Agency", "Estates", "Tax", "Bonds", "Patents", "Precedent", "Solidity", "ERC-20", "ERC-721", "ERC-8004", "EIP-712", "Uniswap v4", "Permit2", "x402", "Oracles", "Audits"];
-
-/** A shelf of law books in the firm's colours: deterministic widths/heights, some tilted, two volumes leaning. */
-function Shelf() {
-  const books = Array.from({ length: 64 }, (_, i) => {
-    const h = hashInt(`book-${i}`);
-    return { c: COLORS[h % COLORS.length], w: 12 + (h % 4) * 3, ht: 54 + ((h >> 4) % 26), tilt: i % 17 === 9, t: TITLES[(h >> 8) % TITLES.length] };
-  });
-  return (
-    <div className="shelf wrap" aria-hidden="true">
-      {books.map((b, i) => (
-        <span key={i} className={`book c-${b.c}${b.tilt ? " tilt" : ""}`} style={{ ["--w" as string]: `${b.w}px`, ["--h" as string]: `${b.ht}px` }}>
-          {b.w >= 15 && b.ht >= 66 && <span className="spine">{b.t}</span>}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/** A quill signature that writes itself when the footer scrolls into view. */
-function Signature() {
-  return (
-    <svg className="sig-line rv" viewBox="0 0 260 54" shapeRendering="crispEdges" aria-label="Signed, Company.md" role="img">
-      <path className="sig-ink" d="M6 40 C 12 14, 20 12, 22 30 S 30 46, 38 26 S 48 8, 52 30 S 58 44, 66 28 C 70 20, 78 22, 80 32 S 92 40, 98 26 S 110 18, 116 32 S 126 42, 134 24 C 138 16, 148 18, 150 30 S 162 40, 170 26 S 186 20, 196 34 L 252 34" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" />
-    </svg>
-  );
-}
 
 export function Footer() {
   return (
     <footer className="site-footer">
-      <Shelf />
       <div className="wrap">
         <div className="cols">
           <div>
@@ -47,7 +17,6 @@ export function Footer() {
             <p style={{ marginTop: 12 }}>Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain. Two thousand Counsel on Robinhood Chain, retained in $COMD; every Counsel earns $COMD for accepted work. Not affiliated with Robinhood. Contracts reviewed before launch. Nothing here is legal or financial advice; counsel are software.</p>
             <p className="small">Network: <span className="tx-lime">{activeChain.name}</span> ({activeChain.id}). Payments in $COMD.</p>
             <ContactBlock />
-            <Signature />
           </div>
           <nav aria-label="The Docket" className="c-cyan">
             <h4>The Docket</h4>

@@ -20,7 +20,15 @@ export default async function FilmPage({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const art = { logo: logo(), icons: { scales: icon("scales"), chain: icon("chain"), gavel: icon("gavel"), coin: icon("coin"), seal: icon("seal") }, portraits: PORTRAITS };
   const mode = sp.still === "1" ? "still" : sp.manual === "1" ? "manual" : "auto";
-  if (sp.v === "mint") return <MintFilm logo={art.logo} portraits={WALL} mode={mode} />;
-  if (sp.v === "minted" || sp.v === "comd" || sp.v === "register" || sp.v === "tasks" || sp.v === "steps" || sp.v === "build" || sp.v === "imd" || sp.v === "fomo" || sp.v === "wheel" || sp.v === "dev" || sp.v === "gm" || sp.v === "burn" || sp.v === "backend" || sp.v === "receipt" || sp.v === "working" || sp.v === "major" || sp.v === "burn2" || sp.v === "traits" || sp.v === "trades" || sp.v === "fwtrack" || sp.v === "versus" || sp.v === "pushed" || sp.v === "burn3" || sp.v === "burn4" || sp.v === "burn5" || sp.v === "burn6" || sp.v === "burn7" || sp.v === "burn8" || sp.v === "burn9" || sp.v === "today" || sp.v === "matters" || sp.v === "agentfi" || sp.v === "activity" || sp.v === "oracle" || sp.v === "coins" || sp.v === "clerk" || sp.v === "x402") return <AnnounceFilm kind={sp.v} logo={art.logo} portraits={WALL} mode={mode} />;
-  return <Film art={art} mode={mode} />;
+  // the pixel faces load on page load (off-screen, real glyphs) so document.fonts.ready is honest for the renderer
+  const preload = (
+    <div className="film-fontload" aria-hidden="true">
+      {['"Press Start 2P"', '"Silkscreen"', '"Pixelify Sans"', '"VT323"'].map((f) => (
+        <span key={f} style={{ fontFamily: f }}>0123ABCabc</span>
+      ))}
+    </div>
+  );
+  if (sp.v === "mint") return <>{preload}<MintFilm logo={art.logo} portraits={WALL} mode={mode} /></>;
+  if (sp.v === "minted" || sp.v === "comd" || sp.v === "register" || sp.v === "tasks" || sp.v === "steps" || sp.v === "build" || sp.v === "imd" || sp.v === "fomo" || sp.v === "wheel" || sp.v === "dev" || sp.v === "gm" || sp.v === "burn" || sp.v === "backend" || sp.v === "receipt" || sp.v === "working" || sp.v === "major" || sp.v === "burn2" || sp.v === "traits" || sp.v === "trades" || sp.v === "fwtrack" || sp.v === "versus" || sp.v === "pushed" || sp.v === "burn3" || sp.v === "burn4" || sp.v === "burn5" || sp.v === "burn6" || sp.v === "burn7" || sp.v === "burn8" || sp.v === "burn9" || sp.v === "today" || sp.v === "matters" || sp.v === "agentfi" || sp.v === "activity" || sp.v === "oracle" || sp.v === "coins" || sp.v === "clerk" || sp.v === "x402") return <>{preload}<AnnounceFilm kind={sp.v} logo={art.logo} portraits={WALL} mode={mode} /></>;
+  return <>{preload}<Film art={art} mode={mode} /></>;
 }

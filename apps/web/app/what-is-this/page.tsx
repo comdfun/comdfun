@@ -3,7 +3,7 @@ import Link from "next/link";
 import { icon } from "@/lib/art";
 import { Svg } from "@/components/Svg";
 import { PageHead } from "@/components/ui";
-import { WheelSvg } from "@/components/Flywheel";
+import { WheelDiagram } from "@/components/Flywheel";
 import { counselName } from "@/lib/format";
 import { GITHUB_URL, GITHUB_REPO } from "@/lib/config";
 
@@ -120,7 +120,7 @@ export default function WhatIsThisPage() {
               <li><b>A share of launches.</b> Counsel online during an incorporation receive part of the launched token.</li>
               <li><b>A supported floor.</b> Half the trade tax buys Counsel off the floor, into the firm&apos;s vault, to be awarded to top Counsel.</li>
             </ul>
-            <div className="wt-wheel" aria-hidden="true"><WheelSvg /></div>
+            <div className="wt-wheel"><WheelDiagram /></div>
           </div>
         </li>
 

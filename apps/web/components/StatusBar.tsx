@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Activity } from "@/lib/types";
 import { CountUp } from "./fx/CountUp";
-import { FxToggles } from "./fx/FxToggles";
 
 export function StatusBar({ initial }: { initial: Activity }) {
   const [a, setA] = useState<Activity>(initial);
@@ -38,7 +37,6 @@ export function StatusBar({ initial }: { initial: Activity }) {
         </span>
         <span className="right-side">
           {a.mock && <span className="mock" title="NEXT_PUBLIC_MOCK=1: fixture data, not the live API">Mock data</span>}
-          <FxToggles />
           <Link className="health" href="/docs#health">
             <span className={`dot ${tone}`} aria-hidden="true" /> {a.health === "ok" ? "Health ok" : a.health === "degraded" ? "Degraded" : "Unreachable"}
           </Link>

@@ -1,9 +1,12 @@
+// the pixel faces are used only by the announcement films (/film); declared here so they are always available
 import "@fontsource/silkscreen/400.css";
 import "@fontsource/silkscreen/700.css";
 import "@fontsource/press-start-2p/400.css";
 import "@fontsource/pixelify-sans/400.css";
-import "@fontsource/pixelify-sans/600.css";
 import "@fontsource/vt323/400.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
@@ -18,7 +21,6 @@ import { SigRoot } from "@/components/SigRoot";
 import { Ticker } from "@/components/fx/Ticker";
 import { FxRuntime } from "@/components/fx/FxRuntime";
 import { HEAD_SCRIPT_PREFS } from "@/lib/head-script";
-import { Intro, INTRO_SCRIPT } from "@/components/fx/Intro";
 import { getActivity } from "@/lib/activity";
 import { wagmiConfig } from "@/lib/wagmi";
 import { SITE_URL } from "@/lib/config";
@@ -46,8 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: HEAD_SCRIPT_PREFS + INTRO_SCRIPT }} />
-        <link rel="preload" href="/intro/scene.svg" as="image" type="image/svg+xml" />
+        <script dangerouslySetInnerHTML={{ __html: HEAD_SCRIPT_PREFS }} />
       </head>
       <body>
         <a href="#main" className="sr-only">Skip to content</a>
@@ -61,8 +62,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </SigRoot>
           <FxRuntime />
         </Providers>
-        <Intro />
-        <div className="crt" aria-hidden="true" />
       </body>
     </html>
   );
