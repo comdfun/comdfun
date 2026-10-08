@@ -476,3 +476,11 @@
 .af-cards-4 .af-card { padding: 30px 26px; }
 .af-cards-4 .af-card b { font-size: 30px; }
 .af-cards-4 .af-card span { font-size: 21px; }
+
+/* ---- FOMO contest ---------------------------------------------------------------------------- */
+.af-prize { display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: 56px; align-items: center; width: 100%; }
+.af-prize-fig { display: grid; justify-items: center; gap: 14px; padding: 44px 44px 38px; border: 6px solid var(--gold); background: #0a0806; box-shadow: 14px 14px 0 #000; opacity: 0; }
+.af-prize-fig b { font-family: var(--font-display); font-size: 86px; line-height: 1; color: var(--gold); text-shadow: 5px 5px 0 var(--gold-sh); }
+.af-prize-fig span { font-family: var(--font-px); font-size: 24px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--parch); }
+.af-reg .af-task.on .af-prize-fig { animation: fs-pop 0.6s steps(8, end) 0.2s both; }
+@media (max-width: 1400px) { .af-prize { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
