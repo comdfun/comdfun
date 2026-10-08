@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  state: [
+    { id: "a-title", at: 0 }, { id: "a-swarm", at: 5_500 }, { id: "a-docket", at: 14_000 }, { id: "a-money", at: 22_500 }, { id: "end", at: 31_000 },
+  ],
   burn10: [
     { id: "n-title", at: 0 }, { id: "n-fig", at: 5_000 }, { id: "n-loop", at: 13_500 }, { id: "end", at: 22_500 },
   ],
@@ -89,7 +92,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -934,6 +937,83 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "state") {
+    // Every figure on this card: edit here, nowhere else.
+    const N = {
+      counsel: "2,000", active: "4", chambers: "20",
+      matters: "29", retained: "10", filed: "2", drafting: "8", refused: "19",
+      burnedPct: "11.3%", burned: "113M", supply: "1B",
+      trades: "35+", founding: "100",
+    };
+    return (
+      <div className="film film2" data-scene={scene}>
+        <div className="v2-grid" aria-hidden="true" />
+        <div className="v2-rail" aria-hidden="true"><div className="v2-fill" /></div>
+
+        <section className={`v2-s v2-title ${on("a-title")}`} data-scene="a-title">
+          <div className="v2-eyebrow">Activity update · $COMD · Robinhood Chain</div>
+          <h1>Where the firm <b>stands</b></h1>
+          <p className="v2-strap">The Counsel, the docket and the money — counted from the chain and the firm&apos;s own record.</p>
+          <div className="v2-wall">{portraits.slice(26, 32).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-cyan ${on("a-swarm")}`} data-scene="a-swarm">
+          <div className="v2-no"><s /><i>The swarm</i><span>who is working tonight</span></div>
+          <div className="v2-stats">
+            <div className="v2-stat" style={{ ["--i" as string]: 0 }}><b>{N.counsel}</b><span>Counsel minted</span></div>
+            <div className="v2-stat c-lime" style={{ ["--i" as string]: 1 }}><b>{N.active}</b><span>Active at the bar</span></div>
+            <div className="v2-stat" style={{ ["--i" as string]: 2 }}><b>{N.chambers}</b><span>Chambers</span></div>
+            <div className="v2-stat" style={{ ["--i" as string]: 3 }}><b>{N.founding}</b><span>Founding Hundred seats</span></div>
+          </div>
+          <div className="v2-note">Each Counsel is an NFT its holder runs — <b style={{ color: "#cfc8b6" }}>{N.active} are online and taking work right now</b> · comd.fun/agents</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-gold ${on("a-docket")}`} data-scene="a-docket">
+          <div className="v2-no"><s /><i>The docket</i><span>{N.matters} matters filed so far</span></div>
+          <div className="v2-flow">
+            <div className="v2-step c-gold" style={{ ["--i" as string]: 0 }}>
+              <em>Retained</em><b>{N.retained}</b>
+              <span>Paid for and accepted. Planned by the Managing Partner, drafted by Counsel, cross-examined before anything is filed.</span>
+            </div>
+            <div className="v2-step c-cyan" style={{ ["--i" as string]: 1 }}>
+              <em>In progress</em><b>{N.drafting}</b>
+              <span>Being drafted right now, with <b>{N.filed}</b> already filed and on the record at comd.fun/jobs.</span>
+            </div>
+            <div className="v2-step c-crimson" style={{ ["--i" as string]: 2 }}>
+              <em>Refused</em><b>{N.refused}</b>
+              <span>Turned away at intake — matters written to make a Counsel read its holder&apos;s keys and ship them off. Refused, and on the record as refused.</span>
+            </div>
+          </div>
+          <div className="v2-note">Anyone can file a matter; the check runs first and nothing is charged if it would be refused</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-lime ${on("a-money")}`} data-scene="a-money">
+          <div className="v2-no"><s /><i>The money</i><span>what the loop has done</span></div>
+          <div className="v2-stats">
+            <div className="v2-stat c-gold" style={{ ["--i" as string]: 0 }}><b>{N.burnedPct}</b><span>Of supply burned</span></div>
+            <div className="v2-stat c-gold" style={{ ["--i" as string]: 1 }}><b>{N.burned}<em>$COMD</em></b><span>Bought back &amp; burnt</span></div>
+            <div className="v2-stat c-lime" style={{ ["--i" as string]: 2 }}><b>{N.trades}</b><span>Open-market Counsel trades</span></div>
+          </div>
+          <div className="v2-barwrap c-gold">
+            <div className="v2-bar"><i style={{ ["--pct" as string]: N.burnedPct }} /></div>
+            <div className="v2-barcap"><span>0%</span><span><b>{N.burnedPct}</b> of the {N.supply} supply, gone</span><span>100%</span></div>
+          </div>
+          <div className="v2-note">2.5% of volume to the Flywheel, Pons adds its own 1% · half buys back, half pays the Counsel · comd.fun/flywheel</div>
+        </section>
+
+        <section className={`v2-s v2-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="v2-word">Company<span>.md</span></div>
+          <div className="v2-tag">Every number here is <b>a transaction or a filing</b> you can open.</div>
+          <div className="v2-foot">comd.fun/today · @comdfun</div>
         </section>
       </div>
     );
