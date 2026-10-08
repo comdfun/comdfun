@@ -24,7 +24,7 @@ import type { JobX } from "./engine.ts";
 import type { OracleRecord } from "./records.ts";
 import { iso } from "./store.ts";
 import { planOracle } from "./planner.ts";
-import { decodeWord, ChainUnavailable } from "./chain.ts";
+import { decodeWord, ChainUnavailable, redactRpc } from "./chain.ts";
 import { E } from "./errors.ts";
 
 const HEXADDR = /^0x[0-9a-fA-F]{40}$/;
@@ -54,7 +54,7 @@ export class Oracle {
       const b = await chain.block(w.toBlock);
       return { fromBlock: w.fromBlock, toBlock: w.toBlock, toBlockHash: b.hash };
     } catch (e) {
-      if (e instanceof ChainUnavailable || /fetch|timeout|ECONN|RPC/i.test((e as Error).message)) throw E.unavailable("chain_unavailable", (e as Error).message);
+      if (e instanceof ChainUnavailable || /fetch|timeout|ECONN|RPC/i.test((e as Error).message)) throw E.unavailable("chain_unavailable", redactRpc((e as Error).message));
       throw e;
     }
   }

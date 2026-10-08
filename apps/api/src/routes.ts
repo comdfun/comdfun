@@ -8,6 +8,7 @@ import { CHAINS, DEVICE_KEY_RE, HASH_RE, LIMITS, PROTOCOL_VERSION, UUID_RE, type
 import type { App } from "./app.ts";
 import { API_VERSION } from "./config.ts";
 import { ApiError, E } from "./errors.ts";
+import { redactRpc } from "./chain.ts";
 import { Router, bearerOf, clientIp, errorRes, json, parseBefore, parseLimit, parseSince, readBody, send, type Req, type Res, type RouteOpts } from "./http.ts";
 import type { JobX } from "./engine.ts";
 import type { AssuranceRecord, DocumentRecord, FeedbackBatch, LaunchRecord, OracleRecord, OrderRecord, PolicyRecord, RewardEpoch, ScheduleRecord, SeatRecord, SiteRecord, WorkflowRecord } from "./records.ts";
@@ -286,7 +287,7 @@ export function buildRouter(app: App): Router {
     return json(200, { count: seats.length, seats }, { "cache-control": "public, max-age=5" });
   }, read);
   r.get("/seats/owners", async () => {
-    try { await app.pairing.refreshOwners(); } catch (e) { if (!app.pairing.owners.at) throw E.unavailable("chain_unavailable", (e as Error).message); }
+    try { await app.pairing.refreshOwners(); } catch (e) { if (!app.pairing.owners.at) throw E.unavailable("chain_unavailable", redactRpc((e as Error).message)); }
     return json(200, { refreshedAt: iso(app.pairing.owners.at), owners: app.pairing.owners.owners });
   }, read);
   r.get("/seats/:tokenId", (q) => json(200, seatView(app, q.params.tokenId, cap(q.query.get("work"), 50), cap(q.query.get("reviews"), 50))), read);

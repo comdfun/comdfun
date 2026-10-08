@@ -376,6 +376,16 @@ export class NoChain implements ChainReader {
 
 export class ChainUnavailable extends Error {}
 
+/** An RPC client puts the endpoint it called into its error text — and the endpoint carries the API key in its path.
+ *  Those messages travel: into a payment's `reason`, into /health's failedReasons, back to whoever filed the request.
+ *  That is how our Alchemy key reached a user. Everything user-facing goes through here; the server log keeps the
+ *  original. Hosts are kept because knowing *which* endpoint failed is the useful half. */
+export function redactRpc(text: unknown): string {
+  return String(text ?? "")
+    .replace(/(https?:\/\/)([^\s/"')]+)\/[^\s"')]*/gi, (_m, scheme: string, host: string) => `${scheme}${host}/<redacted>`)
+    .replace(/\b(alch|sk|pk|key)[-_][A-Za-z0-9_-]{8,}/gi, "<redacted>");
+}
+
 /** Deterministic in-memory chain for tests and the demo. */
 export class MockChain implements ChainReader {
   readonly configured = true;

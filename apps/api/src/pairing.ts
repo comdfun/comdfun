@@ -15,7 +15,7 @@ import type { App } from "./app.ts";
 import { ApiError, E } from "./errors.ts";
 import type { EnrollmentRecord, PairingRecord, SeatRecord } from "./records.ts";
 import { iso } from "./store.ts";
-import { ChainUnavailable } from "./chain.ts";
+import { ChainUnavailable, redactRpc } from "./chain.ts";
 import { counselMetadata } from "./art.ts";
 import { identityRegistryAbi } from "@company/abi";
 
@@ -210,7 +210,7 @@ export class Pairing {
   async wallet(address: string, fresh: boolean) {
     if (!/^0x[0-9a-fA-F]{40}$/.test(address)) throw E.invalidId("address must be 0x + 40 hex");
     const a = address.toLowerCase();
-    try { await this.refreshOwners(fresh); } catch (e) { if (!this.owners.at) throw E.unavailable("chain_unavailable", (e as Error).message); }
+    try { await this.refreshOwners(fresh); } catch (e) { if (!this.owners.at) throw E.unavailable("chain_unavailable", redactRpc((e as Error).message)); }
     const held = this.owners.owners.map((o, id) => (o === a ? String(id) : null)).filter((x): x is string => x !== null);
     for (const s of this.seats.filter((x) => x.owner === a)) if (!held.includes(s.tokenId)) held.push(s.tokenId);
     return {
@@ -253,7 +253,7 @@ export class Pairing {
       agent = await this.app.chain.agent(agentId);
       owner = await this.app.chain.ownerOf(tokenId);
     } catch (e) {
-      throw E.unavailable("chain_unavailable", (e as Error).message);
+      throw E.unavailable("chain_unavailable", redactRpc((e as Error).message));
     }
     if (!agent) return { status: 202, body: { tokenId, agentId, pending: true, detail: "agent not found yet; retry after the register transaction is mined" } };
     if (agent.uri !== this.agentURI(tokenId)) throw new ApiError(400, "uri_mismatch", `agentURI must be ${this.agentURI(tokenId)}`);

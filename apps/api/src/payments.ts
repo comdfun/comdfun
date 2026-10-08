@@ -8,6 +8,7 @@
 import { formatEther, getAddress, keccak256, toHex, type Address, type Hex } from "viem";
 import { permit2TypedData, recoverTypedSigner, type PaymentPayload } from "@company/protocol";
 import type { ChainReader, ChainWriter } from "./chain.ts";
+import { redactRpc } from "./chain.ts";
 
 export type SettleOutcome = { ok: true; txHash: Hex; blockNumber: number } | { ok: false; reason: string };
 
@@ -75,7 +76,7 @@ export class ChainSettler implements Settler {
       if (bal < amount) return { ok: false, reason: "insufficient_funds" };
       if (allowance < amount) return { ok: false, reason: "insufficient_permit2_allowance" };
     } catch (e) {
-      return { ok: false, reason: `chain_unavailable: ${(e as Error).message.slice(0, 120)}` };
+      return { ok: false, reason: `chain_unavailable: ${redactRpc((e as Error).message).slice(0, 120)}` };
     }
     try {
       const r = await this.writer.permit2Settle({ auth: a, signature: p.payload.signature, payTo, amount });
@@ -86,7 +87,7 @@ export class ChainSettler implements Settler {
       if (/InvalidNonce/i.test(m)) return { ok: false, reason: "nonce_already_used" };
       if (/SignatureExpired/i.test(m)) return { ok: false, reason: "payment_permission_expired" };
       if (/InvalidSigner|InvalidSignature/i.test(m)) return { ok: false, reason: "invalid_signature" };
-      return { ok: false, reason: `transaction_failed: ${m.slice(0, 160)}` };
+      return { ok: false, reason: `transaction_failed: ${redactRpc(m).slice(0, 160)}` };
     }
   }
 
@@ -96,7 +97,7 @@ export class ChainSettler implements Settler {
       return { address: this.spender, balanceEth: formatEther(wei), low: wei < 5n * 10n ** 15n, unknown: false };
     } catch (e) {
       // The balance could not be read — almost always no working RPC. Say that, rather than claiming it is low.
-      return { address: this.spender, balanceEth: "unknown", low: false, unknown: true, error: (e as Error).message.slice(0, 200) };
+      return { address: this.spender, balanceEth: "unknown", low: false, unknown: true, error: redactRpc((e as Error).message).slice(0, 200) };
     }
   }
 }
