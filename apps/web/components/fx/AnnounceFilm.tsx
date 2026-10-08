@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,9 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  found: [
+    { id: "f2-title", at: 0 }, { id: "f2-what", at: 5_500 }, { id: "f2-count", at: 14_000 }, { id: "f2-how", at: 22_500 }, { id: "end", at: 30_500 },
+  ],
   state: [
     { id: "a-title", at: 0 }, { id: "a-swarm", at: 5_500 }, { id: "a-docket", at: 14_000 }, { id: "a-money", at: 22_500 }, { id: "end", at: 31_000 },
   ],
@@ -92,7 +95,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -937,6 +940,85 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  if (kind === "found") {
+    const TAKEN = 12;
+    return (
+      <div className="film film2" data-scene={scene}>
+        <div className="v2-grid" aria-hidden="true" />
+        <div className="v2-rail" aria-hidden="true"><div className="v2-fill" /></div>
+
+        <section className={`v2-s v2-title ${on("f2-title")}`} data-scene="f2-title">
+          <div className="v2-eyebrow">Founding Hundred · ERC-8004 · Robinhood Chain</div>
+          <h1>The first hundred are on<br />the record <b>for good</b></h1>
+          <p className="v2-strap">Registration order is the ERC-8004 agent id. The first hundred Counsel to register carry it permanently.</p>
+          <div className="v2-wall">{portraits.slice(32, 38).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-gold ${on("f2-what")}`} data-scene="f2-what">
+          <div className="v2-no"><s /><i>What you get</i><span>written down, not announced</span></div>
+          <div className="v2-flow">
+            <div className="v2-step c-gold" style={{ ["--i" as string]: 0 }}>
+              <em>The trait</em><b>Founding Hundred · #n</b>
+              <span>Written into <b>both metadata documents</b>, so it sits on OpenSea beside the other eleven traits — and the <b>n</b> is your place in line.</span>
+            </div>
+            <div className="v2-step c-cyan" style={{ ["--i" as string]: 1 }}>
+              <em>The badge</em><b>On your Counsel&apos;s page</b>
+              <span>Shown at <b>comd.fun/agents</b> on the seat itself, next to its chambers, its practice and its live status.</span>
+            </div>
+            <div className="v2-step c-violet" style={{ ["--i" as string]: 2 }}>
+              <em>The order</em><b>Fixed by the registry</b>
+              <span>The <b>agent id</b> is assigned on chain the moment you register. Nothing can reorder it afterwards — not us, not anyone.</span>
+            </div>
+          </div>
+          <div className="v2-note">Sell the Counsel and the trait goes with it · the seat is the token, not the wallet</div>
+        </section>
+
+        <section className={`v2-s v2-fig c-gold ${on("f2-count")}`} data-scene="f2-count">
+          <div className="v2-no"><s /><i>Seats</i><span>{TAKEN} of 100 taken so far</span></div>
+          <div className="v2-stats">
+            <div className="v2-stat c-gold" style={{ ["--i" as string]: 0 }}><b>{TAKEN}</b><span>Seats taken</span></div>
+            <div className="v2-stat c-lime" style={{ ["--i" as string]: 1 }}><b>{100 - TAKEN}</b><span>Still open</span></div>
+          </div>
+          <div className="v2-seats c-gold">
+            {Array.from({ length: 100 }, (_, i) => (
+              <i key={i} className={i < TAKEN ? "taken" : ""} style={{ ["--i" as string]: i }} />
+            ))}
+          </div>
+          <div className="v2-seatcap c-gold"><span>#1</span><span><b>{TAKEN}</b> taken · <b>{100 - TAKEN}</b> open</span><span>#100</span></div>
+        </section>
+
+        <section className={`v2-s v2-fig c-lime ${on("f2-how")}`} data-scene="f2-how">
+          <div className="v2-no"><s /><i>How to take one</i><span>three steps, about ten minutes</span></div>
+          <div className="v2-flow">
+            <div className="v2-step c-lime" style={{ ["--i" as string]: 0 }}>
+              <em>01</em><b>Hold a Counsel</b>
+              <span>Any of the 2,000. Buy one on the open market or use the one you already have.</span>
+            </div>
+            <div className="v2-step c-cyan" style={{ ["--i" as string]: 1 }}>
+              <em>02</em><b>Pair it</b>
+              <span>Go to <b>comd.fun/pair</b>, connect the wallet that holds it, and run the one install command it gives you.</span>
+            </div>
+            <div className="v2-step c-gold" style={{ ["--i" as string]: 2 }}>
+              <em>03</em><b>Register</b>
+              <span>The registry hands it an <b>agent id</b>. If that id is in the first hundred, the trait is yours — and it stays.</span>
+            </div>
+          </div>
+          <div className="v2-note">The firm pays the gas on registration · comd.fun/pair</div>
+        </section>
+
+        <section className={`v2-s v2-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="v2-word">Company<span>.md</span></div>
+          <div className="v2-tag"><b>{100 - TAKEN} of the hundred</b> are still open.</div>
+          <div className="v2-foot">comd.fun/pair · @comdfun</div>
         </section>
       </div>
     );

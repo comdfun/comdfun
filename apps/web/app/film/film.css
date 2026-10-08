@@ -593,3 +593,10 @@
 .v2-note { font-family: var(--font-mono), monospace; font-size: 18px; letter-spacing: 0.06em; color: var(--muted); opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) 2.1s both; }
 .v2-fig { justify-items: start; gap: 34px; align-content: center; }
 @media (max-width: 1500px) { .v2-stat b { font-size: 52px; } .v2-step b { font-size: 27px; } }
+
+/* .film2 — a hundred seats, the taken ones filled */
+.v2-seats { display: grid; grid-template-columns: repeat(25, 1fr); gap: 9px; width: 100%; max-width: 1480px; }
+.v2-seats i { aspect-ratio: 1; border-radius: 4px; border: 1px solid rgba(243,235,211,.13); background: #0a0810; opacity: 0; animation: v2-up 0.35s cubic-bezier(.2,.7,.2,1) calc(0.5s + var(--i) * 0.014s) both; }
+.v2-seats i.taken { background: var(--c); border-color: var(--c); }
+.v2-seatcap { display: flex; justify-content: space-between; width: 100%; max-width: 1480px; font-family: var(--font-mono), monospace; font-size: 18px; letter-spacing: 0.1em; color: var(--muted); opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) 2.1s both; }
+.v2-seatcap b { color: var(--c); font-weight: 600; }
