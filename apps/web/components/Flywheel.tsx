@@ -127,8 +127,8 @@ export function TaxStage({ s, labels = "short" }: { s: FlywheelStats; labels?: "
         </div>
       </div>
       <span className="fw-tag t-in">{labels === "long" ? "ETH in from Pons · every trade" : "Every buy & sell · ETH in"}</span>
-      <span className="fw-tag t-burn c-crimson">Buyback &amp; burn · {pctVol(s.bps.buyback, s.taxBps)}%</span>
-      <span className="fw-tag t-sweep c-violet">Floor sweeps · {pctVol(s.bps.sweep, s.taxBps)}%</span>
+      <span className="fw-tag t-burn c-crimson">Buyback &amp; burn · {pctVol(s.bps.buyback, s.taxBps)}% of volume</span>
+      <span className="fw-tag t-sweep c-violet">Floor sweeps · {pctVol(s.bps.sweep, s.taxBps)}% of volume</span>
     </div>
   );
 }
@@ -138,7 +138,7 @@ export function FlywheelStatsGrid({ s, compact }: { s: FlywheelStats; compact?: 
   return (
     <div className="fw-stats rv-kids">
       <div className="stat rv c-gold"><CountUp className="v" value={eth(taxCollectedWei(s).toString())} format="fixed2" /><span className="k">ETH tax collected{s.fees?.tracked ? "" : " by the Flywheel"}</span></div>
-      <div className="stat rv c-crimson"><CountUp className="v" value={toUnits(burnedWei(s).toString())} format="compact" /><span className="k">$COMD bought back &amp; burned (0x…dEaD){s.burns?.burnedPct ? ` · ${s.burns.burnedPct}%` : ""}</span></div>
+      <div className="stat rv c-crimson"><CountUp className="v" value={toUnits(burnedWei(s).toString())} format="compact" /><span className="k">$COMD bought back &amp; burned (0x…dEaD){s.burns?.burnedPct ? ` · ${s.burns.burnedPct}% of supply` : ""}</span></div>
       <div className="stat rv c-violet">
         <CountUp className="v" value={s.totals.swept} /><span className="k">Counsel NFTs swept</span>
         {portraits.length > 0 && (

@@ -8,8 +8,13 @@
  *   - buys:   Transfer(*, buyback wallet) — inbound $COMD to the wallets listed in BURN_WALLETS (server-side only).
  * The buyback wallets are never part of the output: only totals and the burn transactions themselves are public.
  *
- * Env: BURN_WALLETS (comma-separated; optional — without it only burns are tracked), BURN_FROM_BLOCK (first block to
- * scan; default: 600,000 blocks before the head on first scan ≈ 2–3 days on Robinhood Chain), BURN_CACHE_SECONDS (60).
+ * The running total must never go down, so the burns, the buyback total and the scan cursor are written to the kv
+ * store and read back on boot: a restart resumes the scan instead of re-anchoring it. Without that a default
+ * "scan the last N blocks" anchor slides forward with the head and silently drops older burns.
+ *
+ * Env: BURN_WALLETS (comma-separated; optional — without it only burns are tracked), BURN_FROM_BLOCK (the first block
+ * to scan — set it to the block the token launched in and the figure is exact and reproducible; only used when
+ * nothing is stored yet, default: 5,000,000 blocks before the head), BURN_CACHE_SECONDS (60).
  * Scans are incremental: each refresh continues from the last scanned block.
  */
 import { getAddress, keccak256, pad, toHex, type Address, type Hex } from "viem";
@@ -48,7 +53,28 @@ export class BurnTracker {
   private refreshing: Promise<void> | null = null;
   private error: string | null = null;
   private readonly times = new Map<number, string>();
+  private loaded = false;
   constructor(app: App) { this.app = app; }
+
+  // ------------------------------------------------------------------------------------ persistence (kv)
+  private static readonly KEY = "burns:state";
+  private load() {
+    if (this.loaded) return;
+    this.loaded = true;
+    const st = this.app.kv.get(BurnTracker.KEY) as
+      | { fromBlock?: number; scannedTo?: number; bought?: string; burns?: (Burn & { from: Address })[] }
+      | undefined;
+    if (!st) return;
+    if (Number.isFinite(st.fromBlock)) this.fromBlock = Number(st.fromBlock);
+    if (Number.isFinite(st.scannedTo)) this.scannedTo = Number(st.scannedTo);
+    if (st.bought) try { this.bought = BigInt(st.bought); } catch { /* keep 0 */ }
+    if (Array.isArray(st.burns)) this.burns = st.burns.filter((b) => b && b.txHash && b.amount);
+  }
+  private persist() {
+    try {
+      this.app.kv.set(BurnTracker.KEY, { fromBlock: this.fromBlock, scannedTo: this.scannedTo, bought: this.bought.toString(), burns: this.burns });
+    } catch { /* a lost write only costs a rescan */ }
+  }
 
   get wallets(): Address[] {
     return (this.app.cfg.storage.BURN_WALLETS ?? "").split(/[\s,]+/).filter((x) => /^0x[0-9a-fA-F]{40}$/.test(x)).map((x) => getAddress(x));
@@ -57,6 +83,7 @@ export class BurnTracker {
 
   async summary(): Promise<BurnSummary> {
     const cfg = this.app.cfg;
+    this.load();
     const tracked = this.app.chain.configured && !!this.app.chain.rawLogs && !/^0x0{40}$/i.test(cfg.comd);
     if (tracked) {
       const stale = this.app.now() - this.last > this.ttlMs;
@@ -90,11 +117,13 @@ export class BurnTracker {
   private async refresh(): Promise<void> {
     const c = this.app.chain;
     const token = this.app.cfg.comd;
+    this.load();
     try {
       const head = await c.blockNumber();
       if (this.fromBlock === null) {
+        // chosen once and then stored: the anchor must not slide forward with the head, or old burns fall out
         const env = Number(this.app.cfg.storage.BURN_FROM_BLOCK);
-        this.fromBlock = Number.isFinite(env) && env > 0 ? env : Math.max(0, head - 600_000);
+        this.fromBlock = Number.isFinite(env) && env > 0 ? env : Math.max(0, head - 5_000_000);
       }
       const from = this.scannedTo === null ? this.fromBlock : this.scannedTo + 1;
       if (from <= head) {
@@ -123,6 +152,7 @@ export class BurnTracker {
       if (this.supply === null || this.last === 0) {
         try { this.supply = await c.erc20TotalSupply(token); } catch { /* keep null */ }
       }
+      this.persist();
       this.error = null;
     } catch (e) {
       this.error = (e as Error).message.split("\n")[0].slice(0, 200);

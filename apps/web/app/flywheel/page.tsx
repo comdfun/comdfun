@@ -59,7 +59,12 @@ export default async function FlywheelPage() {
     <div className="wrap">
       <PageHead
         crumbs={[{ label: "Company.md", href: "/" }, { label: "Treasury", href: "/swap" }, { label: "Flywheel" }]}
-        kicker={<><span className="badge brass fill">5% tax · ETH</span><span className="badge crimson" style={{ ["--c" as string]: "var(--crimson)" }}>{pct(s.bps.buyback)}% burn</span><span className="badge violet">{pct(s.bps.sweep)}% sweeps</span><span className="badge ok">80% of job revenue to Counsel</span></>}
+        kicker={<>
+          {s.burns?.burnedPct && <span className="badge crimson fill" style={{ ["--c" as string]: "var(--crimson)" }}>{s.burns.burnedPct}% of supply burned</span>}
+          <span className="badge brass fill">5% tax · ETH</span>
+          <span className="badge violet">half burns · half sweeps</span>
+          <span className="badge ok">80% of job revenue to Counsel</span>
+        </>}
         title={<>The <span className="accent">flywheel</span></>}
         lede={<>$COMD launched on <strong>Pons</strong> with a <strong>5% tax in ETH on every buy and sell</strong>. (Pons adds its own 1% protocol fee on top; the firm takes only the 5%.) Pons pays that tax to the Flywheel, which spends it two ways, on-chain, in public, when the firm decides to: <strong>buyback-and-burn</strong> (sent to the dead address) and <strong>Counsel floor sweeps</strong>. Work closes the loop: jobs are paid in $COMD, 80% of it to the Counsel who did them and 20% to the firm treasury.</>}
       />
@@ -116,8 +121,6 @@ export default async function FlywheelPage() {
             </div>
           )}
           {s.burns.error && <p className="small muted" style={{ marginTop: 10 }}>Burn tracker: {s.burns.error}</p>}
-          {s.fees?.error && <p className="small muted" style={{ marginTop: 6 }}>Fee tracker: {s.fees.error}</p>}
-          {s.fees?.internalUnavailable && <p className="small muted" style={{ marginTop: 6 }}>Fee tracker: the indexer in use cannot see contract payouts on this chain, so &quot;collected&quot; is a floor — add an Etherscan API key (<code>ETHERSCAN_API_KEY</code>) for the full figure.</p>}
         </Section>
       )}
 

@@ -38,7 +38,7 @@ export function TradeCards({ ponsUrl, uniswapUrl, graduated }: { ponsUrl: string
           <p className="small muted" style={{ margin: 0 }}>{graduated ? "The pool is live; the Uniswap link appears here as soon as it is published." : "When $COMD graduates on Pons, its liquidity moves to a locked Uniswap v4 pool and a Uniswap trade link appears here. Buybacks start then too."}</p>
         </div>
       )}
-      <p className="small muted rv">Announcements, including graduation: <XLink label />.</p>
+      <p className="small muted rv">Announcements, including graduation, go out on <XLink label /></p>
     </div>
   );
 }
