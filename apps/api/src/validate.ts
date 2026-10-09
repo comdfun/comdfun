@@ -75,6 +75,9 @@ function checkPaths(p: Problems, v: unknown, path: string, max = 16) {
   v.forEach((x, i) => { if (!isStr(x, 1, 512) || String(x).startsWith("/") || String(x).split("/").includes("..")) p.add(`${path}[${i}]`, "invalid", "relative repository path (≤512, no ..)"); });
 }
 
+/** An objective that demands a bare answer — "the whole number only", "one word", "no explanation". */
+const WANTS_BARE_ANSWER = /\b(whole\s+number|number|digits?|figure|word|name|date|answer)\s+only\b|\bonly\s+(the\s+)?(whole\s+)?(number|digits?|figure|word|name|date|answer)\b|\bjust\s+(the\s+)?(number|digits?|figure|word|name|date|answer)\b|\bno\s+(explanation|prose|commentary|preamble|citations?|sources?)\b|\bone\s+word\b|\bsingle\s+(number|word|figure)\b/i;
+
 export function validateJobBody(body: unknown, o: JobCheckOpts, path = ""): Problem[] {
   const p = new Problems();
   const at = (k: string) => (path ? `${path}.${k}` : k);
@@ -96,6 +99,13 @@ export function validateJobBody(body: unknown, o: JobCheckOpts, path = ""): Prob
   if (body.skill !== undefined) {
     if (!isStr(body.skill, 1, 64) || !o.skills.runnable(body.skill)) p.add(at("skill"), "unknown_skill", `${String(body.skill)} is not a runnable skill`);
     else if (o.skills.get(body.skill)?.writes === "paths" && !Array.isArray(body.paths)) p.add(at("paths"), "required", `${body.skill} writes only declared paths; give paths`);
+    // A matter that cannot pass its own verifier must not be charged for. research-citations requires a cited report;
+    // an objective that asks for a bare number or a single word can never satisfy it, so the Counsel answers correctly,
+    // the verifier rejects it, and the attempts run out. That is a question for the Oracle, which rules in one line.
+    if (isStr(body.objective, 1, 4000) && WANTS_BARE_ANSWER.test(body.objective)
+        && ((o.skills.get(String(body.skill))?.checks ?? []).includes("research-citations") || body.skill === "research-report")) {
+      p.add(at("objective"), "skill_mismatch", `${String(body.skill)} is checked for a cited report of some length, so an objective that asks for the answer only can never pass it — every attempt will be rejected. Ask the Oracle instead (action oracle.request), which answers a short factual question with a sealed ruling, or drop the "answer only" instruction and ask for a report.`);
+    }
   }
   if (body.template !== undefined && !(TEMPLATES as readonly string[]).includes(body.template)) p.add(at("template"), "invalid", `template must be one of ${TEMPLATES.join(", ")}`);
   if (body.steps !== undefined) {
