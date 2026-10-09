@@ -866,7 +866,9 @@ export async function health(app: App) {
   for (const o of orders) {
     const k = o.status === "admitted" || o.status === "admission_pending" ? "paid" : o.status;
     counts[k] = (counts[k] ?? 0) + 1;
-    if (o.status === "payment_failed" && o.payment.reason) failedReasons[o.payment.reason] = (failedReasons[o.payment.reason] ?? 0) + 1;
+    // Redacted on the way out, not only on the way in: reasons stored before redactRpc() existed still carry the
+    // endpoint, and /health is public. Historical rows are cleaned here rather than left to leak for ever.
+    if (o.status === "payment_failed" && o.payment.reason) { const r = redactRpc(o.payment.reason); failedReasons[r] = (failedReasons[r] ?? 0) + 1; }
   }
   const degraded: string[] = [];
   const dbOk = await app.store.healthy().catch(() => false);

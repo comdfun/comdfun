@@ -19,6 +19,7 @@ import {
 } from "@company/protocol";
 import type { App } from "./app.ts";
 import { ApiError, E } from "./errors.ts";
+import { redactRpc } from "./chain.ts";
 import type { JobX } from "./engine.ts";
 import type { OrderRecord, ScheduleRecord } from "./records.ts";
 import { iso } from "./store.ts";
@@ -405,7 +406,8 @@ export class Requests {
       const settle = this.settleAndAdmit(o, payment);
       const done = await Promise.race([settle.then(() => true), new Promise<boolean>((r) => setTimeout(() => r(false), this.app.cfg.settleWaitMs).unref())]);
       if (!done) return { status: 202, body: this.statusView(o) };
-      if ((o.status as string) === "payment_failed") throw new ApiError(402, "payment_rejected", `payment failed: ${o.payment.reason}`, { reason: o.payment.reason });
+      // This is the string a payer actually reads. It carried the RPC endpoint — and the key in its path — to a user.
+      if ((o.status as string) === "payment_failed") { const r = redactRpc(o.payment.reason); throw new ApiError(402, "payment_rejected", `payment failed: ${r}`, { reason: r }); }
       return { status: (o.status as string) === "admitted" ? 200 : 202, body: this.statusView(o) };
     } finally {
       this.inflight.delete(o.id);
@@ -487,7 +489,7 @@ export class Requests {
     return {
       status: o.status,
       order: { id: o.id, requestKey: o.requestKey, status: o.status, quote: o.quote, createdAt: o.createdAt, paidAt: o.paidAt },
-      payment: { status: o.payment.status, paid: o.payment.paid, transactionHash: o.payment.transactionHash, reason: o.payment.reason },
+      payment: { status: o.payment.status, paid: o.payment.paid, transactionHash: o.payment.transactionHash, reason: o.payment.reason ? redactRpc(o.payment.reason) : null },
       admission: o.admission,
     };
   }
