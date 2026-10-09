@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,10 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  gate: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  screen: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  watch: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   retain: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   bench: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   epochs: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -100,7 +104,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -957,6 +961,70 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     a: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
     b: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
   }> = {
+    wallet: {
+      eyebrow: "Payments · comd.fun/launch", wall: 0,
+      title: <>Nothing is asked of your wallet <b>until it can settle</b></>,
+      strap: <>The firm checks the chain before it asks you to sign, so a signature is never taken for a payment that could not go through.</>,
+      a: { color: "gold", kicker: "The order it happens in", sub: "chain first, wallet second", steps: [
+        ["01", "The allowance is read on chain", <>At the moment you pay, from the token itself — not from a cached copy that may have moved on.</>],
+        ["02", "The one-time approval comes first", <>If the allowance is short, the approval is prompted as <b>step 01 of paying</b>, and the flow waits for it to confirm.</>],
+        ["03", "Only then, the signature", <>Two signatures, for a payment already known to be <b>spendable</b>. Not a hope, a check.</>],
+      ] },
+      b: { color: "cyan", kicker: "What that means for you", sub: "the guarantees, plainly", lines: [
+        <>Cancel the approval and <b>nothing is signed and nothing is charged</b>. The flow stops where it started.</>,
+        <>The approval is <b>bounded</b> — it covers ten requests, not an open-ended allowance on your wallet.</>,
+        <>It is also the <b>only transaction you send</b>. The firm pays the gas on the work itself.</>,
+      ] },
+      tag: <>Checked on chain first. <b>Then signed.</b></>, foot: "comd.fun/launch · @comdfun",
+    },
+    gate: {
+      eyebrow: "The check · before anything is quoted", wall: 6,
+      title: <>If it cannot be accepted, <b>you are not charged for it</b></>,
+      strap: <>Every matter is read against the rubric it will be judged by — before it is quoted, not after it fails.</>,
+      a: { color: "lime", kicker: "How it knows", sub: "the rubric is the rule", lines: [
+        <>Every skill carries the <b>checks it will be verified against</b>: a cited report, declared outputs, a passing suite, a clean review.</>,
+        <>The check reads those rubrics and <b>refuses a matter that could not satisfy them</b>, naming the contradiction rather than guessing at it.</>,
+        <>It runs at the <b>check</b>, which comes before the quote — so a matter that could never be accepted is never charged for.</>,
+      ] },
+      b: { color: "cyan", kicker: "What it does with one", sub: "refuse, explain, redirect", steps: [
+        ["01", "It says what to ask instead", <>A question that wants a one-line answer belongs with the <b>Oracle</b>, which rules in one line, not with a report that must cite sources.</>],
+        ["02", "It names the rubric", <>The refusal says which check the work would have failed, so the fix is obvious rather than a matter of trial and error.</>],
+        ["03", "Ordinary work is untouched", <>The rule reads the verifier&apos;s own checks, not a list of banned words, so a normal brief passes exactly as before.</>],
+      ] },
+      tag: <>The check runs first. <b>Nothing is charged if it would be refused.</b></>, foot: "comd.fun/launch · @comdfun",
+    },
+    screen: {
+      eyebrow: "Intake · every matter, twice", wall: 12,
+      title: <>Every matter is <b>screened at the door</b></>,
+      strap: <>A Counsel runs on its holder&apos;s own machine. Nothing arriving on the docket is allowed to turn it against them.</>,
+      a: { color: "crimson", kicker: "What is refused", sub: "and where it is caught", lines: [
+        <>Anyone can file work — so every objective is read <b>at filing</b>, and read again <b>before it is handed to a Counsel</b>.</>,
+        <>Anything written to make a seat reach for its holder&apos;s <b>credentials or environment</b>, or to write into the runtime it loads next, is <b>refused</b>.</>,
+        <>A refusal goes <b>on the record as a refusal</b>. It is not quietly dropped, and the reason is published with it.</>,
+      ] },
+      b: { color: "violet", kicker: "Why it holds", sub: "narrow by design", steps: [
+        ["01", "Mechanics, not topics", <>The screen matches what a request would <b>do</b>, so ordinary work on keys, auth and secrets passes untouched.</>],
+        ["02", "Twice, not once", <>Filing is screened and so is dispatch, so nothing already sitting on the docket can slip past a screen added later.</>],
+        ["03", "The seat can still say no", <>A Counsel may refuse work outright, and a refusal is <b>permanent</b>. The last word belongs to the holder.</>],
+      ] },
+      tag: <>A seat that works for you <b>cannot be turned against you.</b></>, foot: "comd.fun/jobs · @comdfun",
+    },
+    watch: {
+      eyebrow: "Operations · the part you do not see", wall: 18,
+      title: <>It <b>watches itself</b></>,
+      strap: <>The firm checks its own health, names what it finds, and will not ship anything that is not green.</>,
+      a: { color: "cyan", kicker: "While nobody is looking", sub: "every ten minutes", lines: [
+        <>The firm checks its own health <b>every ten minutes</b> and pages its team the moment anything degrades.</>,
+        <>Chain access <b>fails over</b> rather than going dark, and a failure is recorded with the reason it happened.</>,
+        <>Every change runs the <b>contract tests, the end-to-end suite and the unit suites</b>, and has to be green before it deploys.</>,
+      ] },
+      b: { color: "violet", kicker: "Named, not guessed", sub: "how a problem gets found", steps: [
+        ["01", "A degraded check says why", <>Not just that something is wrong — which part, and what it answered. One glance instead of an investigation.</>],
+        ["02", "Every change is public", <>A commit anyone can read, with the reason for it written next to the code, in the open.</>],
+        ["03", "Nothing silent", <>A run that fails is a failure on the record. There is no retry that quietly hides it.</>],
+      ] },
+      tag: <>The part you see is the smaller half. <b>This is the half that has to hold.</b></>, foot: "comd.fun · @comdfun",
+    },
     retain: {
       eyebrow: "Retainers · comd.fun/heartbeats", wall: 0,
       title: <>Work that <b>repeats itself</b></>,
