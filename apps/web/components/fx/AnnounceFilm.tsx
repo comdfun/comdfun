@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,11 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  retain: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  bench: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  epochs: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  flow: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  filed: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   found: [
     { id: "f2-title", at: 0 }, { id: "f2-what", at: 5_500 }, { id: "f2-count", at: 14_000 }, { id: "f2-how", at: 22_500 }, { id: "end", at: 30_500 },
   ],
@@ -95,7 +100,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -940,6 +945,137 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="mf-url af-url-sm">github.com<span>/comdfun</span></div>
           <div className="mf-tag">Quieter, faster, <b className="c-gold">harder to knock over.</b></div>
           <div className="fo-foot">comd.fun · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  // ── The quiet style, five protocol mechanics that have not had a film: one table, one renderer. Every figure and
+  // every rule below is from the source (scheduler.ts, device.ts/LIMITS.fuzz, settlement.ts, workflows.ts, sites-host.ts).
+  const QUIET: Record<string, {
+    eyebrow: string; title: React.ReactNode; strap: React.ReactNode; wall: number; tag: React.ReactNode; foot: string;
+    a: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
+    b: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
+  }> = {
+    retain: {
+      eyebrow: "Retainers · comd.fun/heartbeats", wall: 0,
+      title: <>Work that <b>repeats itself</b></>,
+      strap: <>A matter or a ruling the firm opens on a cadence — run by run, until the runs you bought are used.</>,
+      a: { color: "gold", kicker: "What a run costs", sub: "only one kind of run spends one", lines: [
+        <>Runs are bought up front, and <b>only an opened run spends one</b>. A slot whose previous result is still in flight is <b>skipped</b>, and a skipped slot costs nothing.</>,
+        <>A run the intake screen <b>refuses</b> is failed, and failed costs nothing either. <b>Three refusals in a row</b> pauses the retainer instead of burning through the rest.</>,
+        <>Floors are checked when you are quoted: <b>ten minutes</b> between rulings, <b>thirty</b> between matters.</>,
+      ] },
+      b: { color: "cyan", kicker: "What happens around it", sub: "outages, top-ups, the record", steps: [
+        ["01", "After an outage it fires once, late", <>One catch-up run, not the whole backlog — and the slots it <b>missed</b> are written down rather than quietly dropped.</>],
+        ["02", "Any wallet can top it up", <>A paused or exhausted retainer resumes from its <b>next slot</b>. Unused runs are not refunded.</>],
+        ["03", "Every run is its own filing", <>Each one is a matter or a ruling in its own right, with its own entry on the docket.</>],
+      ], note: <>comd.fun/heartbeats</> },
+      tag: <>Buy the runs once. <b>The firm turns up on its own.</b></>, foot: "comd.fun/heartbeats · @comdfun",
+    },
+    bench: {
+      eyebrow: "The Bench · adversarial testing", wall: 6,
+      title: <>Contracts get <b>attacked</b> before they ship</>,
+      strap: <>A fuzz campaign is a matter of its own: the properties are stated, then hammered until they break or hold.</>,
+      a: { color: "crimson", kicker: "The campaign", sub: "how hard a contract is hit", stats: [
+        ["1,000", "runs", "Floor per campaign"],
+        ["10M", "runs", "Ceiling per campaign"],
+        ["7", "", "Matter templates"],
+      ], note: <>single · impl+tests · impl+tests+review · multi-contract · <b>fuzz</b> · research · audit</> },
+      b: { color: "lime", kicker: "Why it counts", sub: "stated, signed, filed", lines: [
+        <><b>Properties, not opinions.</b> The campaign writes down what must always hold, and the runtime spends its runs trying to find the one case where it does not.</>,
+        <>Results arrive as a <b>signed call from the holder&apos;s machine</b>. A lease that was never a fuzz campaign cannot submit them.</>,
+        <>Pass and fail counts land <b>per property</b> on the matter — so a failure is an exhibit, not a deleted branch.</>,
+      ] },
+      tag: <>Up to ten million attempts to break it, <b>on the record.</b></>, foot: "comd.fun/jobs · @comdfun",
+    },
+    epochs: {
+      eyebrow: "Rewards · RewardDistributor", wall: 12,
+      title: <>How a Counsel <b>gets paid</b></>,
+      strap: <>Seven-day epochs, split by accepted work, settled by one Merkle root posted on chain.</>,
+      a: { color: "gold", kicker: "The three steps", sub: "revenue in, root out", steps: [
+        ["01", "The revenue arrives", <><b>Anyone</b> can call the RevenueRouter&apos;s distribute(). <b>80%</b> goes to the Counsel reward pool, <b>20%</b> to the firm treasury, plus the 1% fee from every company launched.</>],
+        ["02", "The epoch closes", <>Accepted work per seat over <b>seven days</b> sets each share, pro rata. An epoch with no accepted work posts nothing and the funds <b>roll over</b>.</>],
+        ["03", "A root goes on chain", <>One Merkle root per asset, each leaf an <b>(epoch, token id, amount)</b>. Claim against it whenever you like.</>],
+      ] },
+      b: { color: "violet", kicker: "What that guarantees", sub: "and what it does not", lines: [
+        <>Amounts are fixed <b>at the moment the root is posted</b>, from what the distributor actually holds. Not a projection, not an IOU.</>,
+        <>Paid to the <b>token</b>, not the wallet. Sell the Counsel and the epochs that follow go with it.</>,
+        <>Because anyone can trigger the distribution, the firm has no say in <b>when</b> it happens — and no way to favour one seat over another.</>,
+      ] },
+      tag: <>Accepted work in, <b>$COMD out</b>, on a seven-day clock.</>, foot: "comd.fun/flywheel · @comdfun",
+    },
+    flow: {
+      eyebrow: "Workflows · one matter, six stages", wall: 18,
+      title: <>Ask for a company. <b>Get a company.</b></>,
+      strap: <>Contracts, a deployment, a front end, hosting and a validation — planned and filed as a single matter.</>,
+      a: { color: "cyan", kicker: "The first three stages", sub: "contracts, deployment, front end", steps: [
+        ["01", "Contracts", <>The draft runs as a launch job <b>with the Bench</b> — so the fuzz campaign happens before anything is deployed, not after.</>],
+        ["02", "Deployment", <>The pipeline deploys the <b>attested build</b>: the bytes that were tested are the bytes that go on chain.</>],
+        ["03", "Front end", <>The Managing Partner plans it against the <b>deployed commit</b>, with the launch record as its input — so the site is built for the contracts that exist.</>],
+      ] },
+      b: { color: "lime", kicker: "The last three", sub: "publishing, validating, the verdict", lines: [
+        <><b>Publishing:</b> source to GitHub, and the built site hosted by the firm.</>,
+        <><b>Validating:</b> the hosted bytes, the deployed code and the ABIs are checked against each other. A mismatch <b>blocks</b> the workflow rather than completing it.</>,
+        <>A workflow ends <b>completed, blocked, superseded or cancelled</b> — and says which. There is no quiet failure state.</>,
+      ] },
+      tag: <>One matter, six stages, <b>none of them taken on trust.</b></>, foot: "comd.fun/launch · @comdfun",
+    },
+    filed: {
+      eyebrow: "Filings · comd.fun/published", wall: 24,
+      title: <>Everything it builds, <b>filed in public</b></>,
+      strap: <>Tokens, contracts, sites, research, code, media and audits — each one an exhibit of an accepted matter.</>,
+      a: { color: "gold", kicker: "What a filing is", sub: "the thing itself, not a picture of it", lines: [
+        <>Not a screenshot and not a summary: the <b>artefact</b> — the deployed address, the repository, the hosted site, the document.</>,
+        <>Each one stays attached to the matter that produced it, so <b>what was asked</b> can be read next to <b>what came back</b>.</>,
+        <>Refused and failed matters stay on the docket too. The record is not a highlight reel.</>,
+      ] },
+      b: { color: "cyan", kicker: "How a site is kept", sub: "versioned and content-addressed", steps: [
+        ["01", "Versioned", <>Every publish writes a <b>new version</b> and a pointer to it, keeping the one before. Nothing is overwritten in place.</>],
+        ["02", "Content-addressed", <>A manifest lists every file with its <b>sha256</b> and its byte count. Change one character and the hash changes with it.</>],
+        ["03", "On its own name", <>Each site answers at <b>its own label</b>, served from the firm&apos;s storage rather than a link that can rot.</>],
+      ] },
+      tag: <>If it is not filed, <b>it did not happen.</b></>, foot: "comd.fun/published · @comdfun",
+    },
+  };
+  if (QUIET[kind]) {
+    const q = QUIET[kind];
+    const Panel = ({ id, p }: { id: string; p: typeof q.a }) => (
+      <section className={`v2-s v2-fig c-${p.color} ${on(id)}`} data-scene={id}>
+        <div className="v2-no"><s /><i>{p.kicker}</i><span>{p.sub}</span></div>
+        {p.stats && <div className="v2-stats">{p.stats.map(([n, unit, label], i) => (
+          <div key={label} className="v2-stat" style={{ ["--i" as string]: i }}><b>{n}{unit && <em>{unit}</em>}</b><span>{label}</span></div>
+        ))}</div>}
+        {p.lines && <ul className="v2-lines">{p.lines.map((l, i) => <li key={i} style={{ ["--i" as string]: i }}>{l}</li>)}</ul>}
+        {p.steps && <div className="v2-flow">{p.steps.map(([no, head, body], i) => (
+          <div key={no} className="v2-step" style={{ ["--i" as string]: i }}><em>{no}</em><b>{head}</b><span>{body}</span></div>
+        ))}</div>}
+        {p.note && <div className="v2-note">{p.note}</div>}
+      </section>
+    );
+    return (
+      <div className="film film2" data-scene={scene}>
+        <div className="v2-grid" aria-hidden="true" />
+        <div className="v2-rail" aria-hidden="true"><div className="v2-fill" /></div>
+
+        <section className={`v2-s v2-title ${on("q-title")}`} data-scene="q-title">
+          <div className="v2-eyebrow">{q.eyebrow}</div>
+          <h1>{q.title}</h1>
+          <p className="v2-strap">{q.strap}</p>
+          <div className="v2-wall">{portraits.slice(q.wall, q.wall + 6).map((id, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={id} src={`/art/${id}-card.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+        </section>
+
+        <Panel id="q-a" p={q.a} />
+        <Panel id="q-b" p={q.b} />
+
+        <section className={`v2-s v2-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="v2-word">Company<span>.md</span></div>
+          <div className="v2-tag">{q.tag}</div>
+          <div className="v2-foot">{q.foot}</div>
         </section>
       </div>
     );
