@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useAccount, useReadContracts, useWalletClient, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useWalletClient, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
 import { erc20Abi, type Address } from "viem";
 import type { Capabilities, CheckResult, RequestStatus } from "@/lib/types";
 import * as paid from "@/lib/paid";
@@ -74,7 +74,8 @@ const EVERY = [
 ] as const;
 const TZS = ["UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/London", "Europe/Lisbon", "Europe/Berlin", "Asia/Singapore", "Asia/Tokyo"];
 
-type Step = "idle" | "quote" | "challenge" | "sign" | "submit" | "poll" | "done" | "error";
+type Step = "idle" | "approve" | "quote" | "challenge" | "sign" | "submit" | "poll" | "done" | "error";
+const APPROVE_STEP: { k: Step; label: string } = { k: "approve", label: "One-time approval" };
 const STEPS: { k: Step; label: string }[] = [
   { k: "quote", label: "Quote" },
   { k: "challenge", label: "402 challenge" },
@@ -105,6 +106,7 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
 
   const { address, chainId: walletChain } = useAccount();
   const { data: wallet } = useWalletClient();
+  const publicClient = usePublicClient();
   const { switchChainAsync } = useSwitchChain();
 
   // ------------------------------------------------ payment terms
@@ -209,6 +211,34 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
     }
   };
 
+  /** Permit2 can only move COMD the token itself has been told to let it move. That allowance is an ordinary ERC-20
+   *  approval — a transaction, not a signature — and without it the payment signature is valid and unspendable: the
+   *  settler reverts with insufficient_permit2_allowance after the wallet has already signed. So the allowance is read
+   *  fresh here (the polled copy can be stale, or zero because an RPC read failed) and the approval is prompted as the
+   *  first step of paying. Returns false when it could not be put right, and nothing is signed. */
+  const ensureAllowance = async (): Promise<boolean> => {
+    if (!address || !asset) return false;
+    let current = allowance;
+    try {
+      current = (await publicClient?.readContract({ address: asset, abi: erc20Abi, functionName: "allowance", args: [address, permit2] })) as bigint;
+    } catch { /* fall back to the polled value; if that is short we approve anyway, which is harmless */ }
+    if (current !== undefined && current >= price) return true;
+    setStep("approve");
+    try {
+      const hash = await writeContractAsync({ address: asset, abi: erc20Abi, functionName: "approve", args: [permit2, approveAmount] });
+      await publicClient?.waitForTransactionReceipt({ hash });
+      reads.refetch();
+      return true;
+    } catch (e) {
+      setStep("error");
+      const m = (e as Error).message ?? "";
+      setPayErr(/denied|rejected|User rejected/i.test(m)
+        ? `Approval cancelled, so nothing was signed and nothing was charged. Permit2 needs permission to move COMD on your behalf before a payment can settle — it is one transaction, and it covers ${comd(approveAmount)} COMD.`
+        : `The approval did not go through, so nothing was signed. ${m.split("\n")[0]}`);
+      return false;
+    }
+  };
+
   const pay = async () => {
     setPayErr(null);
     if (!fresh) {
@@ -218,6 +248,7 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
     if (!address || !wallet) return;
     try {
       if (walletChain !== activeChain.id) await switchChainAsync({ chainId: activeChain.id });
+      if (!(await ensureAllowance())) return;
       setStep("quote");
       const q = await paid.quote(action, input);
       setStep("challenge");
@@ -236,7 +267,13 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
       }
       else {
         setStep("error");
-        setPayErr(last.admission?.result.kind === "refused" ? `Refused: ${last.admission.result.problems.map((p) => p.message).join("; ")}` : `${last.status}${last.payment?.reason ? `: ${last.payment.reason}` : ""}`);
+        setPayErr(last.admission?.result.kind === "refused"
+          ? `Refused: ${last.admission.result.problems.map((p) => p.message).join("; ")}`
+          : /insufficient_permit2_allowance/.test(last.payment?.reason ?? "")
+            ? "Permit2 is not allowed to move enough COMD for this payment yet. Nothing was charged. Approve it above and retain again — the approval is one transaction and covers several requests."
+            : /insufficient_funds/.test(last.payment?.reason ?? "")
+              ? `Not enough COMD in the wallet for this payment. Nothing was charged.`
+              : `${last.status}${last.payment?.reason ? `: ${last.payment.reason}` : ""}`);
       }
     } catch (e) {
       setStep("error");
@@ -259,7 +296,7 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
       <div className="section" style={{ marginTop: 8 }}>
         {needsApproval ? (
           <div className="stack" style={{ gap: 12 }}>
-            <p style={{ margin: 0 }}>First, one approval. It lets Permit2 move up to {comd(approveAmount)} COMD, enough for ten requests, and costs gas once.</p>
+            <p style={{ margin: 0 }}><b>One approval is needed before a payment can settle.</b> It lets Permit2 move up to {comd(approveAmount)} COMD on your behalf, enough for ten requests, and costs gas once. Retain without it and we will ask for this first — no signature is taken until it is done.</p>
             {address ? (
               <div className="row">
                 <button
@@ -491,8 +528,8 @@ export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record
         )}
         {step !== "idle" && (
           <ol className="paysteps" aria-label="Payment progress">
-            {STEPS.map((s, i) => {
-              const idx = STEPS.findIndex((x) => x.k === step);
+            {(needsApproval || step === "approve" ? [APPROVE_STEP, ...STEPS] : STEPS).map((s, i, all) => {
+              const idx = all.findIndex((x) => x.k === step);
               const state = step === "done" ? "done" : step === "error" ? (i < Math.max(0, idx) ? "done" : "") : i < idx ? "done" : i === idx ? "now" : "";
               return (
                 <li key={s.k} className={state}>
