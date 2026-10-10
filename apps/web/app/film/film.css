@@ -606,3 +606,75 @@
 .v2-lines li { position: relative; padding-left: 36px; font-size: 28px; line-height: 1.5; color: #b8b1a2; opacity: 0; animation: v2-up 0.7s cubic-bezier(.2,.7,.2,1) calc(0.45s + var(--i) * 0.6s) both; }
 .v2-lines li::before { content: ""; position: absolute; left: 0; top: 16px; width: 18px; height: 1px; background: var(--c); }
 .v2-lines li b { color: var(--parch); font-weight: 500; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   .film2 v2 — the quiet style was legible but flat: text on black with hairlines.
+   This adds depth without noise: a soft accent wash per scene, cards with a lit
+   top edge and a gradient face, brighter markers, and motion that rises rather
+   than only fading. Same palette, same restraint, more presence on a timeline.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* the scene's own colour, washed softly behind it */
+.film2 .v2-s::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(70% 55% at 16% 42%, color-mix(in srgb, var(--c, #ffc83d) 13%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 50% at 92% 8%, color-mix(in srgb, var(--c, #ffc83d) 7%, transparent) 0%, transparent 70%);
+  opacity: 0; animation: v2-wash 1.2s cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes v2-wash { from { opacity: 0; } to { opacity: 1; } }
+.film2 .v2-grid { background-size: 112px 112px, 112px 112px; }
+.film2 .v2-grid::after { background: radial-gradient(78% 78% at 24% 44%, transparent 0%, rgba(5,4,9,.92) 100%); }
+
+/* the rail reads as a measure of the film, so give it weight and a lit edge */
+.v2-rail { height: 3px; background: rgba(243,235,211,.08); }
+.v2-fill { box-shadow: 0 0 18px 1px color-mix(in srgb, var(--gold) 55%, transparent); }
+
+/* kicker: a filled bar rather than a hairline, and the label in the scene colour */
+.v2-no { gap: 18px; font-size: 19px; }
+.v2-no s { width: 54px; height: 3px; border-radius: 2px; background: var(--c); box-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent); }
+.v2-no i { font-weight: 600; letter-spacing: 0.18em; }
+
+/* cards: a lit top edge, a face that catches a little light, and real depth */
+.v2-step, .v2-stat {
+  position: relative; overflow: hidden; border-radius: 12px;
+  border-color: rgba(243,235,211,.11);
+  background: linear-gradient(180deg, rgba(243,235,211,.055) 0%, rgba(243,235,211,.012) 38%, rgba(7,6,10,.9) 100%);
+  box-shadow: 0 24px 60px -30px rgba(0,0,0,.95), inset 0 1px 0 rgba(243,235,211,.07);
+}
+.v2-step::after, .v2-stat::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 10%, transparent));
+}
+.v2-step { padding: 34px 32px 32px; }
+.v2-step em { font-size: 17px; letter-spacing: 0.22em; }
+.v2-step b { font-size: 33px; letter-spacing: -0.025em; }
+.v2-step span { font-size: 22px; line-height: 1.5; color: #c2bbab; }
+.v2-stat { padding: 30px 34px 26px; }
+.v2-stat b { text-shadow: 0 0 36px color-mix(in srgb, var(--c) 45%, transparent); }
+.v2-stat:first-child { border-color: color-mix(in srgb, var(--c) 42%, transparent); }
+
+/* lines: a lit marker instead of a grey dash */
+.v2-lines li { padding-left: 42px; font-size: 29px; color: #c2bbab; }
+.v2-lines li::before {
+  content: ""; position: absolute; left: 2px; top: 13px; width: 11px; height: 11px; border-radius: 3px;
+  background: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 70%, transparent);
+}
+.v2-lines li b { color: var(--parch); }
+
+/* the title card earns a glow of its own, and the wall sits on a soft shelf */
+.v2-title h1 { text-shadow: 0 0 90px rgba(255, 200, 61, 0.22); }
+.v2-title h1 b { text-shadow: 0 0 70px color-mix(in srgb, var(--gold) 45%, transparent); }
+.v2-wall { position: relative; }
+.v2-wall::after {
+  content: ""; position: absolute; left: -6%; right: -6%; bottom: -26px; height: 46px; pointer-events: none;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(255,200,61,.16) 0%, transparent 72%);
+}
+.v2-wall img { border-color: rgba(243,235,211,.26); box-shadow: 0 22px 44px -22px rgba(0,0,0,.95); }
+
+/* motion with a little more life in it */
+@keyframes v2-up { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: none; } }
+.v2-end .ft-logo { filter: drop-shadow(0 0 34px rgba(255,200,61,.42)); }
+.v2-word { text-shadow: 0 0 70px rgba(255,200,61,.22); }
+
+@media (max-width: 1500px) { .v2-step b { font-size: 28px; } .v2-step span { font-size: 20px; } .v2-lines li { font-size: 26px; } }
