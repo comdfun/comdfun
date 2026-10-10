@@ -9,6 +9,7 @@ const ITEMS = [
   { href: "/heartbeats", label: "Retainers", c: "lime", m: ["/heartbeats"] },
   { href: "/agents", label: "Counsel", c: "gold", m: ["/agents"] },
   { href: "/today", label: "Today", c: "cyan", m: ["/today"] },
+  { href: "/leaderboard", label: "Leaderboard", c: "gold", m: ["/leaderboard"] },
   { href: "/launch", label: "Retain ›", c: "pink", m: ["/launch"] },
 ];
 

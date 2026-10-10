@@ -11,7 +11,7 @@ import { WhatIsThisLink } from "./WhatIsThisLink";
 export { XLink };
 
 export const NAV = [
-  { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches", "/today"], hint: "Matters · Rulings · Filings · Counsel" },
+  { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches", "/today", "/leaderboard"], hint: "Matters · Rulings · Filings · Counsel" },
   { href: "/launch", label: "Retain", c: "pink", match: ["/launch"], hint: "Pay the firm in $COMD" },
   { href: "/token", label: "$COMD", c: "gold", match: ["/token"], hint: "The token" },
   { href: "/swap", label: "Treasury", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade", hint: "Pons · Uniswap" }, { href: "/flywheel", label: "Flywheel", hint: "Burns · floor sweeps" }] },

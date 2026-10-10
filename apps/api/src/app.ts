@@ -28,6 +28,7 @@ import type { EventRecord } from "./records.ts";
 import type { Router } from "./http.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { Room } from "./room.ts";
+import { Leaderboard } from "./leaderboard.ts";
 import { Keeper, ViemKeeperPort, type KeeperPort } from "./keeper.ts";
 
 export interface AppDeps {
@@ -75,6 +76,7 @@ export class App {
   readonly device: Device;
   readonly fuzz: Fuzz;
   readonly room: Room;
+  readonly leaderboard: Leaderboard;
   readonly sites: Sites;
   readonly flywheel: FlywheelView;
   readonly burns: BurnTracker;
@@ -120,6 +122,7 @@ export class App {
     this.device = new Device(this);
     this.fuzz = new Fuzz(this);
     this.room = new Room(this);
+    this.leaderboard = new Leaderboard(this);
     this.sites = new Sites(this);
     this.flywheel = new FlywheelView(this);
     this.burns = new BurnTracker(this);

@@ -593,3 +593,10 @@ export interface SeatReward {
   status: string;
   txHash?: string | null;
 }
+
+/** Rows of /leaderboard: who is doing the work, and what they have been awarded for it. */
+export interface LeaderSeat {
+  tokenId: number; agentId: string | null; owner: string | null;
+  accepted: number; attempts: number; rate: number | null; comd: string; online: boolean; lastAcceptedAt: string | null;
+}
+export interface LeaderHolder { owner: string; seats: number; working: number; accepted: number; comd: string }

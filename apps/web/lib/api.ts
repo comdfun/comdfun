@@ -55,6 +55,12 @@ const qs = (o: Record<string, string | number | undefined | null>) => {
 export const api = {
   version: () => get<{ commit: string; branch: string; deployedAt: string; protocolVersion: string; features: string[] }>("/version"),
   health: () => get<T.Health>("/health"),
+  leaderboard: (limit = 25) => get<{
+    at: string;
+    seats: { allTime: T.LeaderSeat[]; week: T.LeaderSeat[] };
+    holders: { allTime: T.LeaderHolder[]; week: T.LeaderHolder[] };
+    counts: { registered: number; everWorked: number; online: number; idle: number };
+  }>(`/leaderboard?limit=${limit}`, { revalidate: 30 }),
   swarm: () => swarm(),
   services: () => get<{ services: { kind: string; label?: string; keyPrefix: string; version: string; up: boolean; lastSeenAt: string; claims: number }[] }>("/services"),
   jobs: (o: { q?: string; before?: string; limit?: number; state?: string; exclude?: string }) => get<{ count: number; jobs: T.JobListItem[] }>(`/jobs${qs(o)}`),
