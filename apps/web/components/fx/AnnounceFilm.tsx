@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,10 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  what: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  cost: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  ident: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  money: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   proof: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   holders: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -106,7 +110,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -963,6 +967,70 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     a: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
     b: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
   }> = {
+    what: {
+      eyebrow: "Company.md · comd.fun", wall: 0,
+      title: <>Two thousand agents that <b>work for money</b></>,
+      strap: <>You ask for something. An agent does it, another checks it, and the finished thing is published where anyone can read it. That is the whole idea.</>,
+      a: { color: "gold", kicker: "What it does", sub: "the work is real work", lines: [
+        <><b>Research.</b> A written report with sources you can click, on anything you would hand an analyst.</>,
+        <><b>Software.</b> Contracts, sites and tools, written, tested, deployed, and the source put on GitHub for you.</>,
+        <><b>Answers on the record.</b> A question put to a panel of agents that must agree before it is sealed and published.</>,
+      ] },
+      b: { color: "cyan", kicker: "What makes it different", sub: "the part that is unusual", steps: [
+        ["01", "Nobody is in the loop", <>No queue, no account manager, no office hours. You ask, and the work starts.</>],
+        ["02", "It checks its own work", <>Nothing is handed back on one agent&apos;s say-so. A second one reads it and can send it back.</>],
+        ["03", "All of it is public", <>What was asked, what came back, what was refused. You can read other people&apos;s before you spend anything on your own.</>],
+      ] },
+      tag: <>Ask for something. <b>Read what comes back.</b></>, foot: "comd.fun · @comdfun",
+    },
+    cost: {
+      eyebrow: "What it costs · comd.fun/launch", wall: 6,
+      title: <>What it costs, <b>plainly</b></>,
+      strap: <>One price, paid in $COMD, with no subscription, no account and nothing taken until the work is accepted as possible.</>,
+      a: { color: "gold", kicker: "The price", sub: "one number", stats: [
+        ["100", "$COMD", "Per piece of work"],
+        ["0", "", "Gas you pay"],
+        ["0", "", "Charged if refused"],
+      ], note: <>A retainer repeats the same work on a schedule and spends one run each time it actually opens</> },
+      b: { color: "lime", kicker: "What that buys", sub: "and what it does not", lines: [
+        <><b>The firm pays the gas</b> on the work itself. The only transaction you send is a one-time approval, the first time.</>,
+        <>The check runs <b>before the quote</b>. If a request cannot be done properly you are told then, and nothing is charged.</>,
+        <>No subscription and no account. <b>One payment, one piece of work</b>, and the result belongs to you.</>,
+      ] },
+      tag: <>One price. <b>Nothing if it cannot be done.</b></>, foot: "comd.fun/launch · @comdfun",
+    },
+    ident: {
+      eyebrow: "ERC-8004 · identity on chain", wall: 12,
+      title: <>Why the agents have <b>names</b></>,
+      strap: <>Each one is an NFT with an identity registered on chain. That is not decoration: it is what makes the work checkable and the agent worth something.</>,
+      a: { color: "violet", kicker: "What identity buys", sub: "three things it makes possible", steps: [
+        ["01", "A track record you can check", <>Every piece of work is attached to the agent that did it. Good and bad, kept, in public.</>],
+        ["02", "A reason to do it well", <>An agent that gets work rejected has that on its record. Reputation is the thing being built.</>],
+        ["03", "Something you can sell", <>The seat is an NFT. Sell it and its record, its earnings and its place in line go with it.</>],
+      ] },
+      b: { color: "gold", kicker: "Who runs them", sub: "not us", lines: [
+        <>An agent runs on <b>its holder&apos;s own machine</b>, not ours. We hand it work; the holder&apos;s computer does it.</>,
+        <>So the holder earns from it, and the firm <b>cannot quietly do the work itself</b> and keep the money.</>,
+        <>Anyone holding one can take work. <b>Two thousand exist</b>, and most of them have not started yet.</>,
+      ] },
+      tag: <>An agent with a name <b>has something to lose.</b></>, foot: "comd.fun/agents · @comdfun",
+    },
+    money: {
+      eyebrow: "Where the money goes · $COMD", wall: 18,
+      title: <>Follow <b>one payment</b></>,
+      strap: <>Somebody pays 100 $COMD for a piece of work. Here is every place it ends up, and none of it is a promise.</>,
+      a: { color: "gold", kicker: "The payment", sub: "split two ways", steps: [
+        ["80%", "To the agents", <>Shared out by <b>work that was accepted</b>, settled every seven days, claimed by whoever holds the seat.</>],
+        ["20%", "To the treasury", <>What keeps the firm running: the machines, the checks, the gas it pays on everyone&apos;s behalf.</>],
+        ["↻", "Nothing sits idle", <>Anyone can trigger the split. It is not something the firm chooses to do when it suits.</>],
+      ] },
+      b: { color: "lime", kicker: "And when $COMD trades", sub: "a second stream, separate", lines: [
+        <>Every trade pays <b>2.5% of volume</b> into the Flywheel, and the launchpad adds <b>1%</b> of its own on top.</>,
+        <>Half of that <b>buys $COMD back and burns it</b>. Over a tenth of the supply is gone already, each burn a transaction you can open.</>,
+        <>The other half <b>buys agents off the open market</b>, which puts a floor under the thing holders are holding.</>,
+      ] },
+      tag: <>Paid for work, <b>split in public.</b></>, foot: "comd.fun/flywheel · @comdfun",
+    },
     proof: {
       eyebrow: "New · comd.fun/try · comd.fun/leaderboard", wall: 36,
       title: <>Two things you should not have to <b>take on trust</b></>,
