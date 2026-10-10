@@ -17,6 +17,7 @@ export const NAV = [
   { href: "/swap", label: "Treasury", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade", hint: "Pons · Uniswap" }, { href: "/flywheel", label: "Flywheel", hint: "Burns · floor sweeps" }] },
   { href: "/incorporations", label: "Coins", c: "lime", match: ["/incorporations"], hint: "Company coins in $COMD" },
   { href: "/me", label: "My Counsel", c: "lime", match: ["/me", "/mint", "/pair"], hint: "Your seats · register · earn" },
+  { href: "/room", label: "Holders Room", c: "pink", match: ["/room"], hint: "Chat · submit promotion · earn $COMD" },
   { href: "/docs", label: "Docs", c: "orange", match: ["/docs"], hint: "Guides and the API" },
 ];
 

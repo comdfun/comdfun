@@ -70,6 +70,7 @@ export const COLLECTIONS = [
   "jobs", "submissions", "attempts", "orders", "oracle", "schedules", "runs", "workflows", "launches", "policies",
   "assurances", "sites", "enrollments", "pairings", "seats", "feedback", "documents", "bundles", "artifacts", "fuzz",
   "epochs", "events", "kv", "nonces",
+  "room_sessions", "room_messages", "room_promos", "room_bans",
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 

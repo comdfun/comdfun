@@ -543,6 +543,33 @@ export function buildRouter(app: App): Router {
   r.get("/flywheel", async () => json(200, await app.flywheel.stats(), { "cache-control": "public, max-age=15" }), read);
   r.get("/flywheel/sweep-candidates", async () => json(200, await app.flywheel.sweepCandidates(), { "cache-control": "public, max-age=30" }), read);
 
+  // ------------------------------------------------------------------------------------------ the Holders Room
+
+  // Entry is a signature from a wallet that holds; the session token rides in Authorization: Bearer.
+  r.get("/room", () => json(200, app.room.stats()), read);
+  r.post("/room/nonce", (q) => json(200, app.room.nonce(q.json().address)), { cors: "public", bucket: "read" });
+  r.post("/room/session", async (q) => { const b = q.json(); return json(200, await app.room.signIn(b.address, b.signature)); }, { cors: "public", bucket: "read" });
+  r.get("/room/standing/:address", async (q) => json(200, await app.room.standing(q.params.address)), read);
+  r.get("/room/me", async (q) => {
+    const a = app.room.session(q.bearer);
+    if (!a) throw E.unauthorized("sign_in_required", "sign in to the room first (POST /room/session)");
+    return json(200, await app.room.standing(a));
+  }, { cors: "public", bucket: "read" });
+
+  r.get("/room/messages", (q) => json(200, { messages: app.room.list(parseLimit(q.query, 100, 300)) }), { cors: "public", bucket: "read" });
+  r.post("/room/messages", (q) => json(201, app.room.say(q.bearer, q.json().text)), { cors: "public", bucket: "read", limit: 8 * 1024 });
+  r.post("/room/messages/:id/delete", (q) => { app.room.unsay(q.bearer, q.params.id); return json(200, { ok: true }); }, { cors: "public", bucket: "read" });
+
+  r.get("/room/promos", (q) => json(200, { promos: app.room.promoList(app.room.session(q.bearer)), rewardComd: app.room.stats().rewardComd }), { cors: "public", bucket: "read" });
+  r.post("/room/promos", (q) => json(201, app.room.submit(q.bearer, q.json())), { cors: "public", bucket: "read", limit: 8 * 1024 });
+  r.post("/room/promos/:id/review", (q) => { const b = q.json(); return json(200, app.room.review(q.bearer, q.params.id, b.decision, b.reason)); }, { cors: "public", bucket: "read" });
+
+  r.post("/room/members/:address/remove", (q) => json(200, app.room.remove(q.bearer, q.params.address, q.json().reason)), { cors: "public", bucket: "read" });
+  r.post("/room/members/:address/readmit", (q) => { app.room.readmit(q.bearer, q.params.address); return json(200, { ok: true }); }, { cors: "public", bucket: "read" });
+
+  r.get("/room/payouts", (q) => { app.room.assertAdmin(q.bearer); return json(200, { owed: app.room.owed(), rewardComd: app.room.stats().rewardComd }); }, { cors: "public", bucket: "read" });
+  r.post("/room/payouts/:address/paid", (q) => json(200, app.room.markPaid(q.bearer, q.params.address, q.json().txHash)), { cors: "public", bucket: "read" });
+
   // ------------------------------------------------------------------------------------------ admin (ADMIN_TOKEN)
 
   const admin = (q: Req) => { if (!app.cfg.adminToken || q.bearer !== app.cfg.adminToken) throw E.unauthorized("admin_required", "Authorization: Bearer <ADMIN_TOKEN>"); };

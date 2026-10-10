@@ -27,6 +27,7 @@ import { attachAgentWs } from "./ws.ts";
 import type { EventRecord } from "./records.ts";
 import type { Router } from "./http.ts";
 import { RateLimiter } from "./ratelimit.ts";
+import { Room } from "./room.ts";
 import { Keeper, ViemKeeperPort, type KeeperPort } from "./keeper.ts";
 
 export interface AppDeps {
@@ -73,6 +74,7 @@ export class App {
   readonly pairing: Pairing;
   readonly device: Device;
   readonly fuzz: Fuzz;
+  readonly room: Room;
   readonly sites: Sites;
   readonly flywheel: FlywheelView;
   readonly burns: BurnTracker;
@@ -117,6 +119,7 @@ export class App {
     this.pairing = new Pairing(this);
     this.device = new Device(this);
     this.fuzz = new Fuzz(this);
+    this.room = new Room(this);
     this.sites = new Sites(this);
     this.flywheel = new FlywheelView(this);
     this.burns = new BurnTracker(this);

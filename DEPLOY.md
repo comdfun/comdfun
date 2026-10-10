@@ -35,6 +35,18 @@ read/write on `comdfun/worker` and repo creation in the `comdfun` org (api `GITH
      `MAX_SWEEP_PRICE` (wei), `SEAPORT`, `COUNSEL_BASE_URI`.
 3. Settings → Environments → `mainnet` with yourself as required reviewer: a mainnet deploy then waits for your click.
 
+### The Holders Room
+
+Two variables on `api`, both optional but the room is read-only without the first:
+
+- `ROOM_ADMINS` — comma-separated wallet addresses allowed to review submissions, remove wallets and see the payout
+  ledger. Unset means nobody can moderate. Use a wallet you are happy to connect in a browser; it signs a message to
+  prove itself and never sends a transaction from the room.
+- `PROMO_REWARD_COMD` — whole $COMD accrued by one accepted submission (default `100`).
+
+Nothing in the room can move funds: accepted submissions accrue to a ledger at `GET /room/payouts`, the owner pays
+from their own wallet, and `POST /room/payouts/:address/paid` closes the entries out.
+
 ## 2. Railway
 
 1. New project → Deploy from GitHub repo `comdfun/comdfun`. Add two services from it. Railway's "Config as Code"
