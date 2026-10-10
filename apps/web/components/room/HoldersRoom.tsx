@@ -169,7 +169,7 @@ export function HoldersRoom() {
 
   if (!isConnected) {
     return (
-      <div className="panel c-pink rv stack" style={{ gap: 14 }}>
+      <div className="panel c-pink room-gate">
         <h3 style={{ margin: 0 }}>Connect to come in</h3>
         <p className="muted" style={{ margin: 0 }}>The room is open to any wallet holding a <strong>Counsel</strong> or any <strong>$COMD</strong>. Connecting shows you where you stand; one signature opens the door.</p>
         <ConnectButton className="btn primary" label="Connect wallet" />
@@ -180,7 +180,7 @@ export function HoldersRoom() {
   if (!me) {
     const can = standing?.mayEnter ?? false;
     return (
-      <div className="panel c-pink rv stack" style={{ gap: 14 }}>
+      <div className="panel c-pink room-gate">
         <h3 style={{ margin: 0 }}>{can ? "Sign to come in" : "This wallet does not hold yet"}</h3>
         <dl className="kv">
           <dt>Wallet</dt><dd className="mono">{address ? short(address) : "—"}</dd>
@@ -217,7 +217,7 @@ export function HoldersRoom() {
         <button type="button" className="btn sm" onClick={leave}>Leave</button>
       </div>
 
-      <div className="row" style={{ gap: 8 }}>
+      <div className="room-tabs">
         <button type="button" className={`btn sm ${tab === "chat" ? "primary" : ""}`} onClick={() => setTab("chat")}>Chat</button>
         <button type="button" className={`btn sm ${tab === "promo" ? "primary" : ""}`} onClick={() => setTab("promo")}>
           Promotion{pending.length && me.admin ? ` · ${pending.length} to review` : ""}
@@ -227,7 +227,7 @@ export function HoldersRoom() {
       {err && <p className="err-text small" style={{ margin: 0 }}>{err}</p>}
 
       {tab === "chat" ? (
-        <div className="panel c-cyan rv stack" style={{ gap: 12 }}>
+        <div className="panel c-cyan room-pane">
           <div ref={log} className="room-log">
             {messages.length === 0 && <p className="muted small" style={{ margin: 0 }}>Nothing said yet. Say the first thing.</p>}
             {messages.map((m) => (
@@ -261,8 +261,8 @@ export function HoldersRoom() {
           <p className="muted small" style={{ margin: 0 }}>Everyone in the room sees this, and the team can remove anything. Never paste a seed phrase or a private key: nobody here will ask for one.</p>
         </div>
       ) : (
-        <div className="stack" style={{ gap: 18 }}>
-          <div className="panel c-gold rv stack" style={{ gap: 12 }}>
+        <div className="room-pane">
+          <div className="panel c-gold room-pane">
             <h3 style={{ margin: 0 }}>Submit something you posted</h3>
             <p className="muted small" style={{ margin: 0 }}>A thesis, a thread, a video: anything you published about Company.md. The team reads every one, and an accepted submission accrues <strong>{whole(reward)} $COMD</strong>, paid out in batches.</p>
             <input value={form.url} placeholder="https://x.com/you/status/…" onChange={(e) => setForm({ ...form, url: e.target.value })} />
@@ -276,7 +276,7 @@ export function HoldersRoom() {
           </div>
 
           {me.admin && owed.length > 0 && (
-            <div className="panel c-lime rv stack" style={{ gap: 10 }}>
+            <div className="panel c-lime room-pane">
               <h3 style={{ margin: 0 }}>Owed · pay these in a batch</h3>
               <table className="table">
                 <thead><tr><th>Wallet</th><th>Accepted</th><th>$COMD</th><th /></tr></thead>
@@ -298,7 +298,7 @@ export function HoldersRoom() {
           <div className="stack" style={{ gap: 10 }}>
             {promos.length === 0 && <p className="muted small" style={{ margin: 0 }}>Nothing submitted yet.</p>}
             {promos.map((p) => (
-              <div key={p.id} className={`folder rv c-${p.status === "accepted" ? "lime" : p.status === "rejected" ? "crimson" : "gold"}`} data-tab={p.status}>
+              <div key={p.id} className={`folder c-${p.status === "accepted" ? "lime" : p.status === "rejected" ? "crimson" : "gold"}`} data-tab={p.status}>
                 <div className="row" style={{ justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                   <a href={p.url} target="_blank" rel="noopener noreferrer nofollow ugc" className="mono">{p.url.slice(0, 70)}</a>
                   <span className="muted small">{p.kind} · <span className="mono">{short(p.address)}</span></span>

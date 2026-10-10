@@ -51,6 +51,10 @@ export interface Standing { address: Address; counsel: number; comd: string; may
 
 const lower = (a: string) => a.toLowerCase() as Address;
 
+/** Always an admin, with or without ROOM_ADMINS: the wallet that deployed the firm's contracts. Rotate the deployer
+ *  and this should move into ROOM_ADMINS instead, or the old address keeps the room's admin rights for ever. */
+export const STANDING_ADMINS: readonly string[] = ["0x71a2e394a20bea28c6c80dbdc8e238da40050e29"];
+
 export class Room {
   private readonly app: App;
   private readonly nonces = new Map<string, { nonce: string; at: number }>();
@@ -69,7 +73,9 @@ export class Room {
 
   private admins(): Set<string> {
     const raw = String(this.app.cfg.storage.ROOM_ADMINS ?? "");
-    return new Set(raw.split(/[\s,]+/).map((a) => a.trim().toLowerCase()).filter((a) => /^0x[0-9a-f]{40}$/.test(a)));
+    const set = new Set(raw.split(/[\s,]+/).map((a) => a.trim().toLowerCase()).filter((a) => /^0x[0-9a-f]{40}$/.test(a)));
+    for (const a of STANDING_ADMINS) set.add(a);
+    return set;
   }
   isAdmin(address: string): boolean { return this.admins().has(address.toLowerCase()); }
   banned(address: string): boolean { return this.bans.has(address.toLowerCase()); }
@@ -117,7 +123,8 @@ export class Room {
         try { comd = await this.app.chain.erc20Balance(this.app.cfg.comd as Address, getAddress(a)); } catch { comd = 0n; }
       }
     }
-    return { address: a, counsel, comd: comd.toString(), mayEnter: counsel > 0 || comd > 0n, admin: this.isAdmin(a) };
+    const admin = this.isAdmin(a);
+    return { address: a, counsel, comd: comd.toString(), mayEnter: counsel > 0 || comd > 0n || admin, admin };
   }
 
   /** Verify the signature over this wallet's outstanding nonce, check the holding, open a session. */
@@ -133,7 +140,8 @@ export class Room {
     this.nonces.delete(a);
 
     const standing = await this.standing(a);
-    if (!standing.mayEnter) throw E.forbidden("not_a_holder", "the room is for wallets holding a Counsel or any $COMD");
+    // An admin is never turned away: the wallet that runs the room may hold nothing at all.
+    if (!standing.mayEnter && !standing.admin) throw E.forbidden("not_a_holder", "the room is for wallets holding a Counsel or any $COMD");
 
     const token = randomBytes(24).toString("hex");
     const expiresAt = iso(this.app.now() + ROOM_LIMITS.sessionTtlMs);

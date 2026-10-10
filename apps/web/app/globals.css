@@ -1660,6 +1660,14 @@ html.no-motion .rv { opacity: 1 !important; }
 }
 
 /* ─── the Holders Room ─────────────────────────────────────────────────────── */
+/* Nothing in the room uses .rv: its panels mount on a tab click, long after the reveal observer has run. */
+.room-gate { display: grid; gap: 16px; justify-items: start; }
+.room-gate h3 { margin: 0; }
+.room-gate .kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 18px; margin: 0; width: 100%; max-width: 420px; align-items: baseline; }
+.room-gate .kv dt { margin: 0; color: var(--muted); font-size: 13px; }
+.room-gate .kv dd { margin: 0; font-size: 15px; }
+.room-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.room-pane { display: grid; gap: 16px; }
 .room-log { display: grid; gap: 14px; max-height: 420px; overflow-y: auto; padding: 4px 2px; }
 .room-msg { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r); background: #07060a; }
 .room-msg.mine { border-color: color-mix(in srgb, var(--sig) 40%, var(--rule)); }
