@@ -35,6 +35,18 @@ read/write on `comdfun/worker` and repo creation in the `comdfun` org (api `GITH
      `MAX_SWEEP_PRICE` (wei), `SEAPORT`, `COUNSEL_BASE_URI`.
 3. Settings → Environments → `mainnet` with yourself as required reviewer: a mainnet deploy then waits for your click.
 
+### One free matter
+
+Off until you give it a budget. On `api`:
+
+- `FREE_MATTERS_PER_DAY` — the day's budget; `0` (the default) means closed. Each one is real work a Counsel does
+  with no revenue entering the reward pool for it, so this number is the cost you are choosing to carry.
+- `FREE_MATTERS_PER_IP_PER_DAY` — default `1`; stops one person with many wallets taking the day.
+- `FREE_MATTER_SKILL` — default `research-report`.
+
+A wallet gets one, ever, proved by a signature. The objective goes through the same validation and the same intake
+screen as a paid matter, and a refused one costs nothing from the budget.
+
 ### The Holders Room
 
 Two variables on `api`, both optional but the room is read-only without the first:

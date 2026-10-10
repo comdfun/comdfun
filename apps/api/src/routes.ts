@@ -543,6 +543,12 @@ export function buildRouter(app: App): Router {
   r.get("/flywheel", async () => json(200, await app.flywheel.stats(), { "cache-control": "public, max-age=15" }), read);
   r.get("/flywheel/sweep-candidates", async () => json(200, await app.flywheel.sweepCandidates(), { "cache-control": "public, max-age=30" }), read);
 
+  // ------------------------------------------------------------------------------------------ one free matter
+
+  r.get("/trial", (q) => json(200, app.trial.status(q.query.get("address"))), { cors: "public", bucket: "read" });
+  r.post("/trial/nonce", (q) => json(200, app.trial.nonce(q.json().address)), { cors: "public", bucket: "read" });
+  r.post("/trial/claim", async (q) => json(201, await app.trial.claim(q.json(), q.ip)), { cors: "public", bucket: "read", limit: 8 * 1024 });
+
   // ------------------------------------------------------------------------------------------ leaderboard
 
   r.get("/leaderboard", (q) => json(200, app.leaderboard.view(parseLimit(q.query, 25, 100))), { cors: "public", bucket: "read" });
