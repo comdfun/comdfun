@@ -1677,3 +1677,31 @@ html.no-motion .rv { opacity: 1 !important; }
 .linklike { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: inherit; }
 .linklike:hover { color: var(--text); }
 @media (max-width: 760px) { .room-log { max-height: 60vh; } }
+
+/* ─── try it free ──────────────────────────────────────────────────────────── */
+.try-wrap { margin-top: 4px; }
+.try-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+.try-form { display: grid; gap: 14px; }
+.try-label { font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.try-form textarea { width: 100%; font-size: 17px; line-height: 1.5; padding: 16px; border-radius: var(--r); resize: vertical; min-height: 140px; }
+.try-examples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.try-chip { font: inherit; font-size: 13px; padding: 7px 13px; border-radius: var(--r-pill); border: 1px solid var(--rule); background: var(--ink-1); color: #cfc8b6; cursor: pointer; transition: border-color 0.12s ease, color 0.12s ease; }
+.try-chip:hover { border-color: color-mix(in srgb, var(--sig) 55%, var(--rule)); color: var(--text); }
+.try-chip.on { border-color: var(--sig); color: var(--text); }
+.try-go { width: 100%; justify-content: center; }
+.try-fine { margin: 0; }
+
+.try-side { display: grid; gap: 18px; }
+.try-get h3 { margin: 0 0 8px; }
+.try-get p { margin: 0 0 8px; font-size: 15px; line-height: 1.55; }
+.try-get p:last-child { margin-bottom: 0; }
+.try-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.try-steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 14px; align-items: start; }
+.try-n { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--rule); display: grid; place-items: center; line-height: 1; font-family: var(--font-mono); font-size: 13px; color: var(--sig); }
+.try-steps b { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.try-steps li > div span { display: block; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.try-honest { margin: 0; padding-top: 14px; border-top: 1px solid var(--rule); }
+.try-note { display: grid; gap: 10px; max-width: 640px; }
+.try-note h3 { margin: 0; }
+.try-note p { margin: 0; }
+@media (max-width: 960px) { .try-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .try-side { order: -1; } }
