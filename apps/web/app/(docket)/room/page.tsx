@@ -15,7 +15,7 @@ export default function RoomPage() {
         crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "Holders Room" }]}
         kicker={<><span className="badge pink fill">Holders only</span><span className="badge ok">Counsel or any $COMD</span></>}
         title={<>The <span className="accent">Holders Room</span></>}
-        lede={<>Prove the wallet is yours with one signature — no transaction, no gas — and the room opens. Talk to the firm and to each other, and put up any promotion you have published: the team reads every submission, and an accepted one earns <strong>$COMD</strong>.</>}
+        lede={<>Prove the wallet is yours with one signature: no transaction, no gas. Then the room opens. Talk to the firm and to each other, and put up any promotion you have published: the team reads every submission, and an accepted one earns <strong>$COMD</strong>.</>}
       />
       <HoldersRoom />
     </>

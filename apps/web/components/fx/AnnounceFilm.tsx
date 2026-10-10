@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -69,6 +69,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   backend: [
     { id: "k-title", at: 0 }, { id: "k-rpc", at: 4_500 }, { id: "k-owners", at: 11_500 }, { id: "k-index", at: 18_500 }, { id: "k-tests", at: 25_000 }, { id: "end", at: 31_500 },
   ],
+  holders: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   gate: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   screen: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -104,7 +105,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -961,6 +962,22 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     a: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
     b: { color: string; kicker: string; sub: string; lines?: React.ReactNode[]; steps?: [string, string, React.ReactNode][]; stats?: [string, string, string][]; note?: React.ReactNode };
   }> = {
+    holders: {
+      eyebrow: "New · comd.fun/room", wall: 30,
+      title: <>The <b>Holders Room</b> is open</>,
+      strap: <>A room for wallets that hold: talk to the firm and to each other, and get paid for the promotion you have already published.</>,
+      a: { color: "pink", kicker: "Getting in", sub: "one signature, no gas", steps: [
+        ["01", "Hold a Counsel, or any $COMD", <>No minimum. One Counsel or a single token is enough; the holding is read from the chain, not from a list.</>],
+        ["02", "Sign once", <>Connecting proves nothing, so the room asks for a <b>signature</b> instead. It is not a transaction, it costs nothing, and it cannot move anything.</>],
+        ["03", "The door opens", <>Inside: the chat, and the board where promotion is submitted and reviewed.</>],
+      ] },
+      b: { color: "gold", kicker: "Get paid for promoting", sub: "published work, reviewed, rewarded", lines: [
+        <>Put up anything you have published about Company.md: a <b>thesis</b>, a thread, a video, an article. A link and a line about it.</>,
+        <>The team reads <b>every submission</b>. An accepted one earns <b>$COMD</b>, and a rejected one comes back with the reason rather than silence.</>,
+        <>Everything owed is kept on a <b>ledger</b> and paid out in batches. The room holds no keys and can move nothing on its own.</>,
+      ] },
+      tag: <>Hold, sign, <b>come in.</b></>, foot: "comd.fun/room · @comdfun",
+    },
     wallet: {
       eyebrow: "Payments · comd.fun/launch", wall: 0,
       title: <>Nothing is asked of your wallet <b>until it can settle</b></>,

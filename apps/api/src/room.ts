@@ -79,7 +79,7 @@ export class Room {
   /** The text a wallet signs. It names the room and carries a nonce, so a signature cannot be replayed elsewhere. */
   message(address: Address, nonce: string): string {
     return [
-      "Company.md — Holders Room",
+      "Company.md: Holders Room",
       "",
       "Sign in to the room. This proves the wallet is yours.",
       "It is not a transaction and costs nothing.",
@@ -179,7 +179,7 @@ export class Room {
     const body = text.trim().slice(0, ROOM_LIMITS.text);
     const minuteAgo = this.app.now() - 60_000;
     const recent = this.messages.count((m) => m.address === address && Date.parse(m.createdAt) > minuteAgo);
-    if (recent >= ROOM_LIMITS.messagesPerMinute) throw E.invalidRequest(`slow down — ${ROOM_LIMITS.messagesPerMinute} messages a minute`);
+    if (recent >= ROOM_LIMITS.messagesPerMinute) throw E.invalidRequest(`slow down: ${ROOM_LIMITS.messagesPerMinute} messages a minute`);
     return this.messages.save({ id: randomUUID(), createdAt: iso(this.app.now()), address, text: body });
   }
 

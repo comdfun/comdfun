@@ -258,13 +258,13 @@ export function HoldersRoom() {
             />
             <button type="button" className="btn primary" onClick={say} disabled={busy || !draft.trim()}>Send</button>
           </div>
-          <p className="muted small" style={{ margin: 0 }}>Everyone in the room sees this, and the team can remove anything. Never paste a seed phrase or a private key — nobody here will ask for one.</p>
+          <p className="muted small" style={{ margin: 0 }}>Everyone in the room sees this, and the team can remove anything. Never paste a seed phrase or a private key: nobody here will ask for one.</p>
         </div>
       ) : (
         <div className="stack" style={{ gap: 18 }}>
           <div className="panel c-gold rv stack" style={{ gap: 12 }}>
             <h3 style={{ margin: 0 }}>Submit something you posted</h3>
-            <p className="muted small" style={{ margin: 0 }}>A thesis, a thread, a video — anything you published about Company.md. The team reads every one, and an accepted submission accrues <strong>{whole(reward)} $COMD</strong>, paid out in batches.</p>
+            <p className="muted small" style={{ margin: 0 }}>A thesis, a thread, a video: anything you published about Company.md. The team reads every one, and an accepted submission accrues <strong>{whole(reward)} $COMD</strong>, paid out in batches.</p>
             <input value={form.url} placeholder="https://x.com/you/status/…" onChange={(e) => setForm({ ...form, url: e.target.value })} />
             <div className="row" style={{ gap: 8 }}>
               <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
