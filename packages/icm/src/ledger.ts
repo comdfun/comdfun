@@ -358,6 +358,20 @@ export class Ledger {
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, limit);
   }
 
+  /** Every account, newest first. For the operator's own screens; there is no customer-facing use for this. */
+  accounts(limit = 500): Account[] {
+    return this.store.all<Account>(ACCOUNTS).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, limit);
+  }
+
+  /** Charges across every account, newest first, optionally of one state. The operator's view: unlike
+   *  `chargesOf`, what comes back carries the upstream cost, which is the house's own number. */
+  charges(o: { state?: Charge["state"]; accountId?: string; limit?: number } = {}): Charge[] {
+    return this.store
+      .filter<Charge>(CHARGES, (c) => (!o.state || c.state === o.state) && (!o.accountId || c.accountId === o.accountId))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, o.limit ?? 100);
+  }
+
   /** Holds older than `olderThanMs` with nothing resolving them. A request whose process died leaves one of these,
    *  and the customer cannot spend the money until it is cleared. Released, not settled: we have no evidence the
    *  work was done, and the benefit of that doubt belongs to the person who paid. */

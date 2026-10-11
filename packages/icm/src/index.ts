@@ -26,6 +26,7 @@ export { DEFAULTS, makeConfig, modelAllowed, type IcmConfig, type TokenConfig } 
 export { creditForTokens, tokensForCredit, retailOf, marginOf, rateCard, holdFor, describeRate } from "./pricing.ts";
 export { Ledger, hashSecret, usdFromInput, type LedgerOptions, type IssuedKey } from "./ledger.ts";
 export { Proxy, type ProxyOptions, type ProxyResult } from "./proxy.ts";
+export { createSurface, type IcmRequest, type IcmResponse, type SurfaceOptions } from "./http.ts";
 export {
   OpenRouterUpstream, costToMicroUsd, readUsage,
   type Upstream, type UpstreamModel, type UpstreamUsage, type OpenRouterOptions,
