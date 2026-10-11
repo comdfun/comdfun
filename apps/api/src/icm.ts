@@ -82,10 +82,11 @@ class ChainPayments implements PaymentSource {
     // Stay behind the head by the confirmation depth, so a reorg cannot un-credit a payment that was already
     // spent. The cursor only ever moves forward over blocks that are this deep.
     const safe = Math.max(0, head - this.confirmations);
-    const from = cursor === null ? Math.max(0, safe - 5_000) : Number(cursor) + 1;
+    const from = cursor === null ? Math.max(0, safe - 2_000) : Number(cursor) + 1;
     if (from > safe) return { payments: [], cursor: String(safe) };
-    // at most 50k blocks per pass, so a long outage catches up over several rather than one enormous query
-    const to = Math.min(safe, from + 50_000);
+    // At most 2,000 blocks a pass. The RPC is shared with payments, pairing and the burn tracker, and a desk
+    // nobody is using yet must not spend the rate limit they need. A long outage catches up over many passes.
+    const to = Math.min(safe, from + 2_000);
     // `rawLogs` is optional on the reader interface: a mock chain in tests does not have it, and without it
     // there is nothing to watch rather than something to crash over.
     if (!this.app.chain.rawLogs) return { payments: [], cursor: String(safe) };
@@ -128,6 +129,8 @@ export class Icm {
   readonly watcher: DepositWatcher | null;
   readonly enabled: boolean;
   readonly reason: string | null;
+  /** Set when cICM could not be configured at all. Every route then answers 503 with this. */
+  readonly fault: string | null;
   private readonly app: App;
   private readonly surface: (req: IcmRequest) => Promise<IcmResponse>;
   /** One-time nonces for proving a wallet, held in memory: a nonce that does not survive a restart is a nonce
@@ -137,7 +140,13 @@ export class Icm {
   constructor(d: IcmDeps) {
     this.app = d.app;
     const settings = d.app.cfg.icm;
-    const token = d.app.cfg.comd ?? null;
+    // A malformed address, a rate that will not parse, a token that is not set: every one of those used to
+    // throw out of here, and throwing out of here takes the whole control plane down with it. cICM is an
+    // optional desk bolted to the side of a firm; it does not get to stop the firm answering. Anything that
+    // cannot be configured disables cICM, names itself on /health, and leaves everything else alone.
+    const bad = (e: unknown) => `cICM is misconfigured and switched off: ${(e as Error).message}`;
+    const safeAddress = (v: string | null): Address | null => { try { return v ? getAddress(v) : null; } catch { return null; } };
+    const token = safeAddress(d.app.cfg.comd ?? null);
     // The shared burn address is where the Flywheel, Incorporations and every manual burn already send $COMD.
     // Watching it would read every buyback as a payment for inference and fill the house book with credit
     // nobody bought. cICM needs an address nothing else pays into, so this refuses the trap outright.
@@ -145,8 +154,11 @@ export class Icm {
     if (shared) console.error(`[icm] ICM_DEPOSIT_ADDRESS is the shared burn address; payment watching is off. Use an address nothing else pays into.`);
     const depositAddress = shared ? null : settings.depositAddress;
 
-    this.config = makeConfig({
-      keyPrefix: "cicm",
+    let config: IcmConfig | null = null;
+    let fault: string | null = null;
+    try {
+      config = makeConfig({
+        keyPrefix: "cicm",
       environment: settings.environment,
       token: {
         symbol: "COMD",
@@ -163,14 +175,24 @@ export class Icm {
       marginBps: settings.marginBps,
       minDepositMicroUsd: settings.minDepositUsd,
       maxHoldMicroUsd: settings.maxHoldUsd,
-      allowModels: settings.allowModels,
-      denyModels: settings.denyModels,
-    });
+        allowModels: settings.allowModels,
+        denyModels: settings.denyModels,
+      });
+    } catch (e) {
+      fault = bad(e);
+      console.error(`[icm] ${fault}`);
+      // A shape the rest of the class can hold without branching. Nothing is served from it: `fault` is set,
+      // so every route answers 503 with the reason.
+      config = makeConfig({ keyPrefix: "cicm", token: { symbol: "OFF", address: "0x0000000000000000000000000000000000000001", tokensPerUsd: "1" } });
+    }
+    this.config = config;
+    this.fault = fault;
 
     this.ledger = new Ledger({ store: storeAdapter(d.app), config: this.config, now: () => d.app.now() });
 
-    this.enabled = Boolean(settings.openRouterKey);
-    this.reason = this.enabled ? null : "OPENROUTER_API_KEY is not set, so cICM can sell and account for credit but cannot route a call yet";
+    this.enabled = !fault && Boolean(settings.openRouterKey);
+    this.reason = fault
+      ?? (this.enabled ? null : "OPENROUTER_API_KEY is not set, so cICM can sell and account for credit but cannot route a call yet");
     // The ledger does not need a provider. Credit can be bought, a key minted and a balance read with the
     // gateway half-built, so the surface is always mounted and only the routing refuses.
     this.proxy = new Proxy({
@@ -182,11 +204,28 @@ export class Icm {
     });
     this.surface = createSurface({ ledger: this.ledger, proxy: this.proxy, adminToken: d.app.cfg.adminToken });
 
-    this.watcher = token && depositAddress && d.app.chain.configured
+    this.watcher = this.buildWatcher(d, token, fault ? null : depositAddress);
+  }
+
+  /** Never throws. A deposit address that will not parse switches watching off and says so, rather than
+   *  stopping the process at boot. */
+  private buildWatcher(d: IcmDeps, token: Address | null, depositAddress: string | null): DepositWatcher | null {
+    if (!token || !depositAddress || !d.app.chain.configured) return null;
+    try {
+      return this.makeWatcher(d, token, depositAddress);
+    } catch (e) {
+      console.error(`[icm] payment watching is off: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  private makeWatcher(d: IcmDeps, token: Address, depositAddress: string): DepositWatcher {
+    const settings = d.app.cfg.icm;
+    return token && depositAddress && d.app.chain.configured
       ? new DepositWatcher({
           ledger: this.ledger,
-          source: new ChainPayments(d.app, getAddress(token), getAddress(depositAddress!), settings.confirmations),
-          depositAddress: depositAddress!,
+          source: new ChainPayments(d.app, token, getAddress(depositAddress), settings.confirmations),
+          depositAddress,
           cursor: {
             read: () => (d.app.store.c<Rec & { value?: string }>("kv").get("icm:cursor")?.value ?? null),
             write: (value: string) => { d.app.store.c<Rec & { value?: string }>("kv").save({ id: "icm:cursor", createdAt: new Date(d.app.now()).toISOString(), value }); },
@@ -194,7 +233,7 @@ export class Icm {
           onCredited: (deposit: { creditedMicroUsd: string; accountId: string; ref: string }) => console.log(`[icm] credited ${deposit.creditedMicroUsd} micro-USD to ${deposit.accountId} for ${deposit.ref}`),
           onSkipped: (p: { ref: string }, why: string) => console.warn(`[icm] skipped ${p.ref}: ${why}`),
         })
-      : null;
+      : (() => { throw new Error("not configured"); })();
   }
 
   /** The text a wallet signs to prove it is theirs. It names the service and carries a nonce, so a signature
@@ -250,14 +289,16 @@ export class Icm {
     };
   }
 
-  /** Mount point for everything the package serves. */
+  /** Mount point for everything the package serves. A faulted deployment answers 503 everywhere rather than
+   *  serving a ledger built on a configuration nobody meant. */
   async handle(req: IcmRequest): Promise<IcmResponse> {
+    if (this.fault) return { status: 503, headers: { "content-type": "application/json; charset=utf-8" }, json: { error: { message: this.fault, code: "not_configured", type: "not_configured" } } };
     return this.surface(req);
   }
 
   /** One pass of the payment watcher, for the keeper to call on a schedule. */
   async poll() {
-    if (!this.watcher) return { seen: 0, credited: [], skipped: [], cursor: null };
+    if (this.fault || !this.watcher) return { seen: 0, credited: [], skipped: [], cursor: null };
     return this.watcher.poll();
   }
 
@@ -269,6 +310,7 @@ export class Icm {
 
   /** For `/health`: enough to see that it is on and that the book balances, and nothing a customer owns. */
   status() {
+    if (this.fault) return { enabled: false, reason: this.fault, watching: false, fault: true };
     const book = this.ledger.book();
     return {
       enabled: this.enabled,

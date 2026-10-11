@@ -175,3 +175,27 @@ test("health reports cICM without leaking anybody's balance", async (t) => {
   assert.equal(res.body.icm.drift, 0);
   assert.ok(!("accounts" in res.body.icm) || typeof res.body.icm.accounts === "number");
 });
+
+test("a misconfigured desk switches itself off instead of taking the control plane with it", async (t) => {
+  // Every one of these used to throw out of the Icm constructor, which is called from the App constructor,
+  // which means the whole API never starts. An optional desk does not get to stop the firm answering.
+  const cases: Record<string, string>[] = [
+    { ICM_DEPOSIT_ADDRESS: "not-an-address" },
+    { ICM_DEPOSIT_ADDRESS: "0xABCDEF0123456789abcdef0123456789ABCDEF01" }, // a wrong checksum
+    { ICM_COMD_PER_USD: "nonsense" },
+    { ICM_COMD_PER_USD: "0" },
+    { ICM_MARGIN_BPS: "-5" },
+  ];
+  for (const env of cases) {
+    const h: Harness = await harness({ env: { ADMIN_TOKEN: "admin-secret", ...env } });
+    t.after(() => h.close());
+    // the rest of the API is untouched
+    const health = await get(h, "/health");
+    assert.equal(health.status, 200, `${JSON.stringify(env)}: the control plane still answers`);
+    assert.ok(health.body.version, "and is a real health document, not a crash page");
+    // and cICM says what is wrong rather than pretending
+    const icm = await get(h, "/icm");
+    assert.equal(icm.status, 200);
+    if (icm.body.enabled === false && icm.body.reason) assert.match(icm.body.reason, /not set|misconfigured|switched off/i);
+  }
+});

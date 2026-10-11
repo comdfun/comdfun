@@ -200,7 +200,7 @@ export class App {
     if (this.chain.configured) every(600_000, () => this.pairing.refreshOwners(true).catch(() => undefined));
     // cICM: watch for $COMD payments, and sweep holds whose request never reported back. The sweep matters even
     // when nothing is being watched — a hold nobody resolves is a customer's money they cannot spend.
-    if (this.chain.configured) every(30_000, () => this.icm.poll().catch((e) => console.warn("[icm] poll:", (e as Error).message)));
+    if (this.chain.configured) every(60_000, () => this.icm.poll().catch((e) => console.warn("[icm] poll:", (e as Error).message)));
     every(300_000, () => { const swept = this.icm.sweep(); if (swept.length) console.warn(`[icm] swept ${swept.length} stale hold(s)`); });
     this.keeper.start();
   }
