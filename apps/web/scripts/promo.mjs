@@ -31,25 +31,27 @@ const settle = async (page) => {
 };
 
 const SHOTS = [
-  // whole-window captures, framed as browser windows. Taken narrower than a desktop on purpose: shrunk into a
-  // 430px frame, a 1440px page is grey texture, and the point of showing a screen is that it can be read.
-  { key: "GATE", path: "/", vw: 1280, vh: 760 },
-  { key: "DOCKET", path: "/jobs", vw: 960, vh: 640 },
-  // pieces of the cICM page, framed as floating panels
-  { key: "BUY", path: "/icm", vw: 1440, vh: 1100, el: ".buy", prep: async (p) => {
+  // Four whole windows at one size, so they sit as a set. 1280×800 is the shape of a laptop screen, which is
+  // what a browser window is expected to look like, and small enough that the site's type survives the shrink.
+  { key: "GATE", path: "/" },
+  { key: "RETAIN", path: "/launch" },
+  { key: "ICM", path: "/icm", prep: async (p) => {
     await p.fill(".buy-row input", "250000");
     await p.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
     await p.waitForTimeout(400);
   } },
-  { key: "CAT", path: "/icm", vw: 760, vh: 1800, el: ".cat", maxH: 300, prep: async (p) => { await p.waitForSelector(".cat-row:not(.cat-skel)", { timeout: 20_000 }); } },
-  { key: "DASH", path: "/icm", vw: 760, vh: 2600, el: ".dash", maxH: 372 },
+  // the same page further down: the three facts and the catalogue of models
+  { key: "CAT", path: "/icm", prep: async (p) => {
+    await p.waitForSelector(".cat-row:not(.cat-skel)", { timeout: 20_000 });
+    await p.evaluate(() => { const el = document.querySelector(".icm-facts"); if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 92); });
+  } },
 ];
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 let html = readFileSync(join(HERE, "banner", "promo.html"), "utf8").replaceAll("__ART__", `${base}/art`).replace("__FONTS__", await siteFonts(base));
 
 for (const s of SHOTS) {
-  const page = await browser.newPage({ viewport: { width: s.vw, height: s.vh }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({ viewport: { width: s.vw ?? 1280, height: s.vh ?? 800 }, deviceScaleFactor: 2 });
   await page.goto(`${base}${s.path}`, { waitUntil: "networkidle", timeout: 60_000 });
   if (s.prep) await s.prep(page);
   await settle(page);

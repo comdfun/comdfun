@@ -47,11 +47,11 @@ __FONTS__
   .chrome i:nth-child(1) { background: #ff5f56; } .chrome i:nth-child(2) { background: #ffbd2e; } .chrome i:nth-child(3) { background: #27c93f; }
   .chrome span { margin: 0 auto; transform: translateX(-20px); padding: 3px 14px; border-radius: 6px; background: #15131c; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
 
-  .c-gate   { --cc: var(--cyan); left: 40px;   top: 44px;  width: 440px; transform: perspective(1600px) rotateY(12deg) rotateZ(-1.5deg); z-index: 2; }
-  .c-docket { --cc: var(--cyan); left: 64px;   top: 352px; width: 414px; transform: perspective(1600px) rotateY(12deg) rotateZ(1.5deg); z-index: 3; }
-  .c-cat    { --cc: var(--gold); left: 1568px; top: 30px;  width: 340px; transform: perspective(1600px) rotateY(-12deg) rotateZ(-1.5deg); z-index: 2; }
-  .c-dash   { --cc: var(--lime); left: 1500px; top: 318px; width: 372px; transform: perspective(1600px) rotateY(-12deg) rotateZ(1deg); z-index: 2; }
-  .c-buy    { --cc: var(--gold); left: 1300px; top: 112px; width: 244px; transform: perspective(1600px) rotateY(-9deg) rotateZ(-1deg); z-index: 4; }
+  /* four whole windows, two a side, every one inside the frame: a screen cut by the edge reads as a mistake */
+  .c-gate   { --cc: var(--cyan); left: 44px;   top: 30px;  width: 392px; transform: perspective(1600px) rotateY(10deg) rotateZ(-1.2deg); }
+  .c-retain { --cc: var(--cyan); left: 108px;  top: 312px; width: 392px; transform: perspective(1600px) rotateY(10deg) rotateZ(1.2deg); }
+  .c-icm    { --cc: var(--gold); left: 1364px; top: 30px;  width: 392px; transform: perspective(1600px) rotateY(-10deg) rotateZ(1.2deg); }
+  .c-cat    { --cc: var(--gold); left: 1300px; top: 312px; width: 392px; transform: perspective(1600px) rotateY(-10deg) rotateZ(-1.2deg); }
 
   /* which desk is which, pinned to the screens */
   .tag { position: absolute; z-index: 6; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
@@ -59,8 +59,8 @@ __FONTS__
     background: rgba(8,7,12,.82); border: 1px solid color-mix(in srgb, var(--tc) 50%, transparent); color: var(--tc);
     box-shadow: 0 10px 30px -10px #000, 0 0 30px -12px var(--tc); }
   .tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--tc); box-shadow: 0 0 8px var(--tc); }
-  .t-swarm { --tc: var(--cyan); left: 392px; top: 30px; }
-  .t-icm   { --tc: var(--gold); left: 1262px; top: 82px; }
+  .t-swarm { --tc: var(--cyan); left: 446px; top: 22px; }
+  .t-icm   { --tc: var(--gold); left: 1270px; top: 22px; }
 
   /* ── the copy, centred, with room either side ── */
   .center { position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -52%); width: 740px;
@@ -95,10 +95,9 @@ __FONTS__
 
   <div class="stage">
     <figure class="card c-gate"><div class="chrome"><i></i><i></i><i></i><span>comd.fun</span></div><img src="__SHOT_GATE__" alt=""></figure>
-    <figure class="card c-docket"><div class="chrome"><i></i><i></i><i></i><span>comd.fun/jobs</span></div><img src="__SHOT_DOCKET__" alt=""></figure>
-    <figure class="card c-cat"><img src="__SHOT_CAT__" alt=""></figure>
-    <figure class="card c-dash"><img src="__SHOT_DASH__" alt=""></figure>
-    <figure class="card c-buy"><img src="__SHOT_BUY__" alt=""></figure>
+    <figure class="card c-retain"><div class="chrome"><i></i><i></i><i></i><span>comd.fun/launch</span></div><img src="__SHOT_RETAIN__" alt=""></figure>
+    <figure class="card c-icm"><div class="chrome"><i></i><i></i><i></i><span>comd.fun/icm</span></div><img src="__SHOT_ICM__" alt=""></figure>
+    <figure class="card c-cat"><div class="chrome"><i></i><i></i><i></i><span>comd.fun/icm</span></div><img src="__SHOT_CAT__" alt=""></figure>
   </div>
   <span class="tag t-swarm"><i></i>The Swarm</span>
   <span class="tag t-icm"><i></i>cICM</span>
