@@ -825,7 +825,7 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       enabled: true, reason: null, environment: "live",
       endpoint: "https://api.comd.fun/icm/v1",
       rate: { tokensPerUsd: "100000", symbol: "COMD", marginBps: 1500 },
-      deposit: { address: "0x000000000000000000000000000000000000dead", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: true, note: "Send COMD to this address and it is destroyed on the way in." },
+      deposit: { address: "0x9d4c1e7a3b55f08216ce4d7b0a9f3e21c88b4a60", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: false, note: "Send COMD to this address. The credit lands on the wallet that sent it, so send from the wallet you want credited." },
       compatible: "OpenAI chat completions.",
     });
     if (p === "/workflows") return ok({ count: 0, workflows: [] });

@@ -112,106 +112,91 @@ export function Icm() {
   const endpoint = rate?.endpoint ?? "https://api.comd.fun/icm/v1";
   const balance = view ? BigInt(view.account.balanceMicroUsd) : 0n;
 
+  const perUsd = rate ? Number(rate.rate.tokensPerUsd) : null;
+  const margin = rate ? `${(rate.rate.marginBps / 100).toFixed(rate.rate.marginBps % 100 === 0 ? 0 : 2)}%` : "15%";
+
   return (
     <div className="icm">
-      {/* ------------------------------------------------------------------ what it is */}
-      <div className="icm-top">
-        <div className="panel c-gold icm-what">
-          <h3>What this is</h3>
-          <p>
-            An OpenAI-compatible endpoint you pay for in <strong>$COMD</strong>. Point any client or agent at it with a
-            cICM key and it reaches the frontier models, Claude, GPT, Gemini, Llama and the rest, with no card,
-            no account with a model provider, and no monthly anything.
-          </p>
-          <p className="muted small">
-            You are charged exactly what the model provider charged, plus {rate ? `${(rate.rate.marginBps / 100).toFixed(rate.rate.marginBps % 100 === 0 ? 0 : 2)}%` : "a published margin"}.
-            Every call records what it cost, and you can read your own ledger below.
-          </p>
-          {rate && !rate.enabled && (
-            <p className="err-text small" style={{ margin: 0 }}>
-              Routing is not switched on yet. You can still buy credit and make keys; calls will start working without
-              anything further from you.
-            </p>
-          )}
-        </div>
-
-        <div className="panel c-cyan icm-endpoint">
-          <h3>The endpoint</h3>
-          <div className="icm-code">
-            <code>{endpoint}</code>
+      {/* ---------------------------------------------------------------- the desk */}
+      <section className="icm-desk">
+        <div className="icm-wire">
+          <div className="icm-wire-head">
+            <span>Base URL</span>
             <CopyButton text={endpoint} />
           </div>
-          <p className="muted small">Set it as your base URL and your cICM key as the bearer. Anything that speaks to OpenAI speaks to this.</p>
-          <details className="fold">
-            <summary>Show me a working call</summary>
-            <div className="inner">
-              <pre className="code"><code>{`curl ${endpoint}/chat/completions \\
+          <code className="icm-url">{endpoint}</code>
+          <pre className="icm-curl"><code>{`curl ${endpoint}/chat/completions \\
   -H "Authorization: Bearer cicm_live_…" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "anthropic/claude-sonnet-4",
-    "messages": [{"role": "user", "content": "hello"}]
-  }'`}</code></pre>
-            </div>
-          </details>
+  -d '{"model":"anthropic/claude-sonnet-4",
+       "messages":[{"role":"user","content":"hello"}]}'`}</code></pre>
+          <p className="icm-wire-foot">
+            Anything that speaks to OpenAI speaks to this. Set the base URL, put your cICM key in the bearer, and
+            nothing else about your code changes.
+          </p>
         </div>
-      </div>
 
-      {/* ------------------------------------------------------------------ putting credit on */}
-      <section className="section">
-        <div className="section-title"><h2>Putting credit on</h2></div>
-        <div className="icm-buy">
-          <ol className="try-steps">
-            <li>
-              <span className="try-n">1</span>
-              <div>
-                <b>Send $COMD to the address below</b>
-                <span>
-                  {rate?.rate.tokensPerUsd
-                    ? `${Number(rate.rate.tokensPerUsd).toLocaleString()} $COMD buys $1.00 of credit.`
-                    : "The rate is published below."}
-                  {rate?.deposit.minimumTokens ? ` The smallest useful amount is ${Number(rate.deposit.minimumTokens).toLocaleString()} $COMD.` : ""}
-                </span>
-              </div>
-            </li>
-            <li>
-              <span className="try-n">2</span>
-              <div>
-                <b>The credit lands on the wallet that sent it</b>
-                <span>There is no memo, no account number and nothing to get wrong. Send from the wallet you want credited.</span>
-              </div>
-            </li>
-            <li>
-              <span className="try-n">3</span>
-              <div>
-                <b>Make a key and start calling</b>
-                <span>One signature proves the wallet is yours. It is not a transaction: nothing moves and there is no gas.</span>
-              </div>
-            </li>
-          </ol>
-
-          <div className="panel c-crimson icm-deposit">
-            <div className="label">Send $COMD here</div>
-            {rate?.deposit.address ? (
-              <>
-                <div className="icm-code">
-                  <code className="break">{rate.deposit.address}</code>
-                  <CopyButton text={rate.deposit.address} />
-                </div>
-                {rate.deposit.paymentIsBurn && (
-                  <p className="small" style={{ margin: "10px 0 0" }}>
-                    <strong>This is the burn address.</strong> The $COMD you send is destroyed on the way in. The firm never
-                    holds it, so there is nothing anyone could take.
-                  </p>
-                )}
-                <p className="muted small" style={{ margin: "8px 0 0" }}>
-                  Robinhood Chain{rate.deposit.chainId ? ` · ${rate.deposit.chainId}` : ""}. Only send $COMD. Anything else sent here is lost.
-                </p>
-              </>
-            ) : (
-              <p className="muted small" style={{ margin: 0 }}>Payment watching is not switched on yet on this deployment.</p>
-            )}
+        <aside className="icm-deal">
+          <div className="icm-rate">
+            <div className="icm-rate-side">
+              <b>{perUsd ? perUsd.toLocaleString() : "—"}</b>
+              <span>$COMD</span>
+            </div>
+            <div className="icm-rate-eq" aria-hidden="true">buys</div>
+            <div className="icm-rate-side">
+              <b>$1.00</b>
+              <span>of credit</span>
+            </div>
           </div>
+          <dl className="icm-terms">
+            <dt>Price of a call</dt>
+            <dd>What the model provider charged, plus {margin}.</dd>
+            <dt>Minimum</dt>
+            <dd>{rate?.deposit.minimumTokens ? `${Number(rate.deposit.minimumTokens).toLocaleString()} $COMD` : "—"}</dd>
+            <dt>Settlement</dt>
+            <dd>Held when the call opens, settled on the provider's own figure.</dd>
+          </dl>
+          {rate && !rate.enabled && (
+            <p className="icm-warn">
+              {rate.reason?.includes("misconfigured")
+                ? "The desk is switched off while it is reconfigured. Nothing can be bought or spent."
+                : "Routing is not switched on yet. You can buy credit and make keys now; calls start working with nothing further from you."}
+            </p>
+          )}
+        </aside>
+      </section>
+
+      {/* ---------------------------------------------------------------- funding */}
+      <section className="icm-fund">
+        <div className="icm-fund-say">
+          <h2>Putting credit on</h2>
+          <p>
+            Send $COMD from the wallet you want credited. There is no memo, no account number and nothing to get
+            wrong: the credit lands on whatever wallet the transfer came from, usually within a minute of it
+            confirming.
+          </p>
+          <p className="muted small">
+            Then one signature proves that wallet is yours and you can mint a key. The signature is not a
+            transaction: nothing moves and there is no gas.
+          </p>
+        </div>
+
+        <div className="icm-ticket">
+          <span className="icm-ticket-label">Send $COMD to</span>
+          {rate?.deposit.address ? (
+            <>
+              <code className="icm-addr">{rate.deposit.address}</code>
+              <CopyButton text={rate.deposit.address} label="Copy address" />
+              <ul className="icm-ticket-fine">
+                <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
+                <li>$COMD only. Anything else sent here is lost.</li>
+                {rate.deposit.paymentIsBurn && <li className="warn">This is the burn address: what you send is destroyed on the way in.</li>}
+              </ul>
+            </>
+          ) : (
+            <p className="muted small" style={{ margin: 0 }}>
+              No deposit address is configured on this deployment yet, so credit cannot be bought.
+            </p>
+          )}
         </div>
       </section>
 
