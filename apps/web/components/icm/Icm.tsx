@@ -215,9 +215,9 @@ export function Icm() {
       <section className="icm-cat">
         <div className="icm-cat-say">
           <h2>Every model, one key.</h2>
-          <p>Priced per million output tokens, at what the provider charged plus the published margin.</p>
+          <p>One key reaches all of them. What a call costs is what the provider charged plus the published margin.</p>
         </div>
-        <Catalogue tokensPerUsd={perUsd} />
+        <Catalogue />
       </section>
 
       {/* ------------------------------------------------------------------- funding */}

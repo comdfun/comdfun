@@ -19,13 +19,10 @@ type Model = {
 /** The houses worth showing first: a catalogue of hundreds opens on the names people came to find. */
 const ORDER = ["anthropic", "openai", "google", "x-ai", "xai", "deepseek", "meta-llama", "meta", "mistralai", "qwen", "moonshotai"];
 
-const money = (v: number) =>
-  v >= 100 ? v.toFixed(0)
-  : v >= 1 ? v.toFixed(2)
-  : v >= 0.01 ? v.toFixed(3)
-  : v.toPrecision(2);
+/** A context window as somebody says it out loud: 1M, 200k. */
+const ctx = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}k` : String(n));
 
-export function Catalogue({ tokensPerUsd }: { tokensPerUsd: number | null }) {
+export function Catalogue() {
   const [models, setModels] = useState<Model[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [all, setAll] = useState(false);
@@ -41,14 +38,12 @@ export function Catalogue({ tokensPerUsd }: { tokensPerUsd: number | null }) {
 
   const rows = useMemo(() => {
     if (!models) return [];
-    const priced = models.filter((m) => m.pricing?.completion && Number(m.pricing.completion) > 0);
-    // best known houses first, then by price, so the opening rows are names somebody recognises
+    // best known houses first, then the largest context, so the opening rows are names somebody recognises
     const rank = (id: string) => {
-      const house = id.split("/")[0];
-      const i = ORDER.indexOf(house);
+      const i = ORDER.indexOf(id.split("/")[0]);
       return i === -1 ? ORDER.length : i;
     };
-    return priced.sort((a, b) => rank(a.id) - rank(b.id) || Number(b.pricing!.completion) - Number(a.pricing!.completion));
+    return models.slice().sort((a, b) => rank(a.id) - rank(b.id) || (b.context_length ?? 0) - (a.context_length ?? 0));
   }, [models]);
 
   const shown = all ? rows.slice(0, 60) : rows.slice(0, 8);
@@ -64,7 +59,7 @@ export function Catalogue({ tokensPerUsd }: { tokensPerUsd: number | null }) {
   return (
     <div className="cat">
       <div className="cat-head">
-        <span>Output price · per 1M tokens</span>
+        <span>On the catalogue</span>
         <span>{models ? `${rows.length.toLocaleString()} models` : "reading the catalogue…"}</span>
       </div>
 
@@ -79,22 +74,16 @@ export function Catalogue({ tokensPerUsd }: { tokensPerUsd: number | null }) {
       ) : (
         <>
           <div className="cat-rows">
-            {shown.map((m) => {
-              const usd = Number(m.pricing!.completion);
-              const comd = tokensPerUsd ? usd * tokensPerUsd : null;
-              return (
-                <div className="cat-row" key={m.id}>
-                  <div className="cat-name">
-                    <b>{m.name || m.id.split("/").pop()}</b>
-                    <code>{m.id}</code>
-                  </div>
-                  <div className="cat-price">
-                    <b>${money(usd)}</b>
-                    {comd !== null && <span>{Math.round(comd).toLocaleString()} $COMD</span>}
-                  </div>
+            {shown.map((m) => (
+              <div className="cat-row" key={m.id}>
+                <div className="cat-name">
+                  <b>{m.name || m.id.split("/").pop()}</b>
+                  <code>{m.id}</code>
                 </div>
-              );
-            })}
+                {/* the column header says what this is; repeating it on every row is noise */}
+                <div className="cat-ctx">{m.context_length ? <b>{ctx(m.context_length)}</b> : <b className="muted">—</b>}</div>
+              </div>
+            ))}
           </div>
           {rows.length > 8 && (
             <button type="button" className="cat-more" onClick={() => setAll((v) => !v)}>
@@ -105,8 +94,8 @@ export function Catalogue({ tokensPerUsd }: { tokensPerUsd: number | null }) {
       )}
 
       <p className="cat-foot">
-        What you are charged, which is what the provider charged plus the published margin. Input tokens are
-        priced separately and usually cost less. Providers change their prices; these follow them.
+        Every one of them through the same key and the same endpoint. What a call costs is what the provider
+        charged plus the published margin, settled on the provider&apos;s own usage figure.
       </p>
     </div>
   );

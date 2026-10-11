@@ -547,160 +547,146 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
     );
   }
 
-  // cICM, introduced: the desk is a thing that moves, so the film is built from moving parts rather than
-  // bullets. Chips converge on one endpoint, a payload runs down a conveyor, and the supply bar burns down.
+  // cICM, introduced. Set in the language the site now uses, and built out of the product's own surfaces: the
+  // model table, the buy panel, the dashboard's bars. Somebody who watches this and then opens the page should
+  // recognise the second from the first.
   if (kind === "icmx") {
     return (
-      <div className="film mf af-reg af-tasks" data-scene={scene}>
-        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
-        <div className="film-rail" aria-hidden="true" />
+      <div className="pf" data-scene={scene}>
+        <div className="pf-air" aria-hidden="true" />
+        <div className="pf-hair" aria-hidden="true" />
 
-        <section className={`mf-s af-rtitle ${on("x-title")}`} data-scene="x-title">
-          <div className="af-jury-sm">{portraits.slice(0, 6).map((id, i) => (
-            <img key={id} src={`/art/${id}.svg`} alt="" style={{ ["--i" as string]: i }} />
-          ))}</div>
-          <div className="af-title af-title-sm">Introducing <b>cICM</b></div>
-          <div className="ic-url"><i>https://</i><u>api.comd.fun</u><i>/icm/v1</i><span className="ic-caret" /></div>
-          <div className="mf-sub">Company Inference Capital Markets. Buy AI inference with <b>$COMD</b>.</div>
+        <section className={`pf-s pf-mid ${on("x-title")}`} data-scene="x-title">
+          <div className="pf-eyebrow pf-end-in"><i />Company Inference Capital Markets<i /></div>
+          <h1 className="pf-h">Every frontier model,<br />one key, <mark>paid in $COMD</mark>.</h1>
+          <p className="pf-sub">No card. No subscription. No account of your own with a model provider.</p>
         </section>
 
-        <section className={`mf-s af-loop af-task c-gold ${on("x-many")}`} data-scene="x-many">
-          <header className="fs-h c-gold"><span className="fs-no">01</span><h2>One endpoint, every model</h2></header>
-          <div className="ic-fan">
-            <div className="ic-chips">
-              {[["anthropic", "claude-opus-4.1", "var(--orange)"], ["openai", "gpt-5", "var(--lime)"],
-                ["google", "gemini-2.5-pro", "var(--cyan)"], ["deepseek", "deepseek-r1", "var(--violet)"],
-                ["meta", "llama-4", "var(--pink)"], ["xai", "grok-4", "var(--gold)"]].map(([h, m, c], i) => (
-                <div className="ic-chip" key={m} style={{ ["--i" as string]: i, ["--cc" as string]: c }}>{h}<em>/</em>{m}</div>
-              ))}
-            </div>
-            <div className="ic-sink">
-              <b>cICM</b>
-              <code>api.comd.fun/icm/v1</code>
-              <span>name the model in the request</span>
-            </div>
-          </div>
-          <p className="ic-pipe-note">Point a client, a script or an agent at it. <b>Nothing in your code changes but the base URL.</b></p>
-        </section>
-
-        <section className={`mf-s af-loop af-task c-cyan ${on("x-pay")}`} data-scene="x-pay">
-          <header className="fs-h c-cyan"><span className="fs-no">02</span><h2>Pay once, take a key</h2></header>
-          <div className="ic-pipe">
-            <div className="ic-node" style={{ ["--i" as string]: 0, ["--nc" as string]: "var(--gold)" }}>
-              <span className="ic-glyph">$</span><b>Send $COMD</b><span>from the wallet you want credited</span>
-            </div>
-            <div className="ic-run" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--gold)" }} />
-            <div className="ic-node" style={{ ["--i" as string]: 1, ["--nc" as string]: "var(--cyan)" }}>
-              <span className="ic-glyph">✓</span><b>Sign once</b><span>not a transaction, no gas</span>
-            </div>
-            <div className="ic-run" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--cyan)" }} />
-            <div className="ic-node" style={{ ["--i" as string]: 2, ["--nc" as string]: "var(--lime)" }}>
-              <span className="ic-glyph">#</span><b>API key</b><span>shown once, never again</span>
-            </div>
-          </div>
-          <p className="ic-pipe-note">No card, no monthly bill, and <b>no account of your own with a model provider</b>.</p>
-        </section>
-
-        <section className={`mf-s af-loop af-task c-violet ${on("x-cost")}`} data-scene="x-cost">
-          <header className="fs-h c-violet"><span className="fs-no">03</span><h2>What a call costs</h2></header>
-          <div className="af-cards af-cards-2">
-            <div className="af-card c-violet" style={{ ["--i" as string]: 0 }}><b>What the provider charged</b><span>Settled on the provider&apos;s own usage figure, not an estimate. A call that never ran is never charged for.</span></div>
-            <div className="af-card c-gold" style={{ ["--i" as string]: 1 }}><b>Plus a published margin</b><span>Printed on the page rather than discovered on the bill. The rate from $COMD to credit is fixed and public.</span></div>
-          </div>
-          <ul className="fs-lines c-violet">
-            <li style={{ ["--i" as string]: 2 }}>A call <b>holds</b> an estimate when it opens and <b>settles</b> when it closes. Interrupted calls give the hold back.</li>
-          </ul>
-        </section>
-
-        <section className={`mf-s af-loop af-task c-orange ${on("x-burn")}`} data-scene="x-burn">
-          <header className="fs-h c-orange"><span className="fs-no">04</span><h2>And the $COMD is burned</h2></header>
-          <div className="ic-burn">
-            <div className="ic-bar">
-              <i />
-              <div className="ic-embers" aria-hidden="true">
-                {Array.from({ length: 10 }, (_, i) => (
-                  <i key={i} style={{ ["--i" as string]: i, left: `${8 + i * 9}%` }} />
-                ))}
+        <section className={`pf-s ${on("x-many")}`} data-scene="x-many" style={{ ["--c" as string]: "var(--gold)" }}>
+          <div className="pf-eyebrow"><i />One endpoint</div>
+          <h2 className="pf-h pf-h-sm">Every model, <em>one key</em>.</h2>
+          <div className="pf-cat">
+            <div className="pf-cat-h"><span>On the catalogue</span><span>context</span></div>
+            {[["Claude Opus 4.1", "anthropic/claude-opus-4.1", "200k"],
+              ["GPT-5", "openai/gpt-5", "400k"],
+              ["Gemini 2.5 Pro", "google/gemini-2.5-pro", "1M"],
+              ["Grok 4", "x-ai/grok-4", "256k"],
+              ["DeepSeek R1", "deepseek/deepseek-r1", "164k"]].map(([n, id, c], i) => (
+              <div className="pf-cat-r" key={id} style={{ ["--i" as string]: i }}>
+                <div className="pf-cat-n"><b>{n}</b><code className="pf-mono">{id}</code></div>
+                <div className="pf-cat-p"><b>{c}</b></div>
               </div>
-            </div>
-            <div className="ic-burn-cap"><span>Supply</span><b>spent on inference = gone for good</b></div>
+            ))}
           </div>
-          <ul className="fs-lines c-orange">
-            <li style={{ ["--i" as string]: 0 }}>Every $COMD that buys inference is <b>destroyed</b>. Demand for models becomes demand for the token.</li>
-            <li style={{ ["--i" as string]: 1 }}>A use that is <b>not speculation</b>: somebody who needs a model has a reason to buy $COMD that has nothing to do with the chart.</li>
-          </ul>
         </section>
 
-        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
-          <Svg svg={logo} className="ft-logo" />
-          <div className="ft-word">COMPANY<span>.MD</span></div>
-          <div className="mf-tag">A swarm that works. <b className="c-gold">And a desk that sells the models.</b></div>
-          <div className="fo-foot">comd.fun/icm · @comdfun</div>
+        <section className={`pf-s ${on("x-pay")}`} data-scene="x-pay" style={{ ["--c" as string]: "var(--cyan)" }}>
+          <div className="pf-eyebrow"><i />Getting started</div>
+          <h2 className="pf-h pf-h-sm">Pay once. <em>Take a key.</em></h2>
+          <div className="pf-flow">
+            <div className="pf-plate" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--gold)" }}>
+              <u>Step one</u><b>Send $COMD</b><span>from the wallet you want credited</span>
+            </div>
+            <div className="pf-link" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--gold)" }} />
+            <div className="pf-plate" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--cyan)" }}>
+              <u>Step two</u><b>Sign once</b><span>not a transaction, and no gas</span>
+            </div>
+            <div className="pf-link" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--cyan)" }} />
+            <div className="pf-plate" style={{ ["--i" as string]: 2, ["--pc" as string]: "var(--lime)" }}>
+              <u>Step three</u><b>Your API key</b><span>shown once, and never again</span>
+            </div>
+          </div>
+        </section>
+
+        <section className={`pf-s ${on("x-cost")}`} data-scene="x-cost" style={{ ["--c" as string]: "var(--violet)" }}>
+          <div className="pf-eyebrow"><i />What a call costs</div>
+          <h2 className="pf-h pf-h-sm">Charged <em>what it cost</em>.</h2>
+          <div className="pf-figs" style={{ ["--n" as string]: 3 }}>
+            <div className="pf-fig" style={{ ["--i" as string]: 0 }}><b>Held</b><span>an estimate when the call opens</span></div>
+            <div className="pf-fig" style={{ ["--i" as string]: 1 }}><b>Settled</b><span>on the provider&apos;s own usage figure</span></div>
+            <div className="pf-fig" style={{ ["--i" as string]: 2 }}><b>$0</b><span>for a call that never ran</span></div>
+          </div>
+          <p className="pf-sub">Your request goes to the model you named, and the answer carries the provider&apos;s own model id, so you can check.</p>
+        </section>
+
+        <section className={`pf-s ${on("x-burn")}`} data-scene="x-burn" style={{ ["--c" as string]: "var(--orange)" }}>
+          <div className="pf-eyebrow"><i />And the token</div>
+          <h2 className="pf-h pf-h-sm">Every $COMD spent here is <mark>burned</mark>.</h2>
+          <div className="pf-burn">
+            <div className="pf-burn-bar"><i /></div>
+            <div className="pf-burn-cap"><span>Supply</span><b>inference bought is supply gone</b></div>
+          </div>
+          <p className="pf-sub">A use that is not speculation. Somebody who needs a model has a reason to buy the token that has nothing to do with the chart.</p>
+        </section>
+
+        <section className={`pf-s pf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="pf-mark" />
+          <div className="pf-word">Company<i>.md</i></div>
+          <div className="pf-tag">A swarm that works. <b className="pf-grad">And a desk that sells the models.</b></div>
+          <div className="pf-url">comd.fun/icm</div>
         </section>
       </div>
     );
   }
 
-  // The objection this film answers is the first one anybody has: "I do not hold your token." One conveyor,
-  // one bracket under it, and the answer is a picture rather than a paragraph.
+  // The first objection anybody has is that they do not hold the token. One flow, one bracket under it, and the
+  // answer is a picture rather than a paragraph.
   if (kind === "icmeth") {
     return (
-      <div className="film mf af-reg af-tasks" data-scene={scene}>
-        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
-        <div className="film-rail" aria-hidden="true" />
+      <div className="pf" data-scene={scene}>
+        <div className="pf-air" aria-hidden="true" />
+        <div className="pf-hair" aria-hidden="true" />
 
-        <section className={`mf-s af-rtitle ${on("e-title")}`} data-scene="e-title">
-          <div className="af-jury-sm">{portraits.slice(6, 12).map((id, i) => (
-            <img key={id} src={`/art/${id}.svg`} alt="" style={{ ["--i" as string]: i }} />
-          ))}</div>
-          <div className="af-title af-title-sm">No <b>$COMD</b>? Fine.</div>
-          <div className="mf-sub">Buying inference on <b>cICM</b> when all you hold is ETH</div>
+        <section className={`pf-s pf-mid ${on("e-title")}`} data-scene="e-title">
+          <div className="pf-eyebrow pf-end-in"><i />cICM · comd.fun/icm<i /></div>
+          <h1 className="pf-h">Don&apos;t hold <em>$COMD</em>?<br />Buy inference anyway.</h1>
+          <p className="pf-sub">Pay in ETH. The swap happens on the way in, in a single transaction.</p>
         </section>
 
-        <section className={`mf-s af-loop af-task c-cyan ${on("e-hold")}`} data-scene="e-hold">
-          <header className="fs-h c-cyan"><span className="fs-no">01</span><h2>You do not have to hold it</h2></header>
-          <div className="af-cards af-cards-2">
-            <div className="af-card c-cyan" style={{ ["--i" as string]: 0 }}><b>Hold ETH</b><span>That is the whole requirement. Pick the ETH tab on the page, type an amount, and read what it buys before you send anything.</span></div>
-            <div className="af-card c-violet" style={{ ["--i" as string]: 1 }}><b>Coming from another chain?</b><span>Bridge ETH to Robinhood Chain in seconds and come back. Nothing else to buy or approve by hand.</span></div>
+        <section className={`pf-s ${on("e-hold")}`} data-scene="e-hold" style={{ ["--c" as string]: "var(--cyan)" }}>
+          <div className="pf-eyebrow"><i />What you need</div>
+          <h2 className="pf-h pf-h-sm">ETH. <em>That is the whole list.</em></h2>
+          <div className="pf-figs" style={{ ["--n" as string]: 3 }}>
+            <div className="pf-fig" style={{ ["--i" as string]: 0 }}><b>1</b><span>press on the page</span></div>
+            <div className="pf-fig" style={{ ["--i" as string]: 1 }}><b>1</b><span>signature in your wallet</span></div>
+            <div className="pf-fig pf-fig-hot" style={{ ["--i" as string]: 2 }}><b>0</b><span>tokens to go and find first</span></div>
           </div>
+          <p className="pf-sub">Coming from another chain, bridge ETH to Robinhood Chain in seconds and come back.</p>
         </section>
 
-        <section className={`mf-s af-loop af-task c-gold ${on("e-swap")}`} data-scene="e-swap">
-          <header className="fs-h c-gold"><span className="fs-no">02</span><h2>The swap happens on the way in</h2></header>
-          <div className="ic-pipe">
-            <div className="ic-node" style={{ ["--i" as string]: 0, ["--nc" as string]: "var(--cyan)" }}>
-              <span className="ic-glyph">Ξ</span><b>Your ETH</b><span>what you already hold</span>
+        <section className={`pf-s ${on("e-swap")}`} data-scene="e-swap" style={{ ["--c" as string]: "var(--gold)" }}>
+          <div className="pf-eyebrow"><i />What happens when you press buy</div>
+          <div className="pf-flow">
+            <div className="pf-plate" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--cyan)" }}>
+              <u>You hold</u><b>ETH</b><span>what is already in your wallet</span>
             </div>
-            <div className="ic-run" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--cyan)" }} />
-            <div className="ic-node" style={{ ["--i" as string]: 1, ["--nc" as string]: "var(--pink)" }}>
-              <span className="ic-glyph">⇄</span><b>The pool</b><span>routed at the market price</span>
+            <div className="pf-link" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--cyan)" }} />
+            <div className="pf-plate" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--pink)" }}>
+              <u>Routed through</u><b>The pool</b><span>at the market price</span>
             </div>
-            <div className="ic-run" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--gold)" }} />
-            <div className="ic-node" style={{ ["--i" as string]: 2, ["--nc" as string]: "var(--gold)" }}>
-              <span className="ic-glyph">$</span><b>$COMD</b><span>straight to the desk</span>
+            <div className="pf-link" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--gold)" }} />
+            <div className="pf-plate" style={{ ["--i" as string]: 2, ["--pc" as string]: "var(--gold)" }}>
+              <u>Arrives as</u><b>$COMD</b><span>straight to the desk, and burned</span>
             </div>
-            <div className="ic-run" style={{ ["--i" as string]: 2, ["--pc" as string]: "var(--lime)" }} />
-            <div className="ic-node" style={{ ["--i" as string]: 3, ["--nc" as string]: "var(--lime)" }}>
-              <span className="ic-glyph">+</span><b>Credit</b><span>on the wallet that signed</span>
+            <div className="pf-link" style={{ ["--i" as string]: 2, ["--pc" as string]: "var(--lime)" }} />
+            <div className="pf-plate" style={{ ["--i" as string]: 3, ["--pc" as string]: "var(--lime)" }}>
+              <u>You get</u><b>Credit</b><span>on the wallet that signed</span>
             </div>
           </div>
-          <div className="ic-brace"><span>one transaction</span></div>
+          <div className="pf-brace"><span>one transaction</span></div>
         </section>
 
-        <section className={`mf-s af-loop af-task c-lime ${on("e-one")}`} data-scene="e-one">
-          <header className="fs-h c-lime"><span className="fs-no">03</span><h2>What that means for you</h2></header>
-          <ul className="fs-lines fs-big c-lime">
-            <li style={{ ["--i" as string]: 0 }}>You never go and find the token first. <b>One press, one signature</b>, and the credit is on your account.</li>
-            <li style={{ ["--i" as string]: 1 }}>The credit lands on <b>the wallet that signed</b>, not on the pool that moved the token.</li>
-            <li style={{ ["--i" as string]: 2 }}>And the $COMD the swap bought is <b>burned on the way in</b>. Paying in ETH still takes supply off the market.</li>
-          </ul>
+        <section className={`pf-s ${on("e-one")}`} data-scene="e-one" style={{ ["--c" as string]: "var(--lime)" }}>
+          <div className="pf-eyebrow"><i />Why it matters</div>
+          <h2 className="pf-h pf-h-sm">You never go and <em>find the token first</em>.</h2>
+          <p className="pf-sub">The credit lands on the wallet that signed, not on the pool that moved the token. And the $COMD the swap bought is burned on the way in, so paying in ETH still takes supply off the market.</p>
         </section>
 
-        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
-          <Svg svg={logo} className="ft-logo" />
-          <div className="ft-word">COMPANY<span>.MD</span></div>
-          <div className="mf-tag">Bring ETH. <b className="c-lime">Leave with inference.</b></div>
-          <div className="fo-foot">comd.fun/icm · @comdfun</div>
+        <section className={`pf-s pf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="pf-mark" />
+          <div className="pf-word">Company<i>.md</i></div>
+          <div className="pf-tag">Bring ETH. <b className="pf-grad">Leave with inference.</b></div>
+          <div className="pf-url">comd.fun/icm</div>
         </section>
       </div>
     );

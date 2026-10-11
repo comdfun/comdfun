@@ -1822,9 +1822,9 @@ html.no-motion .rv { opacity: 1 !important; }
 .cat-name { display: grid; gap: 2px; min-width: 0; }
 .cat-name b { font-size: 14.5px; font-weight: 600; color: var(--parch); }
 .cat-name code { font-family: var(--font-mono); font-size: 11.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cat-price { display: grid; gap: 2px; justify-items: end; flex: none; }
-.cat-price b { font-size: 16px; font-weight: 600; color: var(--parch); font-variant-numeric: tabular-nums; }
-.cat-price span { font-family: var(--font-mono); font-size: 11.5px; color: var(--gold); }
+.cat-ctx { display: grid; gap: 2px; justify-items: end; flex: none; }
+.cat-ctx b { font-size: 15px; font-weight: 600; color: #cdc6b5; font-variant-numeric: tabular-nums; }
+.cat-ctx span { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
 .cat-skel { height: 56px; }
 .cat-skel i { display: block; width: 46%; height: 11px; border-radius: 3px; background: linear-gradient(90deg, #15121c, #1d1926, #15121c); background-size: 220% 100%; animation: catShimmer 1.3s linear infinite; }
 @keyframes catShimmer { to { background-position: -220% 0; } }
