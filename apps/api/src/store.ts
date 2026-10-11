@@ -71,6 +71,7 @@ export const COLLECTIONS = [
   "assurances", "sites", "enrollments", "pairings", "seats", "feedback", "documents", "bundles", "artifacts", "fuzz",
   "epochs", "events", "kv", "nonces",
   "room_sessions", "room_messages", "room_promos", "room_bans", "trials",
+  "icm_accounts", "icm_keys", "icm_deposits", "icm_charges",
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 

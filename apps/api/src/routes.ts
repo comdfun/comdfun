@@ -16,6 +16,7 @@ import { iso } from "./store.ts";
 import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselShareCardPng, counselPortraitSvg, filingShareCardPng, validTokenId } from "./art.ts";
 import { ARTIFACT_LIMIT, BUNDLE_LIMIT } from "./device.ts";
 import { deliverable, deliverableFilename, deliverableRef } from "./deliverable.ts";
+import { usdFromInput } from "@company/icm";
 import { pairPage } from "./pairpage.ts";
 
 type A = Attempt & { id: string; createdAt: string };
@@ -556,6 +557,70 @@ export function buildRouter(app: App): Router {
     return { status: 200, raw: png, headers: { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "public, max-age=600" } };
   }, pub);
 
+  // ------------------------------------------------------------------------------------------ cICM (inference)
+
+  // Everything under /icm/v1 and /icm/admin is served by @company/icm, which knows nothing about Company.md.
+  // The adapter is three lines: hand it the method, path, bearer and parsed body, and send back what it says.
+  const icmPass = async (q: Req, path: string): Promise<Res> => {
+    const out = await app.icm.handle({ method: q.method, path, bearer: q.bearer ?? null, body: q.body && q.body.length ? JSON.parse(q.body.toString("utf8")) : undefined, query: q.query });
+    if (out.stream) return { status: out.status, headers: out.headers, stream: out.stream };
+    return { status: out.status, raw: JSON.stringify(out.json), headers: out.headers };
+  };
+  // The OpenAI-compatible surface. `limit` is generous because a conversation is the request body.
+  const icmOpts: RouteOpts = { cors: "public", bucket: "read", limit: 4 * 1024 * 1024 };
+  for (const p of ["/icm/v1/chat/completions", "/icm/v1/models", "/icm/v1/key", "/icm/v1/usage", "/icm/v1/rate"]) {
+    r.get(p, (q) => icmPass(q, p.slice(4)), icmOpts);
+    r.post(p, (q) => icmPass(q, p.slice(4)), icmOpts);
+  }
+  for (const p of ["/icm/admin/book", "/icm/admin/charges", "/icm/admin/accounts", "/icm/admin/sweep", "/icm/admin/grant", "/icm/admin/suspend"]) {
+    r.get(p, (q) => icmPass(q, p.slice(4)), icmOpts);
+    r.post(p, (q) => icmPass(q, p.slice(4)), icmOpts);
+  }
+  r.post("/icm/admin/charges/:id/resolve", (q) => icmPass(q, `/admin/charges/${q.params.id}/resolve`), icmOpts);
+
+  // Where to pay and what it buys. Public, because somebody deciding whether to use this needs it first.
+  r.get("/icm", () => json(200, app.icm.instructions(), { "cache-control": "public, max-age=60" }), read);
+
+  // Proving a wallet, so its owner can mint and manage keys. A signature, not a transaction.
+  r.post("/icm/nonce", (q) => {
+    const b = q.json() as { address?: string };
+    return json(200, app.icm.nonce(String(b.address ?? "")));
+  }, read);
+  r.post("/icm/keys", async (q) => {
+    const b = q.json() as { address?: string; signature?: string; label?: string; spendLimitUsd?: string; models?: string[] };
+    const owner = await app.icm.verify(String(b.address ?? ""), String(b.signature ?? ""));
+    const account = app.icm.ledger.account(owner);
+    const issued = app.icm.ledger.issueKey({
+      accountId: account.id,
+      label: b.label,
+      spendLimitMicroUsd: b.spendLimitUsd ? usdFromInput(b.spendLimitUsd, "spendLimitUsd") : null,
+      models: Array.isArray(b.models) ? b.models.slice(0, 20).map(String) : undefined,
+    });
+    // The secret is returned exactly once, here, and is not recoverable afterwards.
+    return json(201, { secret: issued.secret, key: { id: issued.key.id, display: issued.key.display, label: issued.key.label, createdAt: issued.key.createdAt } });
+  }, read);
+  r.post("/icm/account", async (q) => {
+    const b = q.json() as { address?: string; signature?: string };
+    const owner = await app.icm.verify(String(b.address ?? ""), String(b.signature ?? ""));
+    const account = app.icm.ledger.account(owner);
+    return json(200, {
+      account: { id: account.id, owner: account.owner, balanceMicroUsd: account.balanceMicroUsd, heldMicroUsd: account.heldMicroUsd, depositedMicroUsd: account.depositedMicroUsd, spentMicroUsd: account.spentMicroUsd, suspended: account.suspended },
+      keys: app.icm.ledger.keysOf(account.id).map((k) => ({ id: k.id, display: k.display, label: k.label, disabled: k.disabled, createdAt: k.createdAt, lastUsedAt: k.lastUsedAt, spentMicroUsd: k.spentMicroUsd, spendLimitMicroUsd: k.spendLimitMicroUsd, models: k.models })),
+      deposits: app.icm.ledger.depositsOf(account.id, 25),
+      charges: app.icm.ledger.chargesOf(account.id, 25).map((c) => ({ id: c.id, at: c.createdAt, model: c.model, state: c.state, costMicroUsd: c.retailMicroUsd, tokensIn: c.tokensIn, tokensOut: c.tokensOut })),
+    });
+  }, read);
+  r.post("/icm/keys/:id/revoke", async (q) => {
+    const b = q.json() as { address?: string; signature?: string };
+    const owner = await app.icm.verify(String(b.address ?? ""), String(b.signature ?? ""));
+    const account = app.icm.ledger.accountFor(owner);
+    const key = account ? app.icm.ledger.keysOf(account.id).find((k) => k.id === q.params.id) : undefined;
+    // A key that is not this wallet's is not found, rather than forbidden: no key id is confirmed to a stranger.
+    if (!key) throw E.notFound("no such key on this wallet");
+    app.icm.ledger.revokeKey(key.id);
+    return json(200, { revoked: key.id });
+  }, read);
+
   // ------------------------------------------------------------------------------------------ bundles, artifacts, fuzz
 
   r.post("/bundles", async (q) => { const x = await app.device.uploadBundle(q.json()); return json(x.status, x.body); }, { ...device, limit: Math.ceil(BUNDLE_LIMIT * 1.4) + 65536 });
@@ -1050,6 +1115,7 @@ export async function health(app: App) {
     verifierUp: st.verifier.up, publisherUp: st.publisher.up, deployerUp: st.deployer.up,
     services: { verifier: st.verifier.mode, publisher: st.publisher.mode, deployer: st.deployer.mode, attester: st.attester.mode },
     art: artStatus().source,
+    icm: app.icm.status(),
     skills: { source: app.skills.source, dir: app.skills.dir, count: app.skills.all().length },
     contracts: { chainId: app.cfg.chainId, counselNft: app.cfg.counselNft, identityRegistry: app.cfg.identityRegistry, reputationRegistry: app.cfg.reputationRegistry, rewardDistributor: app.cfg.rewardDistributor, contributorDistributor: app.cfg.contributorDistributor, projectFactory: app.cfg.projectFactory, revenueRouter: app.cfg.revenueRouter, comd: app.cfg.comd, flywheel: app.cfg.flywheel, swapper: app.cfg.swapper, incorporations: app.cfg.incorporations, permit2: app.cfg.permit2, payTo: app.cfg.payTo, sources: app.cfg.addressSource },
     computedAt: iso(now),

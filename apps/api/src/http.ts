@@ -20,6 +20,9 @@ export interface Res {
   status: number;
   body?: unknown;
   raw?: Buffer | string;
+  /** A body written as it arrives rather than buffered: no content-length, flushed per chunk. Server-sent
+   *  events need this — an inference stream that is buffered is not a stream. */
+  stream?: ReadableStream<Uint8Array>;
   headers?: Record<string, string>;
 }
 
@@ -117,6 +120,15 @@ export function bearerOf(req: IncomingMessage): string | null {
 
 export function send(res: ServerResponse, r: Res, head = false) {
   const headers: Record<string, string> = { ...(r.headers ?? {}) };
+  if (r.stream) {
+    headers["x-content-type-options"] ??= "nosniff";
+    headers["content-type"] ??= "text/event-stream; charset=utf-8";
+    headers["cache-control"] ??= "no-cache, no-transform";
+    res.writeHead(r.status, headers);
+    if (head) { res.end(); return; }
+    void pump(r.stream, res);
+    return;
+  }
   let payload: Buffer | string | undefined;
   if (r.raw !== undefined) payload = r.raw;
   else if (r.body !== undefined) {
@@ -128,6 +140,31 @@ export function send(res: ServerResponse, r: Res, head = false) {
   res.writeHead(r.status, headers);
   res.end(head ? undefined : payload);
 }
+
+/** Relay a web stream to a node response, chunk by chunk, respecting back-pressure and cancelling the source
+ *  when the client hangs up — otherwise an abandoned stream keeps generating tokens somebody is paying for. */
+async function pump(stream: ReadableStream<Uint8Array>, res: ServerResponse): Promise<void> {
+  const reader = stream.getReader();
+  const stop = () => { void reader.cancel("the client disconnected").catch(() => {}); };
+  res.on("close", stop);
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!res.write(value)) await once(res, "drain");
+    }
+    res.end();
+  } catch {
+    // The headers are already out, so there is no status left to change: end the response and let the client
+    // see a truncated stream, which is what actually happened.
+    res.destroy();
+  } finally {
+    res.off("close", stop);
+  }
+}
+
+const once = (emitter: ServerResponse, event: string): Promise<void> =>
+  new Promise((resolve) => emitter.once(event, () => resolve()));
 
 export function errorRes(e: unknown): Res {
   if (e instanceof ApiError) return { status: e.status, body: e.toJSON(), headers: e.headers };

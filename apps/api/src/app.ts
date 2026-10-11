@@ -28,6 +28,7 @@ import type { EventRecord } from "./records.ts";
 import type { Router } from "./http.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { Room } from "./room.ts";
+import { Icm } from "./icm.ts";
 import { Leaderboard } from "./leaderboard.ts";
 import { Trial } from "./trial.ts";
 import { Keeper, ViemKeeperPort, type KeeperPort } from "./keeper.ts";
@@ -77,6 +78,7 @@ export class App {
   readonly device: Device;
   readonly fuzz: Fuzz;
   readonly room: Room;
+  readonly icm: Icm;
   readonly leaderboard: Leaderboard;
   readonly trial: Trial;
   readonly sites: Sites;
@@ -124,6 +126,7 @@ export class App {
     this.device = new Device(this);
     this.fuzz = new Fuzz(this);
     this.room = new Room(this);
+    this.icm = new Icm({ app: this });
     this.leaderboard = new Leaderboard(this);
     this.trial = new Trial(this);
     this.sites = new Sites(this);
@@ -195,6 +198,10 @@ export class App {
     every(5_000, () => this.scheduler.tick());
     every(Math.max(2_000, Math.min(60_000, Math.floor((this.cfg.epochSeconds * 1000) / 4))), () => this.settlement.tick());
     if (this.chain.configured) every(600_000, () => this.pairing.refreshOwners(true).catch(() => undefined));
+    // cICM: watch for $COMD payments, and sweep holds whose request never reported back. The sweep matters even
+    // when nothing is being watched — a hold nobody resolves is a customer's money they cannot spend.
+    if (this.chain.configured) every(30_000, () => this.icm.poll().catch((e) => console.warn("[icm] poll:", (e as Error).message)));
+    every(300_000, () => { const swept = this.icm.sweep(); if (swept.length) console.warn(`[icm] swept ${swept.length} stale hold(s)`); });
     this.keeper.start();
   }
 

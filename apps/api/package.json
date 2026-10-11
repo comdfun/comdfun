@@ -24,7 +24,8 @@
     "@company/services": "*",
     "pg": "^8.13.0",
     "viem": "^2.57.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@company/icm": "*"
   },
   "devDependencies": {
     "@company/worker": "*",

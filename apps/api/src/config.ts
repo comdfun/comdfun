@@ -91,6 +91,22 @@ export interface Config {
   rewardEpochPool: string | null;
   rewardGenesisMs: number;
   adminToken: string | null;
+  /** cICM — selling inference for $COMD. Parsed here so a deployment is configured in one place and a test can
+   *  pass an env object rather than reaching into process.env. */
+  icm: {
+    openRouterKey: string | null;
+    /** Where payers send $COMD. The burn address by default, which makes a payment its own burn. */
+    depositAddress: string;
+    /** Whole $COMD per one dollar of credit. Set by hand, changed by hand. */
+    comdPerUsd: string;
+    marginBps: number;
+    minDepositUsd: string;
+    maxHoldUsd: string;
+    confirmations: number;
+    environment: "live" | "test";
+    allowModels: string[];
+    denyModels: string[];
+  };
   commit: string | null;
   branch: string | null;
   deployedAt: string | null;
@@ -216,6 +232,18 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     rewardEpochPool: /^[0-9]+$/.test(env.REWARD_EPOCH_COMD_POOL ?? env.REWARD_EPOCH_POOL ?? "") ? (env.REWARD_EPOCH_COMD_POOL ?? env.REWARD_EPOCH_POOL)! : null,
     rewardGenesisMs: env.REWARD_GENESIS ? Date.parse(env.REWARD_GENESIS) || Date.UTC(2026, 9, 5) : Date.UTC(2026, 9, 5),
     adminToken: env.ADMIN_TOKEN || null,
+    icm: {
+      openRouterKey: env.OPENROUTER_API_KEY || null,
+      depositAddress: env.ICM_DEPOSIT_ADDRESS || "0x000000000000000000000000000000000000dEaD",
+      comdPerUsd: env.ICM_COMD_PER_USD || "100000",
+      marginBps: int(env.ICM_MARGIN_BPS, 1500),
+      minDepositUsd: env.ICM_MIN_DEPOSIT_USD || "1",
+      maxHoldUsd: env.ICM_MAX_HOLD_USD || "5",
+      confirmations: int(env.ICM_CONFIRMATIONS, 12),
+      environment: env.ICM_ENVIRONMENT === "test" ? "test" : "live",
+      allowModels: (env.ICM_ALLOW_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),
+      denyModels: (env.ICM_DENY_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),
+    },
     commit: env.GIT_COMMIT || env.RAILWAY_GIT_COMMIT_SHA || null,
     branch: env.GIT_BRANCH || env.RAILWAY_GIT_BRANCH || null,
     deployedAt: env.DEPLOYED_AT || null,
