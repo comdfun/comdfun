@@ -28,6 +28,32 @@
   .chip { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; border: 1px solid rgba(243,235,211,.22); border-radius: 999px; color: #f3ebd3; font-weight: 500; }
   .chip i { display: block; border-radius: 50%; background: #8cff3a; }
   .url { color: #ffc83d; font-weight: 600; letter-spacing: -0.01em; }
+
+  /* The two desks, shown as the screens they are. Set in perspective so the pair reads as one object rather
+     than two pasted rectangles, and each one carries its desk's colour on the frame and the label. */
+  .screens { position: absolute; display: flex; align-items: center; perspective: 2200px; }
+  .screen { position: relative; flex: none; border-radius: 10px; overflow: hidden; background: #000;
+            border: 1px solid rgba(243,235,211,.16);
+            box-shadow: 0 40px 80px -30px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
+  .screen::after { content: ""; position: absolute; inset: 0;
+            background: linear-gradient(118deg, rgba(255,255,255,.1) 0%, transparent 34%),
+                        linear-gradient(0deg, rgba(4,3,8,.5), transparent 46%); }
+  .screen .bar { position: absolute; left: 0; right: 0; top: 0; z-index: 2; display: flex; align-items: center;
+            gap: 5px; padding: 0 9px; background: #0b0910; border-bottom: 1px solid rgba(243,235,211,.1); }
+  .screen .bar i { border-radius: 50%; background: #2a2533; }
+  .screen .bar i:first-child { background: #ffc83d; }
+  .screen img { display: block; width: 100%; height: auto; }
+  /* The label has to sit on whatever happens to be at the bottom of that screen, so the gradient behind it is
+     tall and nearly opaque at the base: a product name half-legible over a table row looks like an accident. */
+  .screen .tag { position: absolute; z-index: 3; left: 0; bottom: 0; right: 0; display: flex; align-items: baseline;
+            gap: 7px; padding: 26px 13px 11px;
+            background: linear-gradient(0deg, rgba(4,3,8,.99) 0%, rgba(4,3,8,.95) 42%, rgba(4,3,8,.7) 72%, transparent 100%);
+            font-weight: 600; letter-spacing: -0.01em; }
+  .screen .tag em { font-style: normal; font-weight: 500; color: #9a9488; }
+  .s-swarm { --sc: #2de2e6; }
+  .s-icm { --sc: #ffc83d; }
+  .screen .tag b { color: var(--sc); font-weight: 600; }
+  .screen { border-color: color-mix(in srgb, var(--sc, #f3ebd3) 26%, rgba(243,235,211,.14)); }
 </style>
 </head>
 <body>
@@ -88,11 +114,15 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
       ${metaRow(meta, "center")}`;
     return el;
   }
-  veil.style.background = `linear-gradient(90deg, rgba(4,3,8,.94) 0%, rgba(4,3,8,.9) ${copyW - 16}%, rgba(4,3,8,.55) ${copyW + 12}%, rgba(4,3,8,.3) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 45%)`;
+  // With the screens on, the art is a texture behind everything rather than a half of the picture, so the veil
+  // is even instead of a left-to-right wipe: a bright right edge would fight the screens sitting on top of it.
+  veil.style.background = arguments[0].screens
+    ? `linear-gradient(90deg, rgba(4,3,8,.96) 0%, rgba(4,3,8,.93) 46%, rgba(4,3,8,.91) 100%), radial-gradient(60% 120% at 78% 50%, rgba(255,200,61,.07), transparent 70%), radial-gradient(50% 110% at 20% 40%, rgba(45,226,230,.06), transparent 70%)`
+    : `linear-gradient(90deg, rgba(4,3,8,.94) 0%, rgba(4,3,8,.9) ${copyW - 16}%, rgba(4,3,8,.55) ${copyW + 12}%, rgba(4,3,8,.3) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 45%)`;
   const copy = el.querySelector(".copy");
   copy.style.left = pad + "px";
   copy.style.top = "0";
-  copy.style.bottom = "0";
+  copy.style.bottom = arguments[0].screens?.place === "bottom" ? `${arguments[0].screens.clear}px` : "0";
   copy.style.width = `calc(${copyW}% - ${pad}px)`;
   copy.style.gap = logo.gap + "px";
   copy.innerHTML = `
@@ -102,18 +132,46 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
     </div>
     <p class="strap" style="font-size:${strap.size}px; line-height:1.4; max-width:${strap.max}px">${strap.text}</p>
     ${metaRow(meta, "start")}`;
+  if (arguments[0].screens) el.appendChild(screens(arguments[0].screens));
   return el;
 }
 
+/** The pair of desks, in perspective, with the newer one in front. */
+function screens(s) {
+  const wrap = document.createElement("div");
+  wrap.className = "screens";
+  // Beside the copy on a wide card, under it on a squarer one. At 1200x630 there is not enough width for a
+  // headline and two screens on the same line, and the headline loses: it gets clipped by the frame in front.
+  wrap.style.cssText = s.place === "bottom"
+    ? `left:0; right:0; bottom:${s.bottom}px; justify-content:center; gap:${s.gap}px`
+    : `right:${s.right}px; top:50%; transform:translateY(-50%); gap:${s.gap}px`;
+  const one = ({ cls, src, w, label, note, rot, lift, z, dim }) => `
+    <div class="screen ${cls}" style="width:${w}px; z-index:${z}; transform: rotateY(${rot}deg) translateY(${lift}px); ${dim ? "filter:brightness(.82) saturate(.9)" : ""}">
+      <div class="bar" style="height:${s.bar}px">
+        <i style="width:${s.dot}px;height:${s.dot}px"></i><i style="width:${s.dot}px;height:${s.dot}px"></i><i style="width:${s.dot}px;height:${s.dot}px"></i>
+      </div>
+      <img src="${src}" alt="">
+      <div class="tag" style="font-size:${s.tag}px"><b>${label}</b><em>${note}</em></div>
+    </div>`;
+  wrap.innerHTML =
+    one({ cls: "s-swarm", src: "__SHOT_SWARM__", w: s.w, label: "The Swarm", note: "2,000 Counsel", rot: s.rot, lift: s.lift, z: 1, dim: true }) +
+    one({ cls: "s-icm", src: "__SHOT_ICM__", w: s.w, label: "cICM", note: "inference for $COMD", rot: -s.rot, lift: -s.lift, z: 2, dim: false });
+  return wrap;
+}
+
 const PRESETS = {
-  og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 64, copyW: 58, railTop: false,
-        logo: { size: 50, gap: 26, gap2: 18 }, title: { size: 76 },
-        strap: { size: 23, max: 540, text: "A firm of NFT-identified agents that work together to perform AI tasks on chain. Retain it, and the record is public." },
-        meta: { size: 15, gap: 18, pad: "6px 12px" } },
-  x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 72, copyW: 56, railTop: false, center: true,
-       logo: { size: 44, gap: 20, gap2: 16 }, title: { size: 60 },
-       strap: { size: 20, max: 880, text: "A swarm of NFT-identified agents that perform AI tasks on chain, and the desk where anyone buys frontier model inference with $COMD." },
-       meta: { size: 15, gap: 18, pad: "5px 11px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> &middot; inference for <b>$COMD</b>"] } },
+  // og and x carry both desks, because those are the cards people meet the project through and the firm is two
+  // desks now. opensea stays on the collection: whoever is looking is looking at the NFTs.
+  og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 64, copyW: 94, railTop: false,
+        logo: { size: 44, gap: 18, gap2: 16 }, title: { size: 62 },
+        strap: { size: 21, max: 620, text: "Two thousand NFT agents that do the work, and the desk that sells the models. Both paid in <b style=\"color:#f3ebd3;font-weight:600\">$COMD</b>." },
+        meta: { size: 14, gap: 14, pad: "5px 11px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> inference"] },
+        screens: { place: "bottom", bottom: 16, clear: 300, gap: 24, w: 424, rot: 9, lift: 11, bar: 17, dot: 5, tag: 14 } },
+  x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 76, copyW: 44, railTop: false,
+       logo: { size: 40, gap: 18, gap2: 14 }, title: { size: 56 },
+       strap: { size: 19, max: 470, text: "Two thousand NFT agents that do the work, and the desk that sells the models. Both paid in <b style=\"color:#f3ebd3;font-weight:600\">$COMD</b>." },
+       meta: { size: 14, gap: 14, pad: "4px 10px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> inference"] },
+       screens: { right: 48, gap: 18, w: 388, rot: 11, lift: 13, bar: 16, dot: 5, tag: 13 } },
   opensea: { w: 1400, h: 350, cols: 20, rows: 5, gap: 7, pad: 60, copyW: 54, railTop: false,
        logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 56 },
        strap: { size: 18, max: 580, text: "2,000 Counsel. Each NFT is an ERC-8004 agent its holder runs, earning $COMD for accepted work." },
