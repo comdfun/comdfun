@@ -10,7 +10,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Svg } from "@/components/Svg";
-import { logo } from "@/lib/art";
+import { icon, logo } from "@/lib/art";
+import { cardUrl } from "@/lib/links";
 
 export const metadata: Metadata = {
   title: "Company.md",
@@ -20,13 +21,13 @@ export const metadata: Metadata = {
 /** Twelve Counsel for the left door, spread across the collection so no two look alike. */
 const WALL = [7, 1776, 42, 1313, 256, 988, 404, 1501, 133, 777, 1234, 611, 88, 1999, 321, 1042, 66, 1450];
 
-/** The board on the right door. Real ids from the provider's catalogue: the thing cICM actually routes to. */
-const BOARD = [
-  "anthropic/claude-sonnet-4", "openai/gpt-5", "google/gemini-2.5-pro",
-  "anthropic/claude-opus-4", "meta-llama/llama-4-maverick", "deepseek/deepseek-v3",
-  "mistralai/mistral-large", "openai/gpt-5-mini", "x-ai/grok-4",
-  "qwen/qwen3-max", "anthropic/claude-haiku-4", "google/gemini-2.5-flash",
-];
+/** The right door's wall: the firm's own plaques, in gold. Faces on one side and the money on the other, in the
+ *  same pixel hand and at the same card geometry, so the two doors read as one building. */
+const PLAQUES = [
+  "coin", "token", "column", "seal", "contracts", "document",
+  "oracle", "chain", "briefcase", "report", "audit", "clock",
+  "coin", "scales", "token", "column", "seal", "contracts",
+] as const;
 
 export default function Gate() {
   return (
@@ -39,10 +40,10 @@ export default function Gate() {
 
       <div className="gate-pair">
         <Link href="/jobs" className="gate-door door-swarm">
-          <div className="door-art" aria-hidden="true">
+          <div className="door-art door-wall" aria-hidden="true">
             {WALL.map((id) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={id} src={`/art/${id}-card.svg`} alt="" loading="eager" />
+              <img key={id} src={cardUrl(id)} alt="" loading="eager" />
             ))}
           </div>
           <div className="door-body">
@@ -63,8 +64,10 @@ export default function Gate() {
         </Link>
 
         <Link href="/icm" className="gate-door door-icm">
-          <div className="door-art door-board" aria-hidden="true">
-            {BOARD.concat(BOARD).map((m, i) => <span key={`${m}-${i}`}>{m}</span>)}
+          <div className="door-art door-plaques" aria-hidden="true">
+            {PLAQUES.map((n, i) => (
+              <span key={`${n}-${i}`} className="plaque"><Svg svg={icon(n)} /></span>
+            ))}
           </div>
           <div className="door-body">
             <span className="door-since door-new">New</span>
@@ -84,18 +87,6 @@ export default function Gate() {
         </Link>
       </div>
 
-      <nav className="gate-else" aria-label="Elsewhere">
-        {[
-          ["/mint", "Mint a Counsel"],
-          ["/try", "Ask a free question"],
-          ["/token", "$COMD"],
-          ["/flywheel", "Flywheel"],
-          ["/room", "Holders Room"],
-          ["/docs", "Docs"],
-        ].map(([href, label]) => (
-          <Link key={href} href={href}>{label}</Link>
-        ))}
-      </nav>
     </div>
   );
 }

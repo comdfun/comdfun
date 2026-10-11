@@ -1808,7 +1808,7 @@ html.no-motion .rv { opacity: 1 !important; }
 /* A diptych: two doors, each showing the texture of what is behind it. No chrome — the header, ticker, footer
    and status bar are suppressed on this route (components/Chrome.tsx) — because a nav listing the insides of
    both desks is the thing this page exists to spare people. */
-.gate { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; gap: 0; }
+.gate { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; gap: 0; }
 
 .gate-top { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 24px 22px; flex-wrap: wrap; }
 .gate-mark { width: 26px; height: 26px; }
@@ -1816,7 +1816,7 @@ html.no-motion .rv { opacity: 1 !important; }
 .gate-word b { color: var(--gold); font-weight: 600; }
 .gate-top p { margin: 0 0 0 4px; font-size: 15px; color: var(--dim); }
 
-.gate-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border-block: 1px solid var(--rule); }
+.gate-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
 .gate-door {
   position: relative; isolation: isolate; overflow: hidden; background: #000; text-decoration: none;
   display: grid; align-content: end; min-height: 560px; padding: 44px 44px 40px;
@@ -1830,14 +1830,25 @@ html.no-motion .rv { opacity: 1 !important; }
   background: linear-gradient(0deg, #000 42%, rgba(0,0,0,.97) 54%, rgba(0,0,0,.82) 72%, rgba(0,0,0,.45) 100%);
 }
 /* A Counsel card is 64×80, so the cells are too, or the faces crop and the nameplates lose their bottom row. */
-.door-swarm .door-art { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: min-content; gap: 7px; padding: 12px; opacity: 0.55; }
-.door-swarm .door-art img { width: 100%; aspect-ratio: 64 / 80; height: auto; object-fit: contain; display: block; image-rendering: pixelated; border-radius: 2px; }
-.door-board {
-  display: grid; align-content: start; gap: 10px; padding: 20px 24px; opacity: 0.45;
-  font-family: var(--font-mono); font-size: 13px; color: var(--cyan); white-space: nowrap;
+.door-wall { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: min-content; gap: 7px; padding: 12px; opacity: 0.55; }
+.door-wall img { width: 100%; aspect-ratio: 64 / 80; height: auto; object-fit: contain; display: block; image-rendering: pixelated; border-radius: 2px; }
+/* The money side of the building: the firm's own plaques, at the cards' geometry so the two walls rhyme. */
+.door-plaques { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: min-content; gap: 7px; padding: 12px; opacity: 0.62; }
+.plaque {
+  display: grid; place-items: center; aspect-ratio: 64 / 80; border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  background: linear-gradient(170deg, #1d1609 0%, #0d0a06 60%, #060504 100%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 20%, transparent), inset 0 0 22px -8px color-mix(in srgb, var(--gold) 28%, transparent);
 }
-.door-board span { display: block; overflow: hidden; }
-.door-board span:nth-child(even) { color: color-mix(in srgb, var(--cyan) 55%, var(--dim)); }
+/* The icons ship with their own fills; recolour them so the wall is brass rather than grey. */
+.plaque svg { width: 48%; height: auto; display: block; }
+.plaque svg [fill]:not([fill="none"]) { fill: currentColor; }
+.plaque { color: var(--gold); }
+/* a wall is not uniform: a few plaques catch the light and a few sit back */
+.plaque:nth-child(3n) { color: color-mix(in srgb, var(--gold) 62%, #6a4a12); }
+.plaque:nth-child(4n) { color: color-mix(in srgb, var(--gold) 80%, #8a6a1c); border-color: color-mix(in srgb, var(--gold) 22%, transparent); }
+.plaque:nth-child(5n) { color: color-mix(in srgb, var(--goldHi, #ffe9a8) 85%, var(--gold)); }
+.plaque:nth-child(7n) { background: linear-gradient(170deg, #201808 0%, #0d0a06 62%, #050404 100%); }
 
 .door-body { display: grid; gap: 16px; max-width: 46ch; }
 .door-since { font-size: 12px; color: var(--dim); }
@@ -1859,15 +1870,11 @@ html.no-motion .rv { opacity: 1 !important; }
 /* the art lifts a little towards whoever is choosing */
 .door-art { transition: opacity 0.2s ease; }
 .gate-door:hover .door-art { opacity: 0.7; }
-.door-icm:hover .door-board { opacity: 0.58; }
-
-.gate-else { display: flex; flex-wrap: wrap; gap: 10px 22px; justify-content: center; padding: 20px 24px 28px; }
-.gate-else a { font-size: 13.5px; color: var(--dim); text-decoration: none; }
-.gate-else a:hover { color: var(--parch); }
+.door-icm:hover .door-plaques { opacity: 0.78; }
 
 @media (prefers-reduced-motion: reduce) { .gate-door, .door-art, .door-go { transition: none; } }
 @media (max-width: 900px) {
   .gate-pair { grid-template-columns: minmax(0, 1fr); }
   .gate-door { min-height: 440px; padding: 32px 24px 28px; }
-  .door-swarm .door-art { grid-template-columns: repeat(4, 1fr); }
+  .door-wall { grid-template-columns: repeat(4, 1fr); }
 }
