@@ -5,7 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IMarketplaceAdapter} from "../interfaces/IMarketplaceAdapter.sol";
 
 /// @title MockMarketplace — a fixed-price ERC-721 marketplace that is its own IMarketplaceAdapter
-/// @notice UNAUDITED — TESTNET / TESTS ONLY. Sellers `list` (after approving this contract); `buy` pays the seller
+/// @notice TESTNET / TESTS ONLY — not part of the reviewed set and never deployed to mainnet. Sellers `list` (after approving this contract); `buy` pays the seller
 ///         the listing price, delivers the NFT to `recipient` and refunds the rest to msg.sender.
 contract MockMarketplace is IMarketplaceAdapter {
     struct Listing {

@@ -196,7 +196,7 @@ export default async function FlywheelPage() {
             <tbody>{contracts.map(([n, a]) => <tr key={n}><td data-k="Contract">{n}</td><td data-k="Address" className="mono small break">{a ? <a className="ext" href={explorerUrl("address", a)} target="_blank" rel="noreferrer">{a}</a> : <span className="muted">not deployed yet</span>}</td></tr>)}</tbody>
           </table>
         </div>
-        <div className="btn-row" style={{ marginTop: 16 }}><Link className="btn primary gold" href="/swap">Trade $COMD</Link><Link className="btn cyan" href="/docs/comd">How it works</Link><Badge tone="bad">Unaudited</Badge></div>
+        <div className="btn-row" style={{ marginTop: 16 }}><Link className="btn primary gold" href="/swap">Trade $COMD</Link><Link className="btn cyan" href="/docs/comd">How it works</Link><Badge tone="ok">Reviewed before launch</Badge></div>
       </Section>
     </div>
   );

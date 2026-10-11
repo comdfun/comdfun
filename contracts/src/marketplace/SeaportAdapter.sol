@@ -11,7 +11,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IMarketplaceAdapter} from "../interfaces/IMarketplaceAdapter.sol";
 
 /// @title SeaportAdapter — SKELETON IMarketplaceAdapter for Seaport-style marketplaces
-/// @notice UNAUDITED — experimental and NOT tested against a real Seaport deployment (none is confirmed on
+/// @notice Experimental, outside the reviewed set, and NOT tested against a real Seaport deployment (none is confirmed on
 ///         Robinhood Chain). Interface-level only: `data` must be the FULL calldata of a Seaport fulfillment
 ///         (fulfillBasicOrder / fulfillBasicOrder_efficient_6GL6yc / fulfillOrder / fulfillAdvancedOrder) built
 ///         off-chain from the marketplace's order API, with this adapter as fulfiller/recipient. Every

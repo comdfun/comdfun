@@ -3,7 +3,7 @@
 Status 2026-10-06: V5, final for launch. **Company.md** / **$COMD** / **comd.fun**, inspired by IMD (imd.fun):
 jobs paid in COMD; 100% of supply in our own pool, locked; a tax-only hook (5% ETH) feeding the Flywheel. No capped
 pool, buy wall, staking or bond (owner decision). There are no stablecoin payments. The feature checklist
-is [PARITY.md](PARITY.md); the spec is [SPEC.md](SPEC.md). Contracts are **unaudited**.
+is [PARITY.md](PARITY.md); the spec is [SPEC.md](SPEC.md). Contracts **reviewed before launch** (`contracts/AUDIT.md`).
 
 Re-run before any deploy: `npm test`, `npm run contracts:test`, `npm run e2e`, `npm run e2e:ui`,
 `node skills/check-skill.mjs`.

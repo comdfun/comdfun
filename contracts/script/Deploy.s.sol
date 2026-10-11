@@ -28,7 +28,7 @@ import {MockMarketplace} from "../src/mocks/MockMarketplace.sol";
 import {SeaportAdapter} from "../src/marketplace/SeaportAdapter.sol";
 
 /// @title Deploy — Company.md on Robinhood Chain (mainnet 4663 / testnet 46630), Pons mode
-/// @notice UNAUDITED — experimental.
+/// @notice Deployment script — read it before running it.
 /// @dev forge script script/Deploy.s.sol:Deploy --rpc-url $RPC_URL --broadcast --slow
 ///   Single stage, env-only (CI friendly): no prompts, no files required; the deployments JSON is printed to stdout
 ///   between the markers DEPLOYMENTS_JSON_BEGIN / DEPLOYMENTS_JSON_END and written to deployments/<chainId>.json.

@@ -6,7 +6,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {OracleAttestationVerifier} from "./OracleAttestationVerifier.sol";
 
 /// @title OracleConsumerExample — stores answers signed by a trusted attester
-/// @notice UNAUDITED — example only.
+/// @notice Example only — not deployed by Company.md and not part of the reviewed set.
 /// @notice Anyone may submit an attestation; it is accepted once per requestId if signed by `attester`
 ///         and not expired. The owner can rotate the attester (`setAttester`, V7 hot-key rotation); rulings already
 ///         accepted stay.

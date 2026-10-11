@@ -5,7 +5,7 @@ calling `@company/services` in-process (the Clerk, the Records Office, the Regis
 follow IMD's API (see INTERFACES.md, newest block first), paid in **$COMD** (the token Pons mints for the launch;
 decimals read on chain, 100 COMD per action by default) on **Robinhood Chain mainnet 4663 by default** (testnet 46630 with `CHAIN_ID=46630`). Web https://comd.fun,
 API https://api.comd.fun, sites `https://<label>.sites.comd.fun`, contact team@comd.fun (in `/version`, `/health` and
-the pairing page). Contracts are UNAUDITED. Not affiliated with Robinhood.
+the pairing page). Contracts reviewed before launch (`contracts/AUDIT.md`). Not affiliated with Robinhood.
 
 ```bash
 npm run dev  -w @company/api          # tsx src/main.ts

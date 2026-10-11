@@ -956,10 +956,10 @@ html.no-motion .sc-walk { transform: translateX(var(--sx)); } html.no-motion .sc
 .doc-md .dtable th { color: var(--sig); }
 .callout { border: 1px solid var(--rule-2); border-left: 6px solid var(--cyan); background: var(--ink-1); padding: 12px 14px; margin: 18px 0; }
 .callout p { margin: 0; }
-.callout.warning, .callout.unaudited { border-left-color: var(--crimson); }
+.callout.warning { border-left-color: var(--crimson); }
 .callout.tip { border-left-color: var(--lime); }
 .callout-h { display: inline-block; font-family: var(--font-sans); font-weight: 700; font-size: 10px; letter-spacing: 0; color: #000; background: var(--cyan); padding: 3px 6px 2px; margin-bottom: 8px; }
-.callout.warning .callout-h, .callout.unaudited .callout-h { background: var(--crimson); }
+.callout.warning .callout-h { background: var(--crimson); }
 .docs-pn { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 46px; padding-top: 20px; border-top: 1px solid var(--rule); }
 .docs-pn .pn { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--rule-2); text-decoration: none; background: var(--ink-1); transition: transform 0.1s ease; }
 .docs-pn .pn span { font-family: var(--font-sans); font-size: 10px; letter-spacing: 0; color: var(--muted); }

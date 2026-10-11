@@ -66,7 +66,7 @@ export function renderMd(src: string): { nodes: ReactNode[]; headings: Heading[]
       while (i < lines.length && lines[i].startsWith("> ")) buf.push(lines[i++].slice(2));
       const [first, ...rest] = buf.join(" ").split(/^(\w+:)\s*/);
       void first;
-      const label = /^(Note|Warning|Tip|Unaudited):/.exec(buf[0])?.[1];
+      const label = /^(Note|Warning|Tip):/.exec(buf[0])?.[1];
       const body = label ? buf.join(" ").slice(label.length + 1).trim() : buf.join(" ");
       nodes.push(<div key={k++} className={`callout ${label ? label.toLowerCase() : ""}`}>{label && <span className="callout-h">{label}</span>}<p>{inline(body, `q${k}`)}</p></div>);
       void rest;
