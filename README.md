@@ -4,14 +4,23 @@
 
 # Company.md
 
-**A swarm of NFT-identified agents that work together to perform AI tasks on chain.**
+**A swarm of NFT-identified agents that work together to perform AI tasks on chain, and an inference capital
+markets desk where anyone can buy those same models with $COMD.**
 
-*Two Thousand Counsels. One Swarm. Working Together to Complete Tasks.*
+*Two Thousand Counsels. One Swarm. One Inference Desk.*
 
-Company.md is a firm of NFT-identified agents on Robinhood Chain. You retain it in **$COMD**, the Managing Partner
-plans the matter, counsel on their holders' own machines draft it, the Clerk checks it, another counsel
-cross-examines it, and the result is filed on chain. **Counsel earn $COMD for every accepted matter**: anyone who
-owns a Counsel NFT can register it and start earning. These NFT agents make money.
+Company.md runs **two desks on Robinhood Chain**, both paid in **$COMD**.
+
+**The Swarm** is a firm of NFT-identified agents. You retain it in $COMD, the Managing Partner plans the matter,
+counsel on their holders' own machines draft it, the Clerk checks it, another counsel cross-examines it, and the
+result is filed on chain. **Counsel earn $COMD for every accepted matter**: anyone who owns a Counsel NFT can
+register it and start earning. These NFT agents make money.
+
+**cICM**, Company Inference Capital Markets, sells the models themselves. Send $COMD, take an API key, and reach
+every frontier model through one endpoint at what the provider charged plus a published margin: no card, no
+monthly bill, and no account of your own with a model provider. **The $COMD spent on inference is burned**, so
+demand for models becomes demand for the token and the token becomes less of itself. See
+[comd.fun/icm](https://comd.fun/icm) and [the docs](https://comd.fun/docs/icm).
 
 The collection is called **Counsel**: 2,000 NFTs, one NFT = one Counsel, free to mint. Each Counsel is an
 [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) agent run by its holder; 80% of every job payment goes to the
@@ -54,6 +63,7 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 - [Running a counsel agent](#running-a-counsel-agent)
 - [Retaining the firm](#retaining-the-firm)
 - [$COMD and the flywheel](#comd-and-the-flywheel)
+- [cICM: buying inference](#cicm-buying-inference)
 - [The website](#the-website)
 - [Architecture](#architecture)
 - [API](#api)
@@ -72,6 +82,7 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 | **Chambers** | The control plane at `api.comd.fun`: takes paid requests, plans them, leases work to online Counsel over WebSocket, checks it, has it reviewed, publishes it and records it on chain. |
 | **The Docket** | The public explorer: every matter, ruling, filing, retainer and counsel, with the plan, attempts, reviews and on-chain record. |
 | **$COMD** | `0xBfdac6235dBe77c0cD6EDB01C810c7DA858C6c41` on Robinhood Chain — [trade on Pons](https://ponsfamily.com/launchpad/0xbfdac6235dbe77c0cd6edb01c810c7da858c6c41). Company.md's token, launched on **Pons**: 1,000,000,000 supply, minted once, liquidity locked by Pons at graduation. Every request is paid in $COMD (80% to the Counsel who did the work, 20% to the firm treasury); every trade pays a 5% ETH tax into the flywheel. |
+| **cICM** | Company Inference Capital Markets, the second desk: send $COMD, take an API key, and reach every frontier model through one endpoint at `api.comd.fun/icm/v1`, paying what the provider charged plus a published margin. **The $COMD spent is burned.** |
 | **The flywheel** | Every buy and sell pays 5% in ETH; half buys back and burns $COMD, half buys Counsel NFTs off the floor. |
 | **OpenSea** | The Counsel collection: [opensea.io/collection/counsel-362029053](https://opensea.io/collection/counsel-362029053) (5% royalty to the firm). |
 | **Incorporations** | Company coins on a $COMD bonding curve: 1% of every trade to Counsel rewards, 0.5% burned, 0.5% to the launcher. At 400k $COMD in reserve a coin **graduates into a Uniswap v4 pool paired with $COMD** (locked liquidity, pool fees to Counsel rewards). |
@@ -230,6 +241,39 @@ How the loop works:
   `sweep(...)` buys a listed Counsel at or under a price cap from an allowlisted marketplace. Swept Counsel stay in
   the firm's vault and can be awarded to top Counsel. Every number is on [comd.fun/flywheel](https://comd.fun/flywheel).
 
+## cICM: buying inference
+
+The Swarm sells finished work. **cICM** sells the raw models.
+
+```bash
+curl https://api.comd.fun/icm/v1/chat/completions \
+  -H "Authorization: Bearer cicm_live_..." \
+  -d '{"model":"anthropic/claude-sonnet-4",
+       "messages":[{"role":"user","content":"hello"}]}'
+```
+
+One endpoint reaches Claude, GPT, Gemini, Llama, DeepSeek, Mistral, Qwen, Grok and the rest, in the standard
+chat-completions shape, so anything built for that works with nothing changed but the base URL. No card, no
+monthly bill, and no account of your own with a model provider.
+
+| | |
+|---|---|
+| **Paying** | Send $COMD to the desk, or pay in ETH and the $COMD pool swaps it on the way in, in one transaction. Credit lands on the wallet that paid: no memo, no account number. |
+| **The rate** | A fixed number of $COMD to the dollar of credit, set by hand and published at `GET /icm`. |
+| **The price of a call** | What the model provider actually charged, plus a margin published on the page rather than discovered on the bill. |
+| **The sink** | **Burned.** Buying inference takes $COMD out of supply for good. |
+| **Keys** | One signature mints a key (not a transaction, no gas). The secret is shown once; only a hash is stored. A key can carry a spend ceiling. |
+| **Settlement** | Integer micro-dollars. A call holds an estimate when it opens and settles on the provider's own usage figure when it closes; an interrupted call releases its hold. |
+
+The accounting lives in [`packages/icm/`](packages/icm/README.md) with **no token, chain, brand or provider
+compiled in**, so the same desk can be stood up on another token entirely. The one file where Company.md and that
+package meet is `apps/api/src/icm.ts`, which supplies the token, the chain reader and the deposit watcher.
+
+Buying from another chain: bridge ETH to Robinhood Chain with [Relay](https://relay.link/bridge/robinhood) or
+[Across](https://across.to/?to=robinhood) in seconds, or the
+[canonical bridge](https://portal.arbitrum.io/bridge?destinationChain=robinhood-chain&sourceChain=ethereum) from
+Ethereum. Full documentation: [comd.fun/docs/icm](https://comd.fun/docs/icm).
+
 ## The website
 
 [comd.fun](https://comd.fun) is a Next.js site in black and pixel arcade colours. Screenshots are taken from the
@@ -279,6 +323,7 @@ npm workspaces, Node 22, TypeScript ESM (the internal scope `@company/*` is not 
 | [contracts/](contracts/README.md) | Foundry | Solidity 0.8.26: flywheel, buyback swapper, revenue router, rewards, Counsel NFT, ERC-8004 bootstrap, launch factory, Incorporations, oracle verifier ($COMD itself is minted by Pons); `script/Deploy.s.sol`; unit, security and invariant tests |
 | [packages/abi/](packages/abi/README.md) | `@company/abi` | ABIs (`as const`) and the per-chain address book generated from `contracts/` |
 | packages/protocol/ | `@company/protocol` | Wire types, canonical JSON, Ed25519 device envelopes (`comd.v2`), EIP-712 types (Worker, Paid Action, Oracle), x402 payloads, WebSocket frames, Merkle trees |
+| [packages/icm/](packages/icm/README.md) | `@company/icm` | cICM: the credit ledger in integer micro-dollars, fixed-rate pricing with a published margin, the inference proxy that bills what the provider actually charged, the deposit watcher, and a house book that states the unbacked liability. No token, chain, brand or provider compiled in |
 | packages/art/ | `@company/art` | Deterministic pixel Counsel generator (SVG and a pure-JS PNG encoder), logo, 16×16 icon set, brand kit |
 | [packages/services/](packages/services/README.md) | `@company/services` | The back office: content-addressed blob store (local or S3), the Clerk (sandboxed verifier with 24 check types), Records Office (GitHub filings, hosted sites with a content screen), Registrar (forge-script launches under a gas ceiling), skill catalog |
 | [apps/api/](apps/api/README.md) | `@company/api` | Chambers: every route, the `/agent` relay, dispatcher with premium routing, scheduler for retainers, oracle attester, x402 settler, reward epochs, keeper, site host |
@@ -309,6 +354,7 @@ measured against IMD is [PARITY.md](PARITY.md).
 | Paying | `GET /requests/capabilities`, `POST /requests/check`, `/requests/import`, `/requests/quote`, `/requests/:id/submit` (402 → `PAYMENT-SIGNATURE`), `GET /requests/:id` |
 | Pairing | `POST /pair/start`, `GET /pair/:code`, `POST /pair/complete`, `/agents/register-intent`, `POST /agents/bind` |
 | Pool | `GET /flywheel`, `/flywheel/sweep-candidates` |
+| cICM | `GET /icm` (rate card, deposit address, sink), `POST /icm/nonce`, `/icm/account`, `/icm/keys`, `/icm/keys/:id/revoke`; the inference surface itself at `POST /icm/v1/chat/completions` and `GET /icm/v1/models` with a cICM key as the bearer |
 
 ```sh
 curl https://api.comd.fun/health
@@ -396,6 +442,21 @@ node skills/check-skill.mjs
 - **Hosting**: Railway, two services from this repo (`web` on comd.fun, `api` on api.comd.fun and
   `*.sites.comd.fun`), Postgres and a volume.
 - **Launch order**: launch $COMD on Pons → deploy → open the free mint → start the api and keeper → release the worker.
+
+**Switching cICM on** needs four variables on the `api` service. It is off until the first two are set, and the
+rest of the control plane runs normally either way.
+
+| Variable | What it does |
+|---|---|
+| `ICM_DEPOSIT_ADDRESS` | Where people send $COMD. **An address nothing else pays into**: the shared burn address is refused, because the flywheel's buybacks and every manual burn already land there and the watcher could not tell a payment from one of those. |
+| `OPENROUTER_API_KEY` | The house key the proxy spends. Without it the ledger still works (buy credit, mint keys, read balances) and only the calls themselves say why they cannot run. |
+| `ICM_COMD_PER_USD` | Whole $COMD to one dollar of credit. Set by hand, changed by hand. Defaults to `100000`. |
+| `ICM_MARGIN_BPS` | What the house adds to what the provider charged, in basis points. `1500` is 15%, and the default. |
+| `ICM_BURN_ON_DEPOSIT` | `1` to burn what lands in the deposit address, which is what makes buying inference take supply off the market. |
+| `ICM_FORWARDERS` | Extra contracts allowed to pay in on a buyer's behalf. The buyback swapper is trusted already, which is what makes paying in ETH credit the wallet that signed rather than the pool. |
+
+Quotes around a value are stripped, so a variable pasted with them still works. The addresses and the sink that
+are actually in force are published at `GET /icm` and `GET /health`.
 
 Step by step: [DEPLOY.md](DEPLOY.md). Status and the owner's remaining steps: [HANDOVER.md](HANDOVER.md).
 

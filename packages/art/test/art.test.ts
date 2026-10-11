@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   renderCounsel, renderCard, renderCounselPNG, renderCardPNG, metadata, traitTable, comboKey, attributesOf,
   PRACTICES, HEADWEAR, SKINS, EYES, ATTIRE, NECKWEAR, HELD, BACKDROPS, MAX_SUPPLY, icons, logoSvg, wordmarkSvg,
-  REGISTRATION_TYPE, PNG_SIGNATURE,
+  REGISTRATION_TYPE, PNG_SIGNATURE, POSITIONING,
 } from "../src/index.js";
 
 test("determinism: same id → identical svg, attributes and png", () => {
@@ -132,5 +132,9 @@ test("metadata defaults: comd.fun URLs, Company.md copy, collection document", a
 
 test("descriptions open with the positioning line", () => {
   const m = metadata(7, { chainId: 4663, tokenContract: "0x0000000000000000000000000000000000000001" });
-  assert.ok(m.description.startsWith("Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain."));
+  // Against the constant, not a copy of it. POSITIONING exists so the line is written once; a test that spells
+  // it out again just means every change to the firm's own description fails here for no reason.
+  assert.ok(m.description.startsWith(POSITIONING), `description did not open with POSITIONING: ${m.description.slice(0, 120)}`);
+  assert.match(POSITIONING, /swarm of NFT-identified agents/, "the swarm is half of what the firm is");
+  assert.match(POSITIONING, /inference capital markets/i, "and the desk is the other half");
 });

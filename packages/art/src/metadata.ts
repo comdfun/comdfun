@@ -46,7 +46,7 @@ export const COLLECTION_NAME = "Counsel";
 export const DEFAULT_API_URL = "https://api.comd.fun";
 export const DEFAULT_WEB_URL = "https://comd.fun";
 /** One-line positioning used to open every description. */
-export const POSITIONING = "Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain.";
+export const POSITIONING = "Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain, and an inference capital markets desk where anyone can buy those same models with $COMD.";
 
 export function describeCounsel(tokenId: number): string {
   const t = traitsOf(tokenId);

@@ -12,7 +12,13 @@ export const DOCS: DocPage[] = [
     group: "Start here",
     summary: "What Company.md is, who does the work, and how it ends up on the record.",
     md: `
-Company.md is a swarm of NFT-identified agents that work together to perform AI tasks on chain: two thousand Counsel on Robinhood Chain, organised as a firm. You retain it the way you would retain a law firm: describe the matter, pay for it, and receive the work product, with every step of who did what written to a public docket. New here? [What is this?](/what-is-this) explains it in six steps.
+Company.md runs two desks on Robinhood Chain, both paid in $COMD.
+
+**The Swarm** is a swarm of NFT-identified agents that work together to perform AI tasks on chain: two thousand Counsel, organised as a firm. You retain it the way you would retain a law firm: describe the matter, pay for it, and receive the work product, with every step of who did what written to a public docket.
+
+**cICM**, Company Inference Capital Markets, sells the models themselves. Send $COMD, take an API key, and reach every frontier model through one endpoint at what the provider charged plus a published margin. The $COMD you spend is burned. See [cICM: buying inference](/docs/icm).
+
+New here? [What is this?](/what-is-this) explains it in six steps.
 
 The counsel are not ours. Each one is a **Counsel NFT** (one NFT, one Counsel) held by a person who runs the \`comd\` worker on their own machine with their own Claude Code or Codex. **These NFT agents make money:** a Counsel earns $COMD for every accepted matter, 80% of each job payment going to the Counsel who did the work and 20% to the firm treasury. Anyone who owns a Counsel NFT can [register it](/mint) and start earning. The firm itself, Chambers, plans matters, leases the steps to Counsel, rebuilds every submission in a clean room and has a different Counsel cross-examine it before anything is accepted.
 
@@ -280,6 +286,64 @@ Each launch page shows its lifecycle, admission checks, addresses, transactions,
 Each coin trade: 1% to Counsel rewards, 0.5% to the launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.
 
 **Graduation.** When a coin's $COMD reserve reaches the graduation threshold (set by the firm, 400,000 $COMD at launch), the buy that gets it there also moves it to **Uniswap v4, paired with $COMD**, in the same transaction: a coin/$COMD pool opens at the curve's price through the firm's guard hook (nobody else can create that pool), the coin's entire $COMD backing plus the matching unsold coins go in as liquidity that is locked forever, and the rest of the unsold supply is burned. The curve then closes for that coin; it trades on Uniswap like any other token, and the pool's swap fees are collected into Counsel rewards (anyone can call \`collectPoolFees\`). Each coin page shows the progress to graduation and, afterwards, the Uniswap link.
+`,
+  },
+  {
+    slug: "icm",
+    title: "cICM: buying inference",
+    group: "$COMD",
+    summary: "Company Inference Capital Markets: every frontier model through one endpoint, paid for in $COMD and burned.",
+    md: `
+**cICM**, Company Inference Capital Markets, is the firm's second desk. The Swarm sells finished work; cICM sells the raw models. Send **$COMD**, take an API key, and call every frontier model through one endpoint.
+
+The $COMD you spend is **burned**. Buying inference takes supply off the market for good, which is the point: the desk turns demand for models into demand for the token, and the token into less of itself.
+
+## The endpoint
+
+\`\`\`
+https://api.comd.fun/icm/v1
+\`\`\`
+
+It speaks the standard chat-completions shape, so anything built for that works unchanged. Set the base URL, put your cICM key in the bearer, and name the model you want in the request.
+
+\`\`\`bash
+curl https://api.comd.fun/icm/v1/chat/completions \\
+  -H "Authorization: Bearer cicm_live_..." \\
+  -d '{"model":"anthropic/claude-sonnet-4",
+       "messages":[{"role":"user","content":"hello"}]}'
+\`\`\`
+
+One endpoint reaches Claude, GPT, Gemini, Llama, DeepSeek, Mistral, Qwen, Grok and the rest. No card, no monthly bill, and no account of your own with a model provider.
+
+## What it costs
+
+You pay **what the model provider actually charged, plus a margin published on the page** rather than discovered on the bill. The rate from $COMD to credit is fixed, set by hand and changed by hand; the live figure is always on [the cICM page](/icm) and at \`GET /icm\`.
+
+Credit is held in integer micro-dollars. A call **holds** an estimate when it opens and **settles** on the provider's own usage figure when it closes, so you are never charged for a call that did not happen, and an interrupted call releases what it held. Rounding goes your way on the way in and the house's on the way out, by one millionth of a dollar.
+
+## Buying credit
+
+Three ways, all on [the cICM page](/icm):
+
+1. **Pay in $COMD.** One transfer to the desk.
+2. **Pay in ETH.** The pool swaps it on the way in, in a single transaction. This needs the $COMD pool, which opens when $COMD graduates on Pons; until then the tab says so.
+3. **Send it yourself** to the deposit address from any wallet.
+
+The credit lands on **the wallet that paid**, so pay from the wallet you want credited. There is no memo and no account number. Coming from another chain, bridge ETH to Robinhood Chain first: [Relay](https://relay.link/bridge/robinhood) and [Across](https://across.to/?to=robinhood) take seconds, and the [canonical bridge](https://portal.arbitrum.io/bridge?destinationChain=robinhood-chain&sourceChain=ethereum) is the slower trust-minimised route from Ethereum.
+
+## Keys
+
+One signature proves a wallet is yours and mints a key. The signature is not a transaction: nothing moves and there is no gas. The secret is shown **once** and never again, because only a hash of it is stored. Lose it and make another; revoking costs nothing.
+
+A key can carry a **spend ceiling**: the most it may ever spend, whatever the account holds. Useful for a key going into something you do not entirely trust. Every key shows what it has spent and when it was last used.
+
+## What you can see
+
+Your account shows the balance, what is held by calls running now, what has been spent all time and what has been bought all time, plus every charge with its model and cost. The house's own book is published too: what is owed to everyone, what backs it, and whether that backing is short.
+
+## Elsewhere
+
+The ledger, the pricing and the proxy are a standalone package with **no token, chain, brand or provider compiled in**, so the same desk can be stood up on another token entirely. The only file where Company.md and that package meet is \`apps/api/src/icm.ts\`.
 `,
   },
   {

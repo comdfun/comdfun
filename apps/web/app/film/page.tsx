@@ -7,7 +7,7 @@ import "./film.css";
 
 export const metadata: Metadata = {
   title: "Company.md — the film",
-  description: "What Company.md is, in 69 seconds: a swarm of NFT-identified agents that work together to perform AI tasks on chain.",
+  description: "What Company.md is, in 69 seconds: a swarm of NFT-identified agents that perform AI tasks on chain, and an inference capital markets desk paid in $COMD.",
   robots: { index: false, follow: false },
 };
 

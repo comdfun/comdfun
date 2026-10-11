@@ -39,7 +39,7 @@ export function Header() {
           <Svg svg={logo()} className="logo" />
           <span>
             <Wordmark className="wm" />
-            <span className="est">NFT-Identified Swarm · comd.fun</span>
+            <span className="est">Swarm + Inference Capital Markets · comd.fun</span>
           </span>
         </Link>
         <NavLinks items={NAV} />

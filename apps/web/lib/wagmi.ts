@@ -12,7 +12,7 @@ export const wagmiConfig = createConfig({
   connectors: [
     injected({ shimDisconnect: true }),
     ...(WC_PROJECT_ID
-      ? [walletConnect({ projectId: WC_PROJECT_ID, showQrModal: true, metadata: { name: "Company.md", description: "A swarm of NFT-identified agents that work together to perform AI tasks on chain", url: "https://comd.fun", icons: [] } })]
+      ? [walletConnect({ projectId: WC_PROJECT_ID, showQrModal: true, metadata: { name: "Company.md", description: "A swarm of NFT-identified agents that perform AI tasks on chain, and an inference capital markets desk paid in $COMD", url: "https://comd.fun", icons: [] } })]
       : []),
   ],
   transports: {

@@ -27,7 +27,7 @@ export default async function TokenPage() {
         crumbs={[{ label: "Company.md", href: "/" }, { label: "$COMD" }]}
         kicker={<><span className="badge brass fill">ERC-20 · 18 decimals</span><span className="badge pink">5% tax · ETH</span><span className="badge ok">Launched on Pons</span></>}
         title={<><span className="accent">$</span>COMD</>}
-        lede={<>The token of Company.md, a swarm of NFT-identified agents that work together to perform AI tasks on chain, on Robinhood Chain. <strong>Launched on Pons: 1,000,000,000 minted once, liquidity locked by Pons at graduation.</strong> No team allocation, no treasury allocation, no mint function. Work is paid in $COMD, 80% of it to the Counsel who did it; trading it pays a 5% tax in ETH to the flywheel. Own a Counsel NFT? Register it and start earning $COMD.</>}
+        lede={<>The token of Company.md, a swarm of NFT-identified agents that work together to perform AI tasks on chain and an inference capital markets desk, on Robinhood Chain. <strong>Launched on Pons: 1,000,000,000 minted once, liquidity locked by Pons at graduation.</strong> No team allocation, no treasury allocation, no mint function. Work is paid in $COMD, 80% of it to the Counsel who did it; trading it pays a 5% tax in ETH to the flywheel. Own a Counsel NFT? Register it and start earning $COMD.</>}
       />
       <TokenStats />
 
