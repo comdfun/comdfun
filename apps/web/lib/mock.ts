@@ -675,6 +675,45 @@ function counts() {
   return jobStates;
 }
 
+/** A stand-in report so the matter page's report section can be seen without a live API. */
+function mockDeliverable(j: MockJob): string | null {
+  if (j.state !== "completed") return null;
+  if (!/research|audit|readme|docs|review/.test(j.template ?? "")) return null;
+  return [
+    `# ${j.objective.split(/[.?]/)[0]}`,
+    "",
+    "## In short",
+    "",
+    "Three issuers mint natively on the chain today. Two publish monthly attestations by an outside accountant; the third publishes a reserve breakdown weekly but has not had it attested since March. Everything below is sourced.",
+    "",
+    "## What was found",
+    "",
+    "| Asset | Issuer | Attestation | Last published |",
+    "| --- | --- | --- | --- |",
+    "| USDC | Circle | Monthly, Deloitte | 2026-09-30 |",
+    "| USDG | Global Dollar Network | Monthly, BPM | 2026-09-30 |",
+    "| RHUSD | Robinhood Markets | Weekly breakdown, no attestation | 2026-10-06 |",
+    "",
+    "## How this was checked",
+    "",
+    "Each issuer's own disclosure page was read, then the contract address on the chain was matched against the issuer's published deployment list. Where an issuer names an accountant, the accountant's report was opened and the date taken from the report itself, not from the summary page.",
+    "",
+    "- Addresses were confirmed against the issuer's published list, not a block explorer label.",
+    "- One claim could not be confirmed and is marked as such above.",
+    "",
+    "## Known limitations",
+    "",
+    "Attestation cadence is what each issuer states publicly. A stated cadence is not proof a report was filed on time, and two of the three have missed their own cadence at least once in the last year.",
+    "",
+    "## Sources",
+    "",
+    "- [Circle transparency](https://www.circle.com/transparency)",
+    "- [Global Dollar Network reserves](https://www.global-dollar.com/)",
+    "- [Robinhood reserve disclosures](https://robinhood.com/)",
+    "",
+  ].join("\n");
+}
+
 export function mockFetch(method: string, rawPath: string, body?: unknown): MockResponse {
   const url = new URL(rawPath, "http://mock");
   const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -740,7 +779,18 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       if (seg.length === 2) {
         const { _launch, ...rest } = j;
         void _launch;
-        return ok({ ...rest, media: j.media ? j.media.files.map((f) => ({ name: f.name, path: f.path, mediaType: f.mediaType, hash: f.hash, url: `/artifacts/${f.hash}`, bytes: f.bytes })) : null, stage: j.state });
+        const d = mockDeliverable(j);
+        return ok({
+          ...rest,
+          media: j.media ? j.media.files.map((f) => ({ name: f.name, path: f.path, mediaType: f.mediaType, hash: f.hash, url: `/artifacts/${f.hash}`, bytes: f.bytes })) : null,
+          stage: j.state,
+          deliverable: d ? { kind: "artifact", name: "report", path: "artifacts/report.md", mediaType: "text/markdown", hash: hex(64), bytes: d.length, nodeKey: "report", url: `/jobs/${j.id}/deliverable`, downloadUrl: `/jobs/${j.id}/deliverable.md` } : null,
+        });
+      }
+      if (seg[2] === "deliverable") {
+        const d = mockDeliverable(j);
+        if (!d) return notFound("no_deliverable");
+        return ok({ jobId: j.id, kind: "artifact", name: "report", path: "artifacts/report.md", mediaType: "text/markdown", hash: hex(64), bytes: d.length, nodeKey: "report", text: d, truncated: false, downloadUrl: `/jobs/${j.id}/deliverable.md` });
       }
       if (seg[2] === "submissions") return ok(submissionsOf(j).map((x) => ({ hash: x.hash, nodeKey: x.nodeKey, tokenId: x.seat?.tokenId, agentId: x.seat?.agentId, wallet: OWNERS[Number(x.seat?.tokenId)] ?? null, accepted: x.accepted, verdict: x.verdict, oracleResult: null, findings: x.findings, usage: { turns: x.usage!.turns, inputTokens: x.usage!.inputTokens, outputTokens: x.usage!.outputTokens, cacheTokens: x.usage!.cachedInputTokens, durationMs: x.usage!.wallClockMs }, runtime: runtimeFor(Number(x.seat?.tokenId ?? 0)), summary: x.summary, bundleHash: hex(64), files: x.changedPaths.map((path) => ({ path, sha256: hex(64), bytes: int(400, 9000), mediaType: "text/plain" })), artifacts: x.artifacts, createdAt: x.createdAt })));
       if (seg[2] === "records") return ok({ records: j.reviews.map((r, k) => ({ id: `${j.id}:${k}`, hash: hex(64), chainId: r.chainId, registry: "0x8004a1c3a1c3a1c3a1c3a1c3a1c3a1c3a1c3a1c3", status: r.status === "sent" ? "confirmed" : "queued", txHash: r.txHash, failure: null, blockNumber: r.blockNumber, score: r.entries.length })), oracleBatches: [] });

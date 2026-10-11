@@ -5,13 +5,14 @@ import { api } from "@/lib/api";
 import { jobStage, verdictTone } from "@/lib/stage";
 import { ago, bytes, caption, counselName, docketNo, duration, fmtNum, compact, iso, short } from "@/lib/format";
 import { artifactUrl, apiUrl } from "@/lib/links";
-import { MOCK } from "@/lib/config";
+import { MOCK, SITE_URL } from "@/lib/config";
 import { chainName, explorerUrl } from "@/lib/chains";
 import { PageHead, Avatar, Badge, Addr, Section, Stamp, Seal } from "@/components/ui";
 import type { Job, JobNode, Submission } from "@/lib/types";
 import { Pipeline } from "@/components/Pipeline";
 import { RStamp } from "@/components/fx/Stamps";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { Report } from "@/components/Report";
 
 /** Where a matter sits on drafting → cross-examination → filing → deploying → on record. */
 function pipelineAt(job: Job): { at: number; failed: boolean } {
@@ -29,7 +30,12 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  return { title: `Matter ${id.slice(0, 8)}` };
+  const job = await api.job(id).catch(() => null);
+  const title = job ? docketNo("Matter", job.id, job.createdAt) : `Matter ${id.slice(0, 8)}`;
+  const description = job ? caption(job.objective, 180) : "A matter on the Company.md docket.";
+  // the card is drawn by the API from public docket material: the question, the Counsel, the state
+  const images = MOCK ? undefined : [{ url: apiUrl(`/jobs/${id}/share.png`), width: 1200, height: 630, alt: title }];
+  return { title, description, openGraph: { title, description, type: "article", images }, twitter: { card: "summary_large_image", title, description, images } };
 }
 
 function levels(nodes: JobNode[]) {
@@ -57,7 +63,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const { id } = await params;
   const [job, records] = await Promise.all([api.job(id), api.records(id)]);
   if (!job) notFound();
-  const subs = await api.submissions(id, job);
+  const [subs, report] = await Promise.all([api.submissions(id, job), job.deliverable === null ? Promise.resolve(null) : api.deliverable(id)]);
   const pos = pipelineAt(job);
   const stage = jobStage(job);
   const seats = [...new Set(job.nodes.map((n) => n.seat?.tokenId).filter(Boolean) as string[])];
@@ -67,6 +73,10 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const totalTurns = submissions.reduce((a, s) => a + (s.usage?.turns ?? 0), 0);
   const files = job.media?.files ?? [];
   const reviewSubs = submissions.filter((s) => s.role === "review");
+  // §numbers run in reading order, so a matter with no report does not open at §2
+  let n = 0;
+  const num = () => `§${++n}`;
+  const followUp = `/launch?mode=report&objective=${encodeURIComponent(`Following on from ${docketNo("Matter", job.id, job.createdAt)} ("${caption(job.objective, 90)}"):\n\n`)}`;
 
   return (
     <>
@@ -109,11 +119,27 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             {job.oracleRequestId && (<><dt>Ruling</dt><dd><Link href={`/oracle/${job.oracleRequestId}`}>{job.oracleRequestId}</Link></dd></>)}
           </dl>
 
-          <Section num="§1" title="The objective" id="objective">
+          {report && (
+            <Section num={num()} title="The report" id="report">
+              <Report d={report} jobId={job.id} />
+              <div className="row" style={{ gap: 8, marginTop: 14 }}>
+                <Link href={followUp} className="btn sm primary">Ask a follow-up</Link>
+                <span className="muted small">Opens a new matter with this one named at the top. 100 $COMD.</span>
+              </div>
+            </Section>
+          )}
+
+          <Section num={num()} title="The objective" id="objective">
             <div className="panel" style={{ whiteSpace: "pre-wrap" }}>{job.objective}</div>
+            {!report && (
+              <div className="row" style={{ gap: 8, marginTop: 12 }}>
+                <Link href={followUp} className="btn sm">Ask something related</Link>
+                <span className="muted small">100 $COMD. This matter is named at the top of the new one.</span>
+              </div>
+            )}
           </Section>
 
-          <Section num="§2" title={`The plan · ${job.nodes.length} step${job.nodes.length === 1 ? "" : "s"}`} id="plan">
+          <Section num={num()} title={`The plan · ${job.nodes.length} step${job.nodes.length === 1 ? "" : "s"}`} id="plan">
             <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "minmax(200px, 1fr)", gap: 12, overflowX: "auto", paddingBottom: 6 }}>
               {cols.map((col, ci) => (
                 <div key={ci} style={{ display: "grid", gap: 10, alignContent: "start" }}>
@@ -140,7 +166,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           </Section>
 
           {files.length > 0 && (
-            <Section num="§3" title={`Exhibits · ${files.length}`} id="exhibits">
+            <Section num={num()} title={`Exhibits · ${files.length}`} id="exhibits">
               <div className="grid g3">
                 {files.map((f, i) => (
                   <a key={f.hash} className="card" href={artifactUrl(f.hash)} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "grid", gap: 8 }}>
@@ -157,7 +183,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             </Section>
           )}
 
-          <Section num="§4" title={`The work · ${submissions.length} submission${submissions.length === 1 ? "" : "s"}`} id="work">
+          <Section num={num()} title={`The work · ${submissions.length} submission${submissions.length === 1 ? "" : "s"}`} id="work">
             {submissions.length === 0 && <p className="muted">Nothing submitted yet.</p>}
             <div className="stack">
               {submissions.map((s) => (
@@ -201,7 +227,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           </Section>
 
           {reviewSubs.length > 0 && (
-            <Section num="§5" title="Cross-examination" id="reviews">
+            <Section num={num()} title="Cross-examination" id="reviews">
               <ul className="rows rv-kids">
                 {reviewSubs.map((r) => (
                   <li key={r.hash} style={{ padding: "10px 0" }} className="row">
@@ -215,7 +241,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           )}
 
           {(job.knownLimitations?.length ?? 0) > 0 && (
-            <Section num="§6" title="Known limitations" id="limitations">
+            <Section num={num()} title="Known limitations" id="limitations">
               <ul className="prose">{job.knownLimitations!.map((l, i) => <li key={i} className="rv">{l}</li>)}</ul>
             </Section>
           )}
@@ -231,6 +257,11 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               <dt>Media</dt><dd>{files.length ? `${files.length} file${files.length === 1 ? "" : "s"}` : <span className="muted">—</span>}</dd>
               <dt>Incorporation</dt>
               <dd>{job.launch?.requested ? (job.launch.id ? <Link href={`/launches/${job.launch.id}`}>{job.launch.kind} · {job.launch.status}</Link> : `${job.launch.kind} · ${job.launch.status}`) : <span className="muted">—</span>}</dd>
+              <dt>Share</dt>
+              <dd>
+                <a className="ext" href={`https://x.com/intent/post?${new URLSearchParams({ text: `${docketNo("Matter", job.id, job.createdAt)} at Company.md — ${caption(job.objective, 120)}`, url: `${SITE_URL}/jobs/${job.id}` }).toString()}`} target="_blank" rel="noreferrer">Share on X</a>
+                {" · "}<a className="ext" href={apiUrl(`/jobs/${job.id}/share.png`)} target="_blank" rel="noreferrer">the picture</a>
+              </dd>
             </dl>
           </div>
           <div className="folder c-lime" data-tab="On the record" style={{ marginTop: 30 }}>

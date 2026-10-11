@@ -192,6 +192,33 @@ export interface Job extends JobListItem {
     entries: { nodeKey: string; agentId: string; value: number; role: string }[];
   }[];
   knownLimitations?: string[];
+  /** The one written document the matter produced (a research report), if it produced one. */
+  deliverable?: {
+    kind: "artifact" | "audit";
+    name: string;
+    path: string;
+    mediaType: string;
+    hash: string | null;
+    bytes: number;
+    nodeKey: string | null;
+    url: string;
+    downloadUrl: string;
+  } | null;
+}
+
+/** The written deliverable with its text, from GET /jobs/:id/deliverable. */
+export interface Deliverable {
+  jobId: string;
+  kind: "artifact" | "audit";
+  name: string;
+  path: string;
+  mediaType: string;
+  hash: string | null;
+  bytes: number;
+  nodeKey: string | null;
+  text: string;
+  truncated: boolean;
+  downloadUrl: string;
 }
 
 export interface Submission {

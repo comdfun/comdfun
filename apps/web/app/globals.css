@@ -1705,3 +1705,28 @@ html.no-motion .rv { opacity: 1 !important; }
 .try-note h3 { margin: 0; }
 .try-note p { margin: 0; }
 @media (max-width: 960px) { .try-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .try-side { order: -1; } }
+
+/* ─── a matter's written report, on the page ───────────────────────────────── */
+/* It used to be a card in the exhibits that opened raw markdown in a tab. Now it is set as a document, with the two
+   things people want from a report at the top: take a copy, or take the file. */
+.report { border: 1px solid var(--rule); border-radius: var(--r); background: #07060a; overflow: hidden; }
+.report-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 12px 18px; border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sig) 7%, transparent) 0%, transparent 100%);
+}
+.report-what { display: grid; gap: 2px; }
+.report-what b { font-size: 14px; font-weight: 600; color: var(--parch); }
+.report-acts { display: flex; align-items: center; gap: 8px; }
+/* Copy and Download do the same kind of thing, so they look the same */
+.report-acts .copy-btn { font-size: 13px; padding: 0 12px; min-height: 34px; color: var(--parch); }
+.report-acts .copy-btn:hover { background: var(--ink-2); border-color: color-mix(in srgb, var(--sig) 55%, var(--rule-2)); }
+.report-body { padding: 22px 26px 8px; max-width: 760px; }
+.report-body > :first-child { margin-top: 0; }
+.report-body h2.dh:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.report-cut { margin: 0; padding: 0 26px 18px; }
+@media (max-width: 760px) {
+  .report-bar { padding: 12px 14px; }
+  .report-body { padding: 18px 16px 4px; }
+  .report-cut { padding: 0 16px 16px; }
+}

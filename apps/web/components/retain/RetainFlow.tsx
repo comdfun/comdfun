@@ -84,10 +84,11 @@ const STEPS: { k: Step; label: string }[] = [
   { k: "poll", label: "Admission" },
 ];
 
-export function RetainFlow({ icons, caps, initial, scheduleId }: { icons: Record<string, string>; caps: Capabilities | null; initial?: string; scheduleId?: string }) {
+export function RetainFlow({ icons, caps, initial, scheduleId, initialText }: { icons: Record<string, string>; caps: Capabilities | null; initial?: string; scheduleId?: string; initialText?: string }) {
   const start = (["company", "oracle", "retainer", "topup", ...TILES.map((t) => t.key)] as string[]).includes(initial ?? "") ? (initial as Choice) : "company";
   const [choice, setChoice] = useState<Choice>(start);
-  const [text, setText] = useState("");
+  // ?objective= arrives from "Ask a follow-up" on a matter page: the field opens with the thread already named
+  const [text, setText] = useState(initialText ?? "");
   const chains = caps?.launches.chains ?? [{ chainId: activeChain.id, name: activeChain.name, testnet: !!activeChain.testnet, kinds: ["custom_token", "evm_project", "univ4_hook", "evm_contracts"], pairings: [] }];
   const [chainId, setChainId] = useState<number>(caps?.launches.defaultChainId ?? activeChain.id);
   const [poolPct, setPoolPct] = useState(88);

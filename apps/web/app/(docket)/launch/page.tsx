@@ -25,7 +25,7 @@ export default async function Launch({ searchParams }: { searchParams: Promise<P
       />
       {!caps && <div className="notice warn small">Capabilities unavailable (GET /requests/capabilities). Prices shown are defaults; the quote is authoritative.</div>}
       <div className="two-col side-wide">
-        <RetainFlow icons={iconSet(ICONS)} caps={caps} initial={mode === "retainer" || mode === "heartbeat" ? "retainer" : mode === "topup" ? "topup" : mode} scheduleId={one(sp.schedule) || undefined} />
+        <RetainFlow icons={iconSet(ICONS)} caps={caps} initial={mode === "retainer" || mode === "heartbeat" ? "retainer" : mode === "topup" ? "topup" : mode} scheduleId={one(sp.schedule) || undefined} initialText={(one(sp.objective) || "").slice(0, 4000) || undefined} />
         <aside className="stack sticky-side">
           <div className="folder c-pink rv" data-tab="Engagement letter">
             <div className="mint-price" style={{ color: "var(--pink)" }}>100 COMD<small>per request · per run for retainers</small></div>

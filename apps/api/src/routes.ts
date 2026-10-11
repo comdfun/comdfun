@@ -13,8 +13,9 @@ import { Router, bearerOf, clientIp, errorRes, json, parseBefore, parseLimit, pa
 import type { JobX } from "./engine.ts";
 import type { AssuranceRecord, DocumentRecord, FeedbackBatch, LaunchRecord, OracleRecord, OrderRecord, PolicyRecord, RewardEpoch, ScheduleRecord, SeatRecord, SiteRecord, WorkflowRecord } from "./records.ts";
 import { iso } from "./store.ts";
-import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselShareCardPng, counselPortraitSvg, validTokenId } from "./art.ts";
+import { artStatus, brandFile, collectionDoc, counselCardPng, counselCardSvg, counselShareCardPng, counselPortraitSvg, filingShareCardPng, validTokenId } from "./art.ts";
 import { ARTIFACT_LIMIT, BUNDLE_LIMIT } from "./device.ts";
+import { deliverable, deliverableFilename, deliverableRef } from "./deliverable.ts";
 import { pairPage } from "./pairpage.ts";
 
 type A = Attempt & { id: string; createdAt: string };
@@ -139,6 +140,37 @@ export function buildRouter(app: App): Router {
     if (!j.report) throw E.notFound("no audit report for this job");
     return { status: 200, raw: j.report, headers: { "content-type": "text/markdown; charset=utf-8", "access-control-allow-origin": "*" } };
   }, read);
+  // The one written document a matter produced, as text — so the matter page can print it, not just link to a file.
+  r.get("/jobs/:id/deliverable", async (q) => {
+    const j = getJob(q.params.id);
+    const d = await deliverable(app, j);
+    if (!d) throw E.notFound("this matter has not produced a written report");
+    return json(200, { jobId: j.id, ...d, downloadUrl: `/jobs/${j.id}/deliverable.md` }, { "cache-control": "public, max-age=30" });
+  }, read);
+  // The same document as a download, whole: the page's "Download" button and anything that wants the file itself.
+  r.get("/jobs/:id/deliverable.md", async (q) => {
+    const j = getJob(q.params.id);
+    const d = await deliverable(app, j, Number.MAX_SAFE_INTEGER);
+    if (!d) throw E.notFound("this matter has not produced a written report");
+    return {
+      status: 200,
+      raw: d.text,
+      headers: {
+        "content-type": "text/markdown; charset=utf-8",
+        "content-disposition": `attachment; filename="${deliverableFilename(j)}"`,
+        "access-control-allow-origin": "*",
+        "cache-control": "public, max-age=30",
+      },
+    };
+  }, read);
+  // Share card: the Open Graph image of comd.fun/jobs/{id} — what was asked, who worked it, where it stands.
+  // Public docket material only: the question (elided), the seats, the state. Never the report.
+  r.get("/jobs/:id/share.png", async (q): Promise<Res> => {
+    const j = getJob(q.params.id);
+    const png = await filingShareCardPng(filingCardFor(app, j));
+    if (!png) return { status: 302, headers: { location: `/brand/opensea-banner-1400x350.png` } };
+    return { status: 200, raw: png, headers: { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "public, max-age=600" } };
+  }, pub);
   r.get("/jobs/:id/panel", (q) => {
     const j = getJob(q.params.id);
     const members = j.nodes.filter((n) => n.kind === "panel");
@@ -692,6 +724,39 @@ function jobListItem(app: App, j: JobX) {
   return { id: j.id, state: j.state, template: j.template, objective: j.objective, originalRequest: j.originalRequest, blockedReason: j.blockedReason, delivery: j.delivery, createdAt: j.createdAt, updatedAt: j.updatedAt, project: j.project, stage: stage(j), seats, oracleRequestId: j.oracleRequestId, createdBy: j.createdBy, launch: j.launch.requested ? j.launch : undefined };
 }
 
+/** The docket number the web prints for a matter — the same hash, so the card and the page agree. */
+export function docketNo(kind: string, id: string, createdAt?: string | null): string {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
+  const y = createdAt ? new Date(createdAt).getUTCFullYear() : new Date().getUTCFullYear();
+  return `${kind.toUpperCase()} ${y}-${String(((h >>> 0) % 9999) + 1).padStart(4, "0")}`;
+}
+
+const SHARE_STATE: Record<string, { status: string; tone: "ok" | "bad" | "work" }> = {
+  completed: { status: "On the record", tone: "ok" },
+  delivering: { status: "Being filed", tone: "work" },
+  executing: { status: "Being written", tone: "work" },
+  blocked: { status: "Blocked", tone: "bad" },
+  failed: { status: "Failed", tone: "bad" },
+  cancelled: { status: "Withdrawn", tone: "bad" },
+  superseded: { status: "Superseded", tone: "bad" },
+};
+
+/** What the matter's share card prints. Public docket material only — never the report. */
+function filingCardFor(app: App, j: JobX) {
+  const s = SHARE_STATE[j.state] ?? { status: "Open", tone: "work" as const };
+  const seats = [...new Set(j.nodes.map((n) => n.seat?.tokenId).filter(Boolean) as string[])].map(Number).filter((n) => Number.isInteger(n));
+  const accepted = j.nodes.filter((n) => n.state === "accepted").length;
+  const crossed = j.nodes.some((n) => n.role === "review" && n.state === "accepted");
+  const facts = [
+    seats.length ? `${seats.length} counsel` : "no counsel yet",
+    `${accepted} accepted`,
+    crossed ? "cross-examined" : null,
+    deliverableRef(app, j) ? "report filed" : null,
+  ].filter(Boolean).join(" · ");
+  return { docket: docketNo("Matter", j.id, j.createdAt), objective: j.objective, status: s.status, tone: s.tone, tokenIds: seats.slice(0, 3), facts, url: `comd.fun/jobs/${j.id.slice(0, 8)}` };
+}
+
 function jobView(app: App, j: JobX) {
   const at = app.store.c<A>("attempts").filter((a) => a.jobId === j.id).sort((a, b) => (a.leasedAt < b.leasedAt ? -1 : 1));
   const reviews = app.store.c<FeedbackBatch>("feedback").filter((b) => b.jobId === j.id).map((b) => ({ status: b.status, chainId: b.chainId, txHash: b.txHash, blockNumber: b.blockNumber, sentAt: b.sentAt, documentHash: b.documentHash, entries: b.entries.map((e) => ({ nodeKey: e.nodeKey, agentId: e.agentId, value: e.value, role: e.tag1 })) }));
@@ -711,6 +776,10 @@ function jobView(app: App, j: JobX) {
     baseJobId: baseJobId ?? null,
     reportUrl: j.report ? `/jobs/${j.id}/report.md` : null,
     resultUrl: `/jobs/${j.id}/result`,
+    deliverable: (() => {
+      const d = deliverableRef(app, j);
+      return d ? { ...d, url: `/jobs/${j.id}/deliverable`, downloadUrl: `/jobs/${j.id}/deliverable.md` } : null;
+    })(),
   };
 }
 

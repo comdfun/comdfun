@@ -6,7 +6,7 @@ import { rng } from "./hash.js";
 import { drawText, textWidth } from "./font.js";
 import { drawTitle, titleWidth, titleHeight, drawText7, text7Width, type Ramp } from "./font7.js";
 import { mark64, mark32, mark16, monoMark, bayer } from "./mark.js";
-import { composeFigure } from "./counsel.js";
+import { composeFigure, composeCounsel } from "./counsel.js";
 import { composeCard, CARD_W, CARD_H } from "./card.js";
 import { traitsOf, counselName, chambersName } from "./traits.js";
 
@@ -544,5 +544,106 @@ export function shareCard(tokenId: number, o: { status?: string; facts?: string[
   // rainbow rail
   const RAIL = [A.gold, A.orange, A.crimson, A.pink, A.violet, A.cyan, A.lime];
   for (let x = 0; x < W; x += 6) r.rect(x, H - 2, 6, 2, RAIL[(x / 6) % RAIL.length]);
+  return { r, unit: 5 };
+}
+
+// ── filing card ─────────────────────────────────────────────────────────────────────────────
+/** Characters the 3×5 face has. Anything else would render as a box, so it becomes a space. */
+const CHARSET = /[^A-Z0-9#.,\-:/$'()&+=?!·  ]/g;
+const say = (s: string) =>
+  s.toUpperCase().replace(/[“”„"]/g, "").replace(/[’‘`]/g, "'").replace(/[—–]/g, " - ").replace(/[;]/g, ",").replace(/[_]/g, "-").replace(/%/g, " PCT")
+    .replace(CHARSET, " ").replace(/\s+([,.])/g, "$1").replace(/\s+/g, " ").trim();
+
+/** Greedy word wrap for the 3×5 face: at most `lines` lines of `cols` characters, the last one elided. */
+function wrap35(s: string, cols: number, lines: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const word of say(s).split(" ")) {
+    const w = word.length > cols ? `${word.slice(0, cols - 1)}-` : word;
+    if (!line) line = w;
+    else if (line.length + 1 + w.length <= cols) line += ` ${w}`;
+    else { out.push(line); line = w; if (out.length === lines) break; }
+  }
+  if (line && out.length < lines) out.push(line);
+  if (out.length === lines) {
+    // something was left over: mark the last line so nobody reads a cut sentence as the whole question
+    const left = say(s).length > out.join(" ").length;
+    if (left) out[lines - 1] = `${out[lines - 1].slice(0, cols - 3).replace(/[ ,.-]+$/, "")}...`;
+  }
+  return out;
+}
+
+/** A filled chip with black type, the way a stamp reads. Returns its width. */
+function chip(r: Raster, x: number, y: number, label: string, c: Color): number {
+  const w = textWidth(label) + 7;
+  r.rect(x, y, w, 11, c);
+  drawText(r, label, x + 4, y + 3, A.black, 1);
+  return w;
+}
+
+export interface FilingCardInput {
+  /** The matter's own number, as the docket prints it: "MATTER 2026-0412". */
+  docket: string;
+  /** What was asked. Wrapped and elided to fit; the card is a poster, not the filing. */
+  objective: string;
+  /** One short state word for the stamp: "ON THE RECORD", "BEING WRITTEN", "REFUSED". */
+  status: string;
+  /** green for finished work, red for a matter that failed, brass for one still running. */
+  tone?: "ok" | "bad" | "work";
+  /** Up to three Counsel who worked it; their portraits sit under the question. */
+  tokenIds?: number[];
+  /** One line of plain facts: "3 COUNSEL · 7 SUBMISSIONS · CROSS-EXAMINED". */
+  facts?: string;
+  /** Defaults to comd.fun/jobs/<the docket's digits>. */
+  url?: string;
+}
+
+/** 1200×630 (240×126 at unit 5) card for one matter: what was asked, who worked it, where it stands. The Open Graph
+ *  image of comd.fun/jobs/{id}. Nothing here is private — the docket is public — but nothing is quoted verbatim at
+ *  length either: the question is elided to three lines and the report itself never appears. */
+export function filingCard(o: FilingCardInput): Asset {
+  const W = 240, H = 126;
+  const r = nightScene({ w: W, h: H, horizon: H, seed: `filing-${o.docket}` });
+  const ink = A.black;
+  const tone = o.tone === "ok" ? A.lime : o.tone === "bad" ? A.crimson : A.gold;
+
+  // header: the wordmark, then the matter's number hard against the right edge
+  title(r, 46, 6, 1, TITLE_RAMP);
+  const dock = say(o.docket).slice(0, 26);
+  r.rect(W - textWidth(dock) - 12, 7, textWidth(dock) + 8, 11, ink);
+  drawText(r, dock, W - textWidth(dock) - 8, 9, A.gold, 1);
+  r.rect(8, 21, W - 16, 1, A.violetLo);
+
+  // the question, on a plate so the starfield never reads through the type
+  // Portraits are 32px square, so the band they sit in has a fixed floor: the question gets three lines when there
+  // are Counsel to show and four when the seat is still empty, and never grows into the footer.
+  const seats = (o.tokenIds ?? []).filter((t) => Number.isInteger(t) && t >= 1 && t <= 2000).slice(0, 3);
+  const lines = wrap35(o.objective, 54, seats.length ? 3 : 4);
+  r.rect(8, 26, W - 16, 13 + lines.length * 9, ink);
+  drawText(r, "IN RE:", 12, 29, A.violet, 1);
+  lines.forEach((l, i) => drawText(r, l, 12, 39 + i * 9, A.parchment, 1));
+
+  // who worked it, and where it stands
+  const band = seats.length ? 68 : 26 + 13 + lines.length * 9 + 7;
+  let x = 8;
+  for (const t of seats) {
+    r.rect(x - 1, band - 1, 34, 34, A.goldDk);
+    r.blit(composeCounsel(t), x, band, 1);
+    x += 37;
+  }
+  const sx = seats.length ? x + 3 : 8;
+  chip(r, sx, band + 1, say(o.status).slice(0, 22), tone);
+  const fy = band + 15, fcols = Math.floor((W - sx - 4) / 4);
+  if (o.facts) wrap35(o.facts, fcols, Math.max(1, Math.floor((100 - fy) / 9))).forEach((l, i) => drawText(r, l, sx, fy + i * 9, A.parchLo, 1));
+
+  // footer: where to read it, and what this place is
+  const url = say(o.url ?? `comd.fun/jobs/${o.docket.replace(/\D/g, "")}`).toLowerCase().toUpperCase();
+  r.rect(0, 104, W, 22 - 2, ink);
+  if (text7Width(url, 1) <= W - 16) drawText7(r, url, 8, 106, A.cyan, 1);
+  else drawText(r, url, 8, 108, A.cyan, 1);
+  drawText(r, "A SWARM OF NFT-IDENTIFIED AGENTS · EVERY MATTER PUBLIC", 8, 117, A.parchLo, 1);
+
+  const RAIL = [A.gold, A.orange, A.crimson, A.pink, A.violet, A.cyan, A.lime];
+  for (let x2 = 0; x2 < W; x2 += 6) r.rect(x2, H - 2, 6, 2, RAIL[(x2 / 6) % RAIL.length]);
   return { r, unit: 5 };
 }

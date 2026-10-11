@@ -67,6 +67,8 @@ export const api = {
   job: async (id: string) => normalizeJob(await get<Record<string, unknown>>(`/jobs/${encodeURIComponent(id)}`, { revalidate: 2 })),
   submissions: async (id: string, job?: T.Job | null) => normalizeSubmissions(await get<unknown>(`/jobs/${encodeURIComponent(id)}/submissions`), job),
   records: (id: string) => get<T.JobRecords>(`/jobs/${encodeURIComponent(id)}/records`),
+  /** The matter's written report, as text, for printing on the page. null when it has not produced one. */
+  deliverable: (id: string) => get<T.Deliverable>(`/jobs/${encodeURIComponent(id)}/deliverable`, { revalidate: 30 }),
   oracleCounts: () => get<{ total: number; byStatus: Record<string, number> }>("/oracle/counts"),
   oracleRequests: (o: { q?: string; before?: string; limit?: number; status?: string }) => get<{ count: number; attester: string; requests: T.OracleListItem[] }>(`/oracle/requests${qs(o)}`),
   oracle: (id: string) => get<T.OracleRequest>(`/oracle/requests/${encodeURIComponent(id)}`, { revalidate: 2 }),

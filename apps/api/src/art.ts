@@ -15,12 +15,16 @@ import path from "node:path";
 
 export interface MetadataInput { apiUrl: string; webUrl: string; chainId: number; tokenContract: string; agentId: string | number | null; agentRegistry: string | null }
 
+/** What the matter's share card prints (see @company/art brandkit.filingCard). */
+export interface FilingCard { docket: string; objective: string; status: string; tone?: "ok" | "bad" | "work"; tokenIds?: number[]; facts?: string; url?: string }
+
 /** The part of @company/art the api uses (typed here so tsc does not compile the art package's own sources). */
 interface ArtModule {
   renderCard(tokenId: number, opts?: { width?: number }): { svg: string; attributes: { trait_type: string; value: string }[]; name: string };
   renderCounsel(tokenId: number, opts?: { size?: number }): { svg: string; attributes: { trait_type: string; value: string }[]; name: string };
   renderCardPNG(tokenId: number, scale?: number): Buffer;
   renderShareCardPNG?(tokenId: number, o?: { status?: string; facts?: string[]; url?: string }): Buffer;
+  renderFilingCardPNG?(o: FilingCard): Buffer;
   renderCounselPNG(tokenId: number, scale?: number): Buffer;
   metadata(tokenId: number, o: MetadataInput): Record<string, unknown> & { attributes: { trait_type: string; value: string }[] };
   collectionMetadata?(o: { apiUrl?: string; webUrl?: string; feeRecipient?: string }): Record<string, unknown>;
@@ -63,6 +67,12 @@ export async function counselCardPng(tokenId: number, scale = 8): Promise<Buffer
 export async function counselShareCardPng(tokenId: number, o: { status?: string; facts?: string[]; url?: string } = {}): Promise<Buffer | null> {
   const m = await artModule();
   return m?.renderShareCardPNG ? m.renderShareCardPNG(tokenId, o) : null;
+}
+
+/** 1200×630 share / Open Graph card for one matter (what was asked, who worked it, where it stands). */
+export async function filingShareCardPng(o: FilingCard): Promise<Buffer | null> {
+  const m = await artModule();
+  return m?.renderFilingCardPNG ? m.renderFilingCardPNG(o) : null;
 }
 
 /** The 32×32 portrait (no nameplate) for small avatars. */
