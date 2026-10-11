@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money" | "read" | "again" | "card" | "shelf" | "review" | "cicm";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money" | "read" | "again" | "card" | "shelf" | "review" | "cicm" | "icmx" | "icmeth";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -80,6 +80,14 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   shelf: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   review: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   cicm: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  icmx: [
+    { id: "x-title", at: 0 }, { id: "x-many", at: 4_800 }, { id: "x-pay", at: 12_000 },
+    { id: "x-cost", at: 19_200 }, { id: "x-burn", at: 25_600 }, { id: "end", at: 32_600 },
+  ],
+  icmeth: [
+    { id: "e-title", at: 0 }, { id: "e-hold", at: 4_600 }, { id: "e-swap", at: 10_800 },
+    { id: "e-one", at: 18_400 }, { id: "end", at: 24_600 },
+  ],
   holders: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   gate: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -116,7 +124,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500, read: 26_500, again: 26_500, card: 26_500, shelf: 26_500, review: 26_500, cicm: 28_000 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500, read: 26_500, again: 26_500, card: 26_500, shelf: 26_500, review: 26_500, cicm: 28_000, icmx: 37_200, icmeth: 29_200 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -534,6 +542,165 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
           <div className="ft-word">COMPANY<span>.MD</span></div>
           <div className="mf-tag">48 hours. One thesis. <b className="c-gold">$500 in $COMD.</b></div>
           <div className="fo-foot">comd.fun · @comdfun · $COMD on FOMO</div>
+        </section>
+      </div>
+    );
+  }
+
+  // cICM, introduced: the desk is a thing that moves, so the film is built from moving parts rather than
+  // bullets. Chips converge on one endpoint, a payload runs down a conveyor, and the supply bar burns down.
+  if (kind === "icmx") {
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("x-title")}`} data-scene="x-title">
+          <div className="af-jury-sm">{portraits.slice(0, 6).map((id, i) => (
+            <img key={id} src={`/art/${id}.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">Introducing <b>cICM</b></div>
+          <div className="ic-url"><i>https://</i><u>api.comd.fun</u><i>/icm/v1</i><span className="ic-caret" /></div>
+          <div className="mf-sub">Company Inference Capital Markets. Buy AI inference with <b>$COMD</b>.</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("x-many")}`} data-scene="x-many">
+          <header className="fs-h c-gold"><span className="fs-no">01</span><h2>One endpoint, every model</h2></header>
+          <div className="ic-fan">
+            <div className="ic-chips">
+              {[["anthropic", "claude-opus-4.1", "var(--orange)"], ["openai", "gpt-5", "var(--lime)"],
+                ["google", "gemini-2.5-pro", "var(--cyan)"], ["deepseek", "deepseek-r1", "var(--violet)"],
+                ["meta", "llama-4", "var(--pink)"], ["xai", "grok-4", "var(--gold)"]].map(([h, m, c], i) => (
+                <div className="ic-chip" key={m} style={{ ["--i" as string]: i, ["--cc" as string]: c }}>{h}<em>/</em>{m}</div>
+              ))}
+            </div>
+            <div className="ic-sink">
+              <b>cICM</b>
+              <code>api.comd.fun/icm/v1</code>
+              <span>name the model in the request</span>
+            </div>
+          </div>
+          <p className="ic-pipe-note">Point a client, a script or an agent at it. <b>Nothing in your code changes but the base URL.</b></p>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("x-pay")}`} data-scene="x-pay">
+          <header className="fs-h c-cyan"><span className="fs-no">02</span><h2>Pay once, take a key</h2></header>
+          <div className="ic-pipe">
+            <div className="ic-node" style={{ ["--i" as string]: 0, ["--nc" as string]: "var(--gold)" }}>
+              <span className="ic-glyph">$</span><b>Send $COMD</b><span>from the wallet you want credited</span>
+            </div>
+            <div className="ic-run" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--gold)" }} />
+            <div className="ic-node" style={{ ["--i" as string]: 1, ["--nc" as string]: "var(--cyan)" }}>
+              <span className="ic-glyph">✓</span><b>Sign once</b><span>not a transaction, no gas</span>
+            </div>
+            <div className="ic-run" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--cyan)" }} />
+            <div className="ic-node" style={{ ["--i" as string]: 2, ["--nc" as string]: "var(--lime)" }}>
+              <span className="ic-glyph">#</span><b>API key</b><span>shown once, never again</span>
+            </div>
+          </div>
+          <p className="ic-pipe-note">No card, no monthly bill, and <b>no account of your own with a model provider</b>.</p>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-violet ${on("x-cost")}`} data-scene="x-cost">
+          <header className="fs-h c-violet"><span className="fs-no">03</span><h2>What a call costs</h2></header>
+          <div className="af-cards af-cards-2">
+            <div className="af-card c-violet" style={{ ["--i" as string]: 0 }}><b>What the provider charged</b><span>Settled on the provider&apos;s own usage figure, not an estimate. A call that never ran is never charged for.</span></div>
+            <div className="af-card c-gold" style={{ ["--i" as string]: 1 }}><b>Plus a published margin</b><span>Printed on the page rather than discovered on the bill. The rate from $COMD to credit is fixed and public.</span></div>
+          </div>
+          <ul className="fs-lines c-violet">
+            <li style={{ ["--i" as string]: 2 }}>A call <b>holds</b> an estimate when it opens and <b>settles</b> when it closes. Interrupted calls give the hold back.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-orange ${on("x-burn")}`} data-scene="x-burn">
+          <header className="fs-h c-orange"><span className="fs-no">04</span><h2>And the $COMD is burned</h2></header>
+          <div className="ic-burn">
+            <div className="ic-bar">
+              <i />
+              <div className="ic-embers" aria-hidden="true">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <i key={i} style={{ ["--i" as string]: i, left: `${8 + i * 9}%` }} />
+                ))}
+              </div>
+            </div>
+            <div className="ic-burn-cap"><span>Supply</span><b>spent on inference = gone for good</b></div>
+          </div>
+          <ul className="fs-lines c-orange">
+            <li style={{ ["--i" as string]: 0 }}>Every $COMD that buys inference is <b>destroyed</b>. Demand for models becomes demand for the token.</li>
+            <li style={{ ["--i" as string]: 1 }}>A use that is <b>not speculation</b>: somebody who needs a model has a reason to buy $COMD that has nothing to do with the chart.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">A swarm that works. <b className="c-gold">And a desk that sells the models.</b></div>
+          <div className="fo-foot">comd.fun/icm · @comdfun</div>
+        </section>
+      </div>
+    );
+  }
+
+  // The objection this film answers is the first one anybody has: "I do not hold your token." One conveyor,
+  // one bracket under it, and the answer is a picture rather than a paragraph.
+  if (kind === "icmeth") {
+    return (
+      <div className="film mf af-reg af-tasks" data-scene={scene}>
+        <div className="film-sky" aria-hidden="true"><i /><i /><i /></div>
+        <div className="film-rail" aria-hidden="true" />
+
+        <section className={`mf-s af-rtitle ${on("e-title")}`} data-scene="e-title">
+          <div className="af-jury-sm">{portraits.slice(6, 12).map((id, i) => (
+            <img key={id} src={`/art/${id}.svg`} alt="" style={{ ["--i" as string]: i }} />
+          ))}</div>
+          <div className="af-title af-title-sm">No <b>$COMD</b>? Fine.</div>
+          <div className="mf-sub">Buying inference on <b>cICM</b> when all you hold is ETH</div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-cyan ${on("e-hold")}`} data-scene="e-hold">
+          <header className="fs-h c-cyan"><span className="fs-no">01</span><h2>You do not have to hold it</h2></header>
+          <div className="af-cards af-cards-2">
+            <div className="af-card c-cyan" style={{ ["--i" as string]: 0 }}><b>Hold ETH</b><span>That is the whole requirement. Pick the ETH tab on the page, type an amount, and read what it buys before you send anything.</span></div>
+            <div className="af-card c-violet" style={{ ["--i" as string]: 1 }}><b>Coming from another chain?</b><span>Bridge ETH to Robinhood Chain in seconds and come back. Nothing else to buy or approve by hand.</span></div>
+          </div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-gold ${on("e-swap")}`} data-scene="e-swap">
+          <header className="fs-h c-gold"><span className="fs-no">02</span><h2>The swap happens on the way in</h2></header>
+          <div className="ic-pipe">
+            <div className="ic-node" style={{ ["--i" as string]: 0, ["--nc" as string]: "var(--cyan)" }}>
+              <span className="ic-glyph">Ξ</span><b>Your ETH</b><span>what you already hold</span>
+            </div>
+            <div className="ic-run" style={{ ["--i" as string]: 0, ["--pc" as string]: "var(--cyan)" }} />
+            <div className="ic-node" style={{ ["--i" as string]: 1, ["--nc" as string]: "var(--pink)" }}>
+              <span className="ic-glyph">⇄</span><b>The pool</b><span>routed at the market price</span>
+            </div>
+            <div className="ic-run" style={{ ["--i" as string]: 1, ["--pc" as string]: "var(--gold)" }} />
+            <div className="ic-node" style={{ ["--i" as string]: 2, ["--nc" as string]: "var(--gold)" }}>
+              <span className="ic-glyph">$</span><b>$COMD</b><span>straight to the desk</span>
+            </div>
+            <div className="ic-run" style={{ ["--i" as string]: 2, ["--pc" as string]: "var(--lime)" }} />
+            <div className="ic-node" style={{ ["--i" as string]: 3, ["--nc" as string]: "var(--lime)" }}>
+              <span className="ic-glyph">+</span><b>Credit</b><span>on the wallet that signed</span>
+            </div>
+          </div>
+          <div className="ic-brace"><span>one transaction</span></div>
+        </section>
+
+        <section className={`mf-s af-loop af-task c-lime ${on("e-one")}`} data-scene="e-one">
+          <header className="fs-h c-lime"><span className="fs-no">03</span><h2>What that means for you</h2></header>
+          <ul className="fs-lines fs-big c-lime">
+            <li style={{ ["--i" as string]: 0 }}>You never go and find the token first. <b>One press, one signature</b>, and the credit is on your account.</li>
+            <li style={{ ["--i" as string]: 1 }}>The credit lands on <b>the wallet that signed</b>, not on the pool that moved the token.</li>
+            <li style={{ ["--i" as string]: 2 }}>And the $COMD the swap bought is <b>burned on the way in</b>. Paying in ETH still takes supply off the market.</li>
+          </ul>
+        </section>
+
+        <section className={`mf-s mf-end ${on("end")}`} data-scene="end">
+          <Svg svg={logo} className="ft-logo" />
+          <div className="ft-word">COMPANY<span>.MD</span></div>
+          <div className="mf-tag">Bring ETH. <b className="c-lime">Leave with inference.</b></div>
+          <div className="fo-foot">comd.fun/icm · @comdfun</div>
         </section>
       </div>
     );

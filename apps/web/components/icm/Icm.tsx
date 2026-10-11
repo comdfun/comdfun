@@ -10,6 +10,8 @@ import { useAccount, useSignMessage } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { CopyButton } from "@/components/CopyButton";
 import { BuyCredit } from "./BuyCredit";
+import { Catalogue } from "./Catalogue";
+import { Dash, SAMPLE } from "./Dash";
 
 type Rate = {
   enabled: boolean;
@@ -136,50 +138,62 @@ export function Icm() {
 
   return (
     <div className="icm">
-      {/* ---------------------------------------------------------------- the desk */}
-      <section className="icm-desk">
-        <div className="icm-wire">
-          <div className="icm-wire-head">
-            <span>Base URL</span>
-            <CopyButton text={endpoint} />
+      {/* ------------------------------------------------------------------- the hero
+          The buy panel sits with the pitch rather than four screens below it: it is the only control on the
+          page and the reason anybody is here. */}
+      <section className="icm-hero">
+        <div className="icm-pitch">
+          <h2 className="icm-big">
+            Every frontier model,<br />
+            one key, <mark>paid in $COMD</mark>.
+          </h2>
+          <p className="icm-lede">
+            No card, no subscription, and no account of your own with a model provider. Point any client at one
+            endpoint and name the model you want.
+          </p>
+
+          <div className="icm-figs">
+            <div className="icm-fig"><b>{perUsd ? perUsd.toLocaleString() : "—"}</b><span>$COMD buys $1.00 of credit</span></div>
+            <div className="icm-fig"><b>$0</b><span>setup, subscription or minimum monthly</span></div>
+            <div className="icm-fig icm-fig-hot"><b>100%</b><span>of the $COMD you spend is burned</span></div>
           </div>
-          <code className="icm-url">{endpoint}</code>
-          <pre className="icm-curl"><code>{`curl ${endpoint}/chat/completions \\
+
+          <div className="icm-wire">
+            <div className="icm-wire-head">
+              <span>Base URL</span>
+              <CopyButton text={endpoint} />
+            </div>
+            <code className="icm-url">{endpoint}</code>
+            <pre className="icm-curl"><code>{`curl ${endpoint}/chat/completions \\
   -H "Authorization: Bearer cicm_live_…" \\
   -d '{"model":"anthropic/claude-sonnet-4",
        "messages":[{"role":"user","content":"hello"}]}'`}</code></pre>
-          <p className="icm-wire-foot">
-            One endpoint, every model: Claude, GPT, Gemini, Llama, DeepSeek and the rest, named in the one field.
-            Set the base URL, put your cICM key in the bearer, and nothing else about your code changes.
-          </p>
+          </div>
         </div>
 
-        <aside className="icm-deal">
-          <div className="icm-rate">
-            <div className="icm-rate-side">
-              <b>{perUsd ? perUsd.toLocaleString() : "—"}</b>
-              <span>$COMD</span>
+        <div className="icm-buyside">
+          {rate?.deposit.address ? (
+            <>
+              <BuyCredit deposit={rate.deposit} onDone={() => { if (view) void load(); }} />
+              <details className="icm-manual">
+                <summary>Or send it yourself</summary>
+                <code className="icm-addr">{rate.deposit.address}</code>
+                <CopyButton text={rate.deposit.address} label="Copy address" />
+                <ul className="icm-ticket-fine">
+                  <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
+                  <li>$COMD only. Anything else sent here is lost.</li>
+                  {rate.deposit.burns && <li className="warn">What you send is destroyed. Credit is bought by taking $COMD out of supply.</li>}
+                </ul>
+              </details>
+            </>
+          ) : (
+            <div className="icm-ticket">
+              <span className="icm-ticket-label">Send $COMD to</span>
+              <p className="muted small" style={{ margin: 0 }}>
+                {rate?.deposit.problem ?? "Payments are not being watched yet, so credit cannot be bought."}
+              </p>
             </div>
-            <div className="icm-rate-eq" aria-hidden="true">buys</div>
-            <div className="icm-rate-side">
-              <b>$1.00</b>
-              <span>of credit</span>
-            </div>
-          </div>
-          <dl className="icm-terms">
-            <dt>Price of a call</dt>
-            <dd>What the model provider charged, plus {margin}.</dd>
-            <dt>Minimum</dt>
-            <dd>{rate?.deposit.minimumTokens ? `${Number(rate.deposit.minimumTokens).toLocaleString()} $COMD` : "—"}</dd>
-            <dt>Settlement</dt>
-            <dd>Held when the call opens, settled on the provider's own figure.</dd>
-            {rate?.deposit.burns && (
-              <>
-                <dt>Supply</dt>
-                <dd className="icm-burnline">Every $COMD spent here is <b>burned</b>. Inference bought is supply gone.</dd>
-              </>
-            )}
-          </dl>
+          )}
           {rate && !rate.enabled && (
             <p className="icm-warn">
               {rate.reason?.includes("misconfigured")
@@ -187,10 +201,26 @@ export function Icm() {
                 : "Routing is not switched on yet. You can buy credit and make keys now; calls start working with nothing further from you."}
             </p>
           )}
-        </aside>
+        </div>
       </section>
 
-      {/* ---------------------------------------------------------------- funding */}
+      {/* ---------------------------------------------------------------- three facts */}
+      <section className="icm-facts">
+        <div className="icm-fact"><b>Straight relay</b><span>Your request goes to the model you named. Nothing is swapped for something cheaper, and the answer carries the provider&apos;s own model id so you can check.</span></div>
+        <div className="icm-fact"><b>Charged what it cost</b><span>A call holds an estimate when it opens and settles on the provider&apos;s own usage figure. A call that never ran is never charged for, and an interrupted one gives the hold back.</span></div>
+        <div className="icm-fact icm-fact-hot"><b>Burned on the way in</b><span>Every $COMD that buys credit is destroyed. Buying inference takes supply off the market for good, so demand for models is demand for the token.</span></div>
+      </section>
+
+      {/* ------------------------------------------------------------------ catalogue */}
+      <section className="icm-cat">
+        <div className="icm-cat-say">
+          <h2>Every model, one key.</h2>
+          <p>Priced per million output tokens, at what the provider charged plus the published margin.</p>
+        </div>
+        <Catalogue tokensPerUsd={perUsd} />
+      </section>
+
+      {/* ------------------------------------------------------------------- funding */}
       <section className="icm-fund">
         <div className="icm-fund-say">
           <h2>Putting credit on</h2>
@@ -235,57 +265,51 @@ export function Icm() {
           </div>
         </div>
 
-        <div className="icm-buyside">
-          {rate?.deposit.address ? (
+        <dl className="icm-terms">
+          <dt>Price of a call</dt>
+          <dd>What the model provider charged, plus {margin}.</dd>
+          <dt>Minimum</dt>
+          <dd>{rate?.deposit.minimumTokens ? `${Number(rate.deposit.minimumTokens).toLocaleString()} $COMD` : "—"}</dd>
+          <dt>Settlement</dt>
+          <dd>Held when the call opens, settled on the provider&apos;s own figure.</dd>
+          {rate?.deposit.burns && (
             <>
-              <BuyCredit deposit={rate.deposit} onDone={() => { if (view) void load(); }} />
-              <details className="icm-manual">
-                <summary>Or send it yourself</summary>
-                <code className="icm-addr">{rate.deposit.address}</code>
-                <CopyButton text={rate.deposit.address} label="Copy address" />
-                <ul className="icm-ticket-fine">
-                  <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
-                  <li>$COMD only. Anything else sent here is lost.</li>
-                  {rate.deposit.burns && <li className="warn">What you send is destroyed. Credit is bought by taking $COMD out of supply.</li>}
-                </ul>
-              </details>
+              <dt>Supply</dt>
+              <dd className="icm-burnline">Every $COMD spent here is <b>burned</b>.</dd>
             </>
-          ) : (
-            <div className="icm-ticket">
-              <span className="icm-ticket-label">Send $COMD to</span>
-              <p className="muted small" style={{ margin: 0 }}>
-                {rate?.deposit.problem ?? "Payments are not being watched yet, so credit cannot be bought."}
-              </p>
-            </div>
           )}
-        </div>
+        </dl>
       </section>
 
       {/* ------------------------------------------------------------------ the account */}
       <section className="section">
         <div className="section-title"><h2>Your account</h2></div>
 
-        {!isConnected ? (
-          <div className="panel icm-gate">
-            <p>Connect the wallet you pay from. Connecting shows your balance and signs nothing until you ask it to.</p>
-            <ConnectButton className="btn primary" label="Connect a wallet" />
-          </div>
-        ) : !view ? (
-          <div className="panel icm-gate">
-            <p>One signature opens your account: the balance, the keys and every call they have made.</p>
-            <button type="button" className="btn primary" onClick={load} disabled={busy !== null}>
-              {saying("load", "Sign in")}
-            </button>
-            <p className="muted small" style={{ margin: 0 }}>Not a transaction. Nothing moves, and there is no gas.</p>
+        {!view ? (
+          <div className="icm-preview">
+            {/* A dashboard of zeroes tells a first-time visitor nothing about what they would get, and invented
+                numbers presented as real would be a lie. A sample that says it is a sample is neither. */}
+            <Dash account={SAMPLE.account} charges={SAMPLE.charges} isSample />
+            <div className="panel icm-gate">
+              {!isConnected ? (
+                <>
+                  <p><b>This is a sample.</b> Connect the wallet you pay from to see your own: the balance, every call and what it cost. Connecting signs nothing until you ask it to.</p>
+                  <ConnectButton className="btn primary" label="Connect a wallet" />
+                </>
+              ) : (
+                <>
+                  <p><b>This is a sample.</b> One signature opens your own account: the balance, the keys and every call they have made.</p>
+                  <button type="button" className="btn primary" onClick={load} disabled={busy !== null}>
+                    {saying("load", "Sign in")}
+                  </button>
+                  <p className="muted small" style={{ margin: 0 }}>Not a transaction. Nothing moves, and there is no gas.</p>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className="icm-account">
-            <div className="icm-stats">
-              <div className="icm-stat"><b>${usd(view.account.balanceMicroUsd)}</b><span>Available</span></div>
-              <div className="icm-stat"><b>${usd(view.account.heldMicroUsd)}</b><span>Held by calls running now</span></div>
-              <div className="icm-stat"><b>${usd(view.account.spentMicroUsd)}</b><span>Spent all time</span></div>
-              <div className="icm-stat"><b>${usd(view.account.depositedMicroUsd)}</b><span>Bought all time</span></div>
-            </div>
+            <Dash account={view.account} charges={view.charges} />
             {balance === 0n && (
               <p className="muted small">
                 Nothing on the account yet. Send $COMD to the address above and it appears here within a minute or two

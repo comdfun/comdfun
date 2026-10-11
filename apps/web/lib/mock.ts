@@ -825,8 +825,30 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       enabled: true, reason: null, environment: "live",
       endpoint: "https://api.comd.fun/icm/v1",
       rate: { tokensPerUsd: "100000", symbol: "COMD", marginBps: 1500 },
-      deposit: { address: "0x9d4c1e7a3b55f08216ce4d7b0a9f3e21c88b4a60", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: false, note: "Send COMD to this address. The credit lands on the wallet that sent it, so send from the wallet you want credited." },
-      compatible: "OpenAI chat completions.",
+      deposit: { address: "0x9d4c1e7a3b55f08216ce4d7b0a9f3e21c88b4a60", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: false, burns: true, sink: "burn", note: "Send COMD to this address and it is destroyed: credit is bought by taking the token out of supply for good. The credit lands on the wallet that sent it, so send from the wallet you want credited." },
+      compatible: "Standard chat completions. Point any client at the endpoint with your cICM key as the bearer, and name the model you want in the request.",
+    });
+    // The catalogue the page prices from. Shaped exactly like the live one (retail per million, dollars) so the
+    // table is exercised in mock mode rather than only discovered to be wrong in production.
+    if (p === "/icm/v1/models") return ok({
+      object: "list",
+      data: [
+        ["anthropic/claude-opus-4.1", "Claude Opus 4.1", 200000, 17.25, 86.25],
+        ["anthropic/claude-sonnet-4", "Claude Sonnet 4", 200000, 3.45, 17.25],
+        ["openai/gpt-5", "GPT-5", 400000, 1.44, 11.5],
+        ["openai/gpt-5-mini", "GPT-5 mini", 400000, 0.288, 2.3],
+        ["google/gemini-2.5-pro", "Gemini 2.5 Pro", 1048576, 1.44, 11.5],
+        ["google/gemini-2.5-flash", "Gemini 2.5 Flash", 1048576, 0.345, 2.875],
+        ["x-ai/grok-4", "Grok 4", 256000, 3.45, 17.25],
+        ["deepseek/deepseek-r1", "DeepSeek R1", 164000, 0.632, 2.507],
+        ["meta-llama/llama-4-maverick", "Llama 4 Maverick", 1048576, 0.195, 0.69],
+        ["mistralai/mistral-large", "Mistral Large", 128000, 2.3, 6.9],
+        ["qwen/qwen3-235b", "Qwen3 235B", 131072, 0.161, 0.644],
+        ["moonshotai/kimi-k2", "Kimi K2", 200000, 0.655, 2.875],
+      ].map(([id, name, ctx, pin, pout]) => ({
+        id, object: "model", name, context_length: ctx,
+        pricing: { prompt: String(pin), completion: String(pout), unit: "per_million_tokens", currency: "USD" },
+      })),
     });
     if (p === "/workflows") return ok({ count: 0, workflows: [] });
     if (p === "/oracle/counts") {

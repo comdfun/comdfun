@@ -6,7 +6,7 @@ import { explorerUrl } from "@/lib/chains";
 import { short, counselName } from "@/lib/format";
 import { WaxSvg } from "./fx/Stamps";
 
-export function PageHead({ crumbs, title, lede, children, kicker }: { crumbs?: { href?: string; label: string }[]; title: ReactNode; lede?: ReactNode; children?: ReactNode; kicker?: ReactNode }) {
+export function PageHead({ crumbs, title, lede, children, kicker }: { crumbs?: { href?: string; label: string }[]; title?: ReactNode; lede?: ReactNode; children?: ReactNode; kicker?: ReactNode }) {
   return (
     <div className="page-head">
       {crumbs && (

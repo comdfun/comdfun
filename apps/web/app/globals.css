@@ -1772,6 +1772,92 @@ html.no-motion .rv { opacity: 1 !important; }
 .icm-fund { display: grid; grid-template-columns: minmax(0, 1fr) var(--aside); gap: 22px; align-items: start; }
 .icm-fund-say h2 { margin: 0 0 10px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .icm-fund-say p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: #b9b3a6; max-width: 58ch; }
+/* ---- the hero: the pitch and the only control on the page, side by side */
+.icm-hero { display: grid; grid-template-columns: minmax(0, 1fr) var(--aside); gap: 40px; align-items: start; }
+.icm-pitch { display: grid; gap: 22px; align-content: start; }
+.icm-big { margin: 0; font-size: clamp(32px, 3.9vw, 52px); font-weight: 600; letter-spacing: -0.04em; line-height: 1.04; color: var(--parch); }
+/* the one highlighted phrase, drawn as a marker rather than a background box */
+/* A solid block, because the text on it is dark: a marker that fades out at the top leaves the top third of
+   every letter dark-on-black and invisible. Full height, full strength, and the whole phrase stays legible. */
+.icm-big mark {
+  background: var(--gold); color: #120d02; padding: 0.04em 0.16em 0.1em; border-radius: 3px;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.icm-lede { margin: 0; font-size: 16.5px; line-height: 1.6; color: #b5afa2; max-width: 56ch; }
+
+/* the three figures: the numbers somebody repeats to somebody else */
+.icm-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; }
+.icm-fig { display: grid; gap: 5px; padding: 17px 18px; background: var(--ink-1); }
+.icm-fig b { font-size: clamp(22px, 2.3vw, 30px); font-weight: 600; letter-spacing: -0.03em; color: var(--parch); line-height: 1; font-variant-numeric: tabular-nums; }
+.icm-fig span { font-size: 12.5px; line-height: 1.45; color: var(--dim); }
+.icm-fig-hot b { color: var(--orange); }
+
+/* ---- three facts, in a row */
+.icm-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.icm-fact { display: grid; gap: 8px; padding: 18px 20px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1); }
+.icm-fact b { position: relative; padding-left: 16px; font-size: 14.5px; font-weight: 600; color: var(--parch); }
+.icm-fact b::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+.icm-fact span { font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.icm-fact-hot { border-color: color-mix(in srgb, var(--orange) 26%, var(--rule)); }
+.icm-fact-hot b::before { background: var(--orange); }
+
+/* the terms, as an aside panel rather than a loose list in a column of its own */
+.icm-fund > .icm-terms {
+  align-self: start; margin: 0; padding: 18px 20px; border-top: 0;
+  border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1);
+}
+.icm-fund > .icm-terms dt { margin-top: 14px; }
+.icm-fund > .icm-terms dt:first-child { margin-top: 0; }
+
+/* ---- the catalogue: what a call costs, model by model */
+.icm-cat { display: grid; gap: 18px; }
+.icm-cat-say h2 { margin: 0 0 6px; font-size: clamp(22px, 2.5vw, 30px); font-weight: 600; letter-spacing: -0.025em; color: var(--parch); }
+.icm-cat-say p { margin: 0; font-size: 14.5px; color: var(--muted); }
+.cat { border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1); overflow: hidden; }
+.cat-head { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--rule); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.cat-rows { display: grid; }
+.cat-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 13px 18px; }
+.cat-row + .cat-row { border-top: 1px solid var(--rule); }
+.cat-row:hover { background: #0c0a12; }
+.cat-name { display: grid; gap: 2px; min-width: 0; }
+.cat-name b { font-size: 14.5px; font-weight: 600; color: var(--parch); }
+.cat-name code { font-family: var(--font-mono); font-size: 11.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-price { display: grid; gap: 2px; justify-items: end; flex: none; }
+.cat-price b { font-size: 16px; font-weight: 600; color: var(--parch); font-variant-numeric: tabular-nums; }
+.cat-price span { font-family: var(--font-mono); font-size: 11.5px; color: var(--gold); }
+.cat-skel { height: 56px; }
+.cat-skel i { display: block; width: 46%; height: 11px; border-radius: 3px; background: linear-gradient(90deg, #15121c, #1d1926, #15121c); background-size: 220% 100%; animation: catShimmer 1.3s linear infinite; }
+@keyframes catShimmer { to { background-position: -220% 0; } }
+.cat-more { width: 100%; padding: 13px; border: 0; border-top: 1px solid var(--rule); background: transparent; cursor: pointer; font-size: 13.5px; color: var(--gold); }
+.cat-more:hover { background: #0c0a12; }
+.cat-foot { margin: 0; padding: 12px 18px; border-top: 1px solid var(--rule); font-size: 12px; line-height: 1.5; color: var(--dim); }
+
+/* ---- the account, read as a dashboard */
+.dash { border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1); overflow: hidden; }
+.dash-sample { border-style: dashed; }
+.dash-bar { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--rule); background: #07060b; }
+.dash-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rule-2); flex: none; }
+.dash-where { font-family: var(--font-mono); font-size: 11.5px; color: var(--dim); }
+.dash-flag { margin-left: auto; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 36%, transparent); border-radius: var(--r-pill); padding: 3px 10px; }
+.dash-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); }
+.dash-tile { display: grid; gap: 5px; padding: 16px 18px; background: var(--ink-1); }
+.dash-tile span { font-size: 11.5px; color: var(--dim); }
+.dash-tile b { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; color: var(--parch); font-variant-numeric: tabular-nums; }
+.dash-lit { background: color-mix(in srgb, var(--gold) 7%, var(--ink-1)); }
+.dash-lit b { color: var(--gold); }
+.dash-panel { padding: 16px 18px; border-top: 1px solid var(--rule); }
+.dash-ph { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; font-size: 13px; color: #cdc6b5; }
+.dash-chart { display: flex; align-items: flex-end; gap: 4px; height: 92px; }
+.dash-chart i { flex: 1; min-width: 0; border-radius: 2px 2px 0 0; background: linear-gradient(180deg, var(--lime), color-mix(in srgb, var(--lime) 42%, transparent)); transform-origin: bottom; animation: dashGrow 0.5s var(--rv-ease) calc(var(--i) * 28ms) both; }
+@keyframes dashGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.dash-models { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dash-models li { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(90px, 2fr) auto auto; gap: 14px; align-items: center; font-size: 12.5px; }
+.dash-m { font-family: var(--font-mono); color: #cdc6b5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-track { height: 7px; border-radius: 4px; background: #15121c; overflow: hidden; }
+.dash-track i { display: block; height: 100%; background: var(--lime); border-radius: 4px; }
+.dash-amt { color: var(--parch); font-variant-numeric: tabular-nums; }
+.dash-calls { color: var(--dim); font-variant-numeric: tabular-nums; }
+
 /* ---- getting here from another chain: three steps, stated once */
 .icm-route { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--rule); display: grid; gap: 14px; max-width: 58ch; }
 .icm-route h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--parch); }
@@ -1890,7 +1976,12 @@ html.no-motion .rv { opacity: 1 !important; }
 
 @media (max-width: 1000px) {
   .icm { gap: 30px; }
-  .icm-desk, .icm-fund { grid-template-columns: minmax(0, 1fr); }
+  .icm-desk, .icm-fund, .icm-hero { grid-template-columns: minmax(0, 1fr); }
+  .icm-facts { grid-template-columns: minmax(0, 1fr); }
+  .icm-hero .icm-buyside { order: -1; }
+  .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-models li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 5px; }
+  .dash-track { grid-column: 1 / -1; order: 3; }
   .icm-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .icm-mint { grid-template-columns: minmax(0, 1fr); }
   .icm-history .rows li { flex-wrap: wrap; gap: 6px 14px; }
@@ -1902,6 +1993,8 @@ html.no-motion .rv { opacity: 1 !important; }
 
 /* A phone reads at a shorter measure, so the same copy at desktop size turns every sentence into five lines */
 @media (max-width: 620px) {
+  .icm-figs { grid-template-columns: minmax(0, 1fr); }
+  .cat-row { gap: 12px; }
   .icm-fund-say p, .icm-steps span { font-size: 13.5px; line-height: 1.55; }
   .icm-fund-say h2 { font-size: 20px; }
   .icm-route { margin-top: 16px; padding-top: 14px; gap: 12px; }
@@ -2112,3 +2205,7 @@ html.no-motion .rv { opacity: 1 !important; }
   .gate-say { font-size: clamp(32px, 11vw, 54px); }
   .gate-body { padding-inline: 20px; }
 }
+
+/* the signed-out account: the sample, then the invitation under it */
+.icm-preview { display: grid; gap: 16px; }
+.icm-preview .icm-gate { max-width: none; }

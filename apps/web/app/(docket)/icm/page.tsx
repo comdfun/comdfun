@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 export default function IcmPage() {
   return (
     <>
+      {/* Crumbs and badges only: the page's own hero carries the headline, and two headlines one above the
+          other made the reader choose which one to believe. */}
       <PageHead
         crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "cICM" }]}
-        kicker={<><span className="badge gold fill">cICM</span><span className="badge cyan">Every frontier model</span><span className="badge ok">Paid in $COMD</span></>}
-        title={<>Inference, <span className="accent">bought with $COMD</span></>}
-        lede={<>Company Inference Capital Markets. Send $COMD, get an API key, and point your client at one endpoint that reaches every frontier model. You pay what the model provider charged plus a published margin, and every call is on a ledger you can read.</>}
+        kicker={<><span className="badge gold fill">cICM</span><span className="badge cyan">Every frontier model</span><span className="badge ok">Paid in $COMD</span><span className="badge orange">Burns $COMD</span></>}
       />
       <Icm />
     </>
