@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-async function raw<R>(path: string, init?: { revalidate?: number | false }): Promise<R> {
+async function raw<R>(path: string, init?: { revalidate?: number | false; timeoutMs?: number }): Promise<R> {
   if (MOCK) {
     const { mockFetch } = await import("./mock");
     const r = mockFetch("GET", path);
@@ -18,8 +18,13 @@ async function raw<R>(path: string, init?: { revalidate?: number | false }): Pro
     return r.json as R;
   }
   const revalidate = init?.revalidate ?? 10;
+  // Every page on this site is server-rendered against the control plane, so a fetch with no deadline means a
+  // control plane that is down takes the whole website down with it: each request sits there until the socket
+  // gives up, which is minutes, not seconds. With a deadline the page renders without that piece instead, and
+  // `get()` below turns the failure into null. A slow API should cost a section, never the site.
   const res = await fetch(`${API_URL}${path}`, {
     headers: { accept: "application/json" },
+    signal: AbortSignal.timeout(init?.timeoutMs ?? 4_000),
     ...(revalidate === false ? { cache: "no-store" as const } : { next: { revalidate } }),
   });
   if (!res.ok) {
@@ -36,11 +41,15 @@ async function raw<R>(path: string, init?: { revalidate?: number | false }): Pro
 }
 
 /** GET that resolves to null on any failure (unreachable API, 404). Pages render an "off the record" state. */
-export async function get<R>(path: string, init?: { revalidate?: number | false }): Promise<R | null> {
+export async function get<R>(path: string, init?: { revalidate?: number | false; timeoutMs?: number }): Promise<R | null> {
   try {
     return await raw<R>(path, init);
   } catch (e) {
-    if (!(e instanceof ApiError && e.status === 404)) console.warn(`[api] ${path}: ${(e as Error).message}`);
+    // A timeout is not an exception worth a stack: it is the control plane being unreachable, which the pages
+    // already render for. Everything else that is not a plain 404 is worth a line in the log.
+    const timedOut = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+    if (timedOut) console.warn(`[api] ${path}: no answer within the deadline`);
+    else if (!(e instanceof ApiError && e.status === 404)) console.warn(`[api] ${path}: ${(e as Error).message}`);
     return null;
   }
 }

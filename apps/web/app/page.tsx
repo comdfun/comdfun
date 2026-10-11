@@ -11,7 +11,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Svg } from "@/components/Svg";
 import { icon, logo } from "@/lib/art";
-import { cardUrl } from "@/lib/links";
 
 export const metadata: Metadata = {
   title: "Company.md",
@@ -43,7 +42,7 @@ export default function Gate() {
           <div className="door-art door-wall" aria-hidden="true">
             {WALL.map((id) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={id} src={cardUrl(id)} alt="" loading="eager" />
+              <img key={id} src={`/art/${id}-card.svg`} alt="" width={64} height={80} loading="eager" decoding="async" />
             ))}
           </div>
           <div className="door-body">

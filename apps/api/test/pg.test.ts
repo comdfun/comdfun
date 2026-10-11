@@ -31,7 +31,10 @@ test("PgStore: migrations apply once, records write through and reload in a new 
     assert.equal(b.store.c<any>("policies").count(), 8, "policies seeded once, not duplicated");
     const p = new pg.Pool({ connectionString: url });
     const mig = await p.query("select name from schema_migrations");
-    assert.deepEqual(mig.rows.map((r: any) => r.name), ["001_init.sql"]);
+    // every migration in the directory, applied once each, in order. Asserting a fixed list here was a trap: it
+  // passed for a year and then silently became the only thing standing between a new migration and production.
+  const onDisk = (await import("node:fs")).readdirSync((await import("../src/migrate.ts")).migrationsDir()).filter((f) => f.endsWith(".sql")).sort();
+  assert.deepEqual(mig.rows.map((r: any) => r.name), onDisk);
     const row = await p.query("select data->>'state' as state from jobs where id = $1", [job.id]);
     assert.equal(row.rows[0].state, "executing");
     await p.end();
