@@ -95,14 +95,15 @@ export interface Config {
    *  pass an env object rather than reaching into process.env. */
   icm: {
     openRouterKey: string | null;
-    /** Where payers send $COMD. The burn address by default, which makes a payment its own burn. */
-    depositAddress: string;
+    /** Where payers send $COMD. Null switches payment watching off. Never the shared burn address. */
+    depositAddress: string | null;
     /** Whole $COMD per one dollar of credit. Set by hand, changed by hand. */
     comdPerUsd: string;
     marginBps: number;
     minDepositUsd: string;
     maxHoldUsd: string;
     confirmations: number;
+    burnOnDeposit: boolean;
     environment: "live" | "test";
     allowModels: string[];
     denyModels: string[];
@@ -234,12 +235,17 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     adminToken: env.ADMIN_TOKEN || null,
     icm: {
       openRouterKey: env.OPENROUTER_API_KEY || null,
-      depositAddress: env.ICM_DEPOSIT_ADDRESS || "0x000000000000000000000000000000000000dEaD",
+      // No default, deliberately. The obvious choice — the burn address — is already where the Flywheel,
+      // Incorporations and every manual burn send $COMD, so watching it would read every buyback as somebody
+      // paying for inference. cICM needs an address nothing else pays into; see icm.ts.
+      depositAddress: env.ICM_DEPOSIT_ADDRESS || null,
       comdPerUsd: env.ICM_COMD_PER_USD || "100000",
       marginBps: int(env.ICM_MARGIN_BPS, 1500),
       minDepositUsd: env.ICM_MIN_DEPOSIT_USD || "1",
       maxHoldUsd: env.ICM_MAX_HOLD_USD || "5",
       confirmations: int(env.ICM_CONFIRMATIONS, 12),
+      /** The operator burns what lands in the deposit address. Changes what the house book claims, nothing else. */
+      burnOnDeposit: env.ICM_BURN_ON_DEPOSIT === "1" || env.ICM_BURN_ON_DEPOSIT === "true",
       environment: env.ICM_ENVIRONMENT === "test" ? "test" : "live",
       allowModels: (env.ICM_ALLOW_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),
       denyModels: (env.ICM_DENY_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),

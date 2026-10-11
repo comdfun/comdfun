@@ -33,8 +33,10 @@ import { E } from "./errors.ts";
 
 /** Transfer(address indexed from, address indexed to, uint256 value) */
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" as Hex;
-/** Where tokens go to die on an ERC-20 with no burn(), which is what $COMD is. */
+/** Where tokens go to die on an ERC-20 with no burn(), which is what $COMD is. The Flywheel's buybacks,
+ *  Incorporations' cut and every manual burn all land here, so it is the one address cICM must not watch. */
 export const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+const SHARED_BURN = /^0x0{39}[01]$|^0x0{36}dead$/i;
 
 /** The package's collection names are a closed set of its own; these are the host's. One mapping, in one place. */
 const TABLE: Record<string, CollectionName> = {
@@ -136,7 +138,12 @@ export class Icm {
     this.app = d.app;
     const settings = d.app.cfg.icm;
     const token = d.app.cfg.comd ?? null;
-    const depositAddress = settings.depositAddress;
+    // The shared burn address is where the Flywheel, Incorporations and every manual burn already send $COMD.
+    // Watching it would read every buyback as a payment for inference and fill the house book with credit
+    // nobody bought. cICM needs an address nothing else pays into, so this refuses the trap outright.
+    const shared = settings.depositAddress && SHARED_BURN.test(settings.depositAddress);
+    if (shared) console.error(`[icm] ICM_DEPOSIT_ADDRESS is the shared burn address; payment watching is off. Use an address nothing else pays into.`);
+    const depositAddress = shared ? null : settings.depositAddress;
 
     this.config = makeConfig({
       keyPrefix: "cicm",
@@ -149,7 +156,9 @@ export class Icm {
         // The rate is set by hand and changed by hand. A live feed on a thin pool is a way to sell a dollar of
         // inference for a cent during a wick; the cost of a hand-set rate is drift, which the book shows.
         tokensPerUsd: settings.comdPerUsd,
-        sink: depositAddress.toLowerCase() === DEAD_ADDRESS.toLowerCase() ? "burn" : "treasury",
+        // A dedicated deposit address holds the $COMD until it is burned, so the payment is not the burn and the
+        // book must not claim one. ICM_BURN_ON_DEPOSIT=1 says the operator burns every deposit on a schedule.
+        sink: settings.burnOnDeposit ? "burn" : "treasury",
       },
       marginBps: settings.marginBps,
       minDepositMicroUsd: settings.minDepositUsd,
@@ -173,11 +182,11 @@ export class Icm {
     });
     this.surface = createSurface({ ledger: this.ledger, proxy: this.proxy, adminToken: d.app.cfg.adminToken });
 
-    this.watcher = token && d.app.chain.configured
+    this.watcher = token && depositAddress && d.app.chain.configured
       ? new DepositWatcher({
           ledger: this.ledger,
-          source: new ChainPayments(d.app, getAddress(token), getAddress(depositAddress), settings.confirmations),
-          depositAddress,
+          source: new ChainPayments(d.app, getAddress(token), getAddress(depositAddress!), settings.confirmations),
+          depositAddress: depositAddress!,
           cursor: {
             read: () => (d.app.store.c<Rec & { value?: string }>("kv").get("icm:cursor")?.value ?? null),
             write: (value: string) => { d.app.store.c<Rec & { value?: string }>("kv").save({ id: "icm:cursor", createdAt: new Date(d.app.now()).toISOString(), value }); },

@@ -24,8 +24,10 @@ async function up(env: Record<string, string> = {}) {
   return { h, signed };
 }
 
+const DESK = "0x1111111111111111111111111111111111111111";
+
 test("the rate card is public and says where to pay and what it buys", async (t) => {
-  const { h } = await up();
+  const { h } = await up({ ICM_DEPOSIT_ADDRESS: DESK });
   t.after(() => h.close());
   const res = await get(h, "/icm");
   assert.equal(res.status, 200);
@@ -33,10 +35,31 @@ test("the rate card is public and says where to pay and what it buys", async (t)
   assert.equal(res.body.rate.tokensPerUsd, "1000");
   assert.equal(res.body.rate.marginBps, 1500);
   assert.match(res.body.endpoint, /\/icm\/v1$/);
-  // paying the burn address means the payment is the burn, and the page has to say so
-  assert.equal(res.body.deposit.address, "0x000000000000000000000000000000000000dead");
-  assert.equal(res.body.deposit.paymentIsBurn, true);
-  assert.match(res.body.deposit.note, /destroyed on the way in/);
+  assert.equal(res.body.deposit.address, DESK);
+  assert.equal(res.body.deposit.minimumTokens, "1000", "the $1 floor at 1,000 COMD to the dollar");
+  assert.match(res.body.deposit.note, /send from the wallet you want credited/);
+});
+
+test("with no deposit address there is nothing to pay into, and the page says so", async (t) => {
+  const { h } = await up();
+  t.after(() => h.close());
+  const res = await get(h, "/icm");
+  assert.equal(res.status, 200);
+  assert.equal(res.body.deposit.address, null, "off by default: an address has to be chosen on purpose");
+  assert.match(res.body.deposit.note, /not configured/);
+});
+
+test("the shared burn address is refused, because everything else already burns there", async (t) => {
+  // The Flywheel's buybacks, Incorporations' cut and every manual burn all send $COMD to 0x…dEaD. Watching it
+  // would read every one of those as somebody paying for inference and fill the book with credit nobody bought.
+  for (const trap of ["0x000000000000000000000000000000000000dEaD", "0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]) {
+    const { h } = await up({ ICM_DEPOSIT_ADDRESS: trap });
+    t.after(() => h.close());
+    const res = await get(h, "/icm");
+    assert.equal(res.body.deposit.address, null, `${trap} must not be watched`);
+    const book = await get(h, "/icm/admin/book", { authorization: "Bearer admin-secret" });
+    assert.equal(book.body.soldMicroUsd, "0", "and no burn anywhere became a sale");
+  }
 });
 
 test("a key is minted only by a wallet that signed for it", async (t) => {
@@ -122,7 +145,7 @@ test("one wallet cannot see or revoke another's keys", async (t) => {
 });
 
 test("the admin book balances and is invisible without the token", async (t) => {
-  const { h, signed } = await up();
+  const { h, signed } = await up({ ICM_DEPOSIT_ADDRESS: DESK, ICM_BURN_ON_DEPOSIT: "1" });
   t.after(() => h.close());
   await post(h, "/icm/keys", await signed(A));
   await post(h, "/icm/admin/grant", { owner: A.address, amount: "10", ref: "g1" }, { authorization: "Bearer admin-secret" });
@@ -143,7 +166,7 @@ test("the admin book balances and is invisible without the token", async (t) => 
 });
 
 test("health reports cICM without leaking anybody's balance", async (t) => {
-  const { h } = await up();
+  const { h } = await up({ ICM_DEPOSIT_ADDRESS: DESK, ICM_BURN_ON_DEPOSIT: "1" });
   t.after(() => h.close());
   const res = await get(h, "/health");
   assert.equal(res.status, 200);

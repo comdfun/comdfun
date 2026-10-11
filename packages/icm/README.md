@@ -86,6 +86,13 @@ Everything that differs is in `makeConfig`. The parts you supply:
 
 The package imports nothing but `node:crypto`. No viem, no chain client, no framework.
 
+### The deposit address must be yours alone
+
+Do not point this at a shared burn address. On most tokens a buyback, a protocol fee and anyone tidying their
+wallet all send to the same `0x…dEaD`, and a watcher cannot tell those from a payment — it would credit a
+contract and fill the house book with credit nobody bought. Use an address nothing else pays into. Whether you
+then destroy what lands there is `token.sink`, and it changes only what the book claims.
+
 ### The rate is set by hand, on purpose
 
 `tokensPerUsd` is a number an operator owns and changes deliberately. A live price feed on a thin pool is a way to
