@@ -13,15 +13,16 @@ import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { siteFonts } from "./banner/fonts.mjs";
 
 const require = createRequire(import.meta.url);
 // Playwright comes from the workspace, or PLAYWRIGHT_PATH / PLAYWRIGHT_MODULE (same convention as scripts/film.mjs)
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || process.env.PLAYWRIGHT_MODULE || "playwright");
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-// og is the link card, x the profile header, wide a 3:1 crop for anywhere that wants one, opensea the
-// collection banner.
-const SIZES = { og: [1200, 630, "og.png"], x: [1500, 500, "banner-x.png"], wide: [1800, 600, "banner-3x1.png"], opensea: [1400, 350, "banner-opensea.png"] };
+// og is the link card, x the profile header, opensea the collection banner. The 3:1 promo is its own
+// composition, in scripts/promo.mjs.
+const SIZES = { og: [1200, 630, "og.png"], x: [1500, 500, "banner-x.png"], opensea: [1400, 350, "banner-opensea.png"] };
 
 const args = process.argv.slice(2);
 const flag = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
@@ -31,6 +32,8 @@ const want = args.filter((a) => !a.startsWith("--") && SIZES[a]);
 const presets = want.length ? want : Object.keys(SIZES);
 
 let html = readFileSync(join(HERE, "banner", "template.html"), "utf8").replaceAll("__ART__", `${base}/art`);
+// Plex is not installed where this runs; without the site's own @font-face rules the banners render in a fallback sans
+html = html.replace("</head>", `<style>${await siteFonts(base)}</style></head>`);
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 

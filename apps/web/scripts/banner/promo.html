@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Company.md promo</title>
+<style>
+__FONTS__
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; }
+  body { font-family: "IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #f3ebd3; }
+  :root {
+    --parch: #f3ebd3; --muted: #9a9488; --dim: #5e584f;
+    --gold: #ffc83d; --cyan: #2de2e6; --lime: #8cff3a; --violet: #9b5cff; --pink: #ff4fd8; --orange: #ff8a1f;
+  }
+  .p { position: relative; width: 1800px; height: 600px; overflow: hidden; background: #040308; isolation: isolate; }
+
+  /* ── the collection, as the room the product sits in: present, legible as Counsel, and well back ── */
+  .wall { position: absolute; left: -60px; top: -50px; width: 1960px; display: grid; grid-template-columns: repeat(19, 1fr); gap: 8px;
+    transform: rotate(-4deg); transform-origin: 50% 50%; }
+  .wall img { display: block; width: 100%; aspect-ratio: 64 / 80; image-rendering: pixelated; border-radius: 4px; }
+  .shade { position: absolute; inset: 0;
+    background:
+      radial-gradient(34% 74% at 50% 50%, rgba(4,3,8,.97) 0%, rgba(4,3,8,.93) 52%, rgba(4,3,8,0) 100%),
+      linear-gradient(0deg, rgba(4,3,8,.9) 0%, rgba(4,3,8,0) 26%),
+      linear-gradient(180deg, rgba(4,3,8,.82) 0%, rgba(4,3,8,0) 22%),
+      rgba(4,3,8,.8); }
+  /* the two desks' colours, under the screens that belong to them */
+  .glow { position: absolute; border-radius: 50%; filter: blur(70px); }
+  .g1 { left: -120px; top: 40px; width: 760px; height: 520px; background: rgba(45,226,230,.16); }
+  .g2 { right: -140px; top: 20px; width: 820px; height: 560px; background: rgba(255,200,61,.15); }
+  .g3 { left: 620px; top: 420px; width: 560px; height: 300px; background: rgba(155,92,255,.13); }
+  .lines { position: absolute; inset: 0; opacity: .55;
+    background-image: linear-gradient(rgba(243,235,211,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(243,235,211,.035) 1px, transparent 1px);
+    background-size: 60px 60px; -webkit-mask-image: radial-gradient(60% 90% at 50% 50%, #000, transparent); }
+
+  /* ── the screens, set round the copy in a shallow arc ── */
+  .stage { position: absolute; inset: 0; }
+  .card { position: absolute; border-radius: 14px; overflow: hidden; background: #050409;
+    border: 1px solid color-mix(in srgb, var(--cc) 34%, rgba(243,235,211,.12));
+    box-shadow: 0 46px 80px -34px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.55), 0 0 70px -30px var(--cc); }
+  .card img { display: block; width: 100%; height: auto; }
+  /* a pane of glass over every screen, so they read as objects in a room rather than pasted rectangles */
+  .card::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(116deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 26%, transparent 42%); }
+  .chrome { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px; background: #0b0a10; border-bottom: 1px solid rgba(243,235,211,.08); }
+  .chrome i { width: 8px; height: 8px; border-radius: 50%; background: #2a2533; }
+  .chrome i:nth-child(1) { background: #ff5f56; } .chrome i:nth-child(2) { background: #ffbd2e; } .chrome i:nth-child(3) { background: #27c93f; }
+  .chrome span { margin: 0 auto; transform: translateX(-20px); padding: 3px 14px; border-radius: 6px; background: #15131c; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
+
+  .c-gate   { --cc: var(--cyan); left: 40px;   top: 44px;  width: 440px; transform: perspective(1600px) rotateY(12deg) rotateZ(-1.5deg); z-index: 2; }
+  .c-docket { --cc: var(--cyan); left: 64px;   top: 352px; width: 414px; transform: perspective(1600px) rotateY(12deg) rotateZ(1.5deg); z-index: 3; }
+  .c-cat    { --cc: var(--gold); left: 1568px; top: 30px;  width: 340px; transform: perspective(1600px) rotateY(-12deg) rotateZ(-1.5deg); z-index: 2; }
+  .c-dash   { --cc: var(--lime); left: 1500px; top: 318px; width: 372px; transform: perspective(1600px) rotateY(-12deg) rotateZ(1deg); z-index: 2; }
+  .c-buy    { --cc: var(--gold); left: 1300px; top: 112px; width: 244px; transform: perspective(1600px) rotateY(-9deg) rotateZ(-1deg); z-index: 4; }
+
+  /* which desk is which, pinned to the screens */
+  .tag { position: absolute; z-index: 6; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; letter-spacing: .02em; backdrop-filter: blur(8px);
+    background: rgba(8,7,12,.82); border: 1px solid color-mix(in srgb, var(--tc) 50%, transparent); color: var(--tc);
+    box-shadow: 0 10px 30px -10px #000, 0 0 30px -12px var(--tc); }
+  .tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--tc); box-shadow: 0 0 8px var(--tc); }
+  .t-swarm { --tc: var(--cyan); left: 392px; top: 30px; }
+  .t-icm   { --tc: var(--gold); left: 1262px; top: 82px; }
+
+  /* ── the copy, centred, with room either side ── */
+  .center { position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -52%); width: 740px;
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .eyebrow i { width: 26px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  .eyebrow i:last-child { background: linear-gradient(90deg, var(--gold), transparent); }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand svg { width: 64px; height: auto; display: block; filter: drop-shadow(0 0 22px rgba(255,200,61,.35)); }
+  h1 { font-size: 82px; font-weight: 600; letter-spacing: -.045em; line-height: .95; color: var(--parch); }
+  h1 b { color: var(--gold); font-weight: 600; }
+  .sub { font-size: 22px; line-height: 1.5; color: #c4bdad; max-width: 700px; }
+  .sub b { color: var(--parch); font-weight: 600; }
+  .sub em { font-style: normal; font-weight: 600; color: var(--gold); }
+  .chips { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .chips span { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px; border-radius: 999px; font-size: 14px; font-weight: 500;
+    border: 1px solid rgba(243,235,211,.16); background: rgba(10,9,14,.72); color: var(--parch); }
+  .chips i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px var(--lime); }
+  .chips .cy { border-color: rgba(45,226,230,.45); color: var(--cyan); }
+  .chips .gd { border-color: rgba(255,200,61,.45); color: var(--gold); }
+  .chips .url { border-color: transparent; background: var(--gold); color: #120d02; font-weight: 600; font-family: "IBM Plex Mono", monospace; }
+
+  .rail { position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--cyan), var(--gold) 50%, var(--pink)); }
+</style>
+</head>
+<body>
+<div class="p">
+  <div class="wall" id="wall"></div>
+  <div class="shade"></div>
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+  <div class="lines"></div>
+
+  <div class="stage">
+    <figure class="card c-gate"><div class="chrome"><i></i><i></i><i></i><span>comd.fun</span></div><img src="__SHOT_GATE__" alt=""></figure>
+    <figure class="card c-docket"><div class="chrome"><i></i><i></i><i></i><span>comd.fun/jobs</span></div><img src="__SHOT_DOCKET__" alt=""></figure>
+    <figure class="card c-cat"><img src="__SHOT_CAT__" alt=""></figure>
+    <figure class="card c-dash"><img src="__SHOT_DASH__" alt=""></figure>
+    <figure class="card c-buy"><img src="__SHOT_BUY__" alt=""></figure>
+  </div>
+  <span class="tag t-swarm"><i></i>The Swarm</span>
+  <span class="tag t-icm"><i></i>cICM</span>
+
+  <div class="center">
+    <div class="eyebrow"><i></i>Swarm + Inference Capital Markets<i></i></div>
+    <div class="brand">
+      <svg viewBox="0 0 18 14" shape-rendering="crispEdges" fill="#ffc83d" aria-hidden="true"><rect x="8" y="0" width="2" height="1"/><rect x="6" y="1" width="2" height="1"/><rect x="10" y="1" width="2" height="1"/><rect x="4" y="2" width="2" height="1"/><rect x="12" y="2" width="2" height="1"/><rect x="2" y="3" width="2" height="1"/><rect x="14" y="3" width="2" height="1"/><rect x="0" y="4" width="18" height="1"/><rect x="1" y="6" width="2" height="5"/><rect x="5" y="6" width="2" height="5"/><rect x="9" y="6" width="2" height="5"/><rect x="13" y="6" width="2" height="5"/><rect x="0" y="12" width="18" height="2"/></svg>
+      <h1>Company<b>.md</b></h1>
+    </div>
+    <p class="sub">A Swarm of <b>2,000 NFT agents</b> and a Desk That Sells <b>Inference</b> to Humans, Agents and Counsel. Both paid in <em>$COMD</em>.</p>
+    <div class="chips">
+      <span><i></i>Live on Robinhood Chain</span>
+      <span class="cy">The Swarm</span>
+      <span class="gd">cICM</span>
+      <span class="url">comd.fun</span>
+    </div>
+  </div>
+  <div class="rail"></div>
+</div>
+<script>
+  // a fixed spread across the collection, so two renders are the same picture
+  const ids = []; let x = 11;
+  while (ids.length < 19 * 6) { x = (x * 1103515245 + 12345) % 2147483648; const id = 1 + (x % 2000); if (!ids.includes(id)) ids.push(id); }
+  document.getElementById("wall").innerHTML = ids.map((id) => `<img src="__ART__/${id}-card.svg" alt="">`).join("");
+</script>
+</body>
+</html>

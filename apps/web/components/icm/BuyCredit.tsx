@@ -221,7 +221,7 @@ export function BuyCredit({ deposit, onDone }: { deposit: BuyDeposit; onDone?: (
       <div className="buy-field buy-get">
         <span className="buy-label">You get</span>
         <div className="buy-row">
-          <b>{quoting ? "…" : credit !== null ? `$${credit.toLocaleString(undefined, { maximumFractionDigits: 4 })}` : "—"}</b>
+          <b>{quoting ? "…" : credit !== null ? `$${credit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: credit < 1 ? 4 : 2 })}` : "—"}</b>
           <span className="buy-unit">credit</span>
         </div>
         {pay === "eth" && quote !== null && (

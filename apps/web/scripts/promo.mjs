@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+// The 3:1 promo banner: the name in the middle, the product's own screens set round it, the collection behind.
+//
+//   node scripts/promo.mjs --base http://localhost:3124        → public/banner-3x1.png (1800×600) and @2x
+//
+// Every screen is photographed from the running site rather than drawn, so the banner shows the product as it
+// is and ages with it. Element-level captures (the buy panel, the catalogue, the dashboard) are taken at 2×, so
+// they stay sharp at the size they are shown. Needs the site running (NEXT_PUBLIC_MOCK=1 is fine).
+import { createRequire } from "node:module";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { siteFonts } from "./banner/fonts.mjs";
+
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PLAYWRIGHT_PATH || process.env.PLAYWRIGHT_MODULE || "playwright");
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const args = process.argv.slice(2);
+const flag = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
+const base = flag("base", "http://localhost:3000").replace(/\/$/, "");
+const out = resolve(flag("out", join(HERE, "..", "public")));
+mkdirSync(out, { recursive: true });
+
+/** Stop everything that moves and show everything that reveals, so a capture is the settled page. */
+const settle = async (page) => {
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(900);
+  await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important} .rv,[data-rv]{opacity:1!important;transform:none!important}" });
+  await page.waitForTimeout(200);
+};
+
+const SHOTS = [
+  // whole-window captures, framed as browser windows. Taken narrower than a desktop on purpose: shrunk into a
+  // 430px frame, a 1440px page is grey texture, and the point of showing a screen is that it can be read.
+  { key: "GATE", path: "/", vw: 1280, vh: 760 },
+  { key: "DOCKET", path: "/jobs", vw: 960, vh: 640 },
+  // pieces of the cICM page, framed as floating panels
+  { key: "BUY", path: "/icm", vw: 1440, vh: 1100, el: ".buy", prep: async (p) => {
+    await p.fill(".buy-row input", "250000");
+    await p.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
+    await p.waitForTimeout(400);
+  } },
+  { key: "CAT", path: "/icm", vw: 760, vh: 1800, el: ".cat", maxH: 300, prep: async (p) => { await p.waitForSelector(".cat-row:not(.cat-skel)", { timeout: 20_000 }); } },
+  { key: "DASH", path: "/icm", vw: 760, vh: 2600, el: ".dash", maxH: 372 },
+];
+
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+let html = readFileSync(join(HERE, "banner", "promo.html"), "utf8").replaceAll("__ART__", `${base}/art`).replace("__FONTS__", await siteFonts(base));
+
+for (const s of SHOTS) {
+  const page = await browser.newPage({ viewport: { width: s.vw, height: s.vh }, deviceScaleFactor: 2 });
+  await page.goto(`${base}${s.path}`, { waitUntil: "networkidle", timeout: 60_000 });
+  if (s.prep) await s.prep(page);
+  await settle(page);
+  let buf;
+  if (s.el) {
+    const el = page.locator(s.el).first();
+    await el.scrollIntoViewIfNeeded();
+    const box = await el.boundingBox();
+    if (!box) throw new Error(`${s.el} not found on ${s.path}`);
+    buf = await page.screenshot({ clip: { x: box.x, y: box.y, width: box.width, height: Math.min(box.height, s.maxH ?? box.height) } });
+  } else {
+    buf = await page.screenshot();
+  }
+  html = html.replaceAll(`__SHOT_${s.key}__`, `data:image/png;base64,${buf.toString("base64")}`);
+  console.log(`shot  ${s.key.padEnd(7)} ${s.path}${s.el ? " " + s.el : ""}  ${(buf.length / 1024).toFixed(0)}kB`);
+  await page.close();
+}
+
+for (const [scale, name] of [[1, "banner-3x1.png"], [2, "banner-3x1@2x.png"]]) {
+  const page = await browser.newPage({ viewport: { width: 1800, height: 600 }, deviceScaleFactor: scale });
+  await page.setContent(html, { waitUntil: "load" });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 30_000 });
+  await page.waitForTimeout(500);
+  const file = join(out, name);
+  writeFileSync(file, await page.locator(".p").screenshot());
+  console.log(`promo ${1800 * scale}×${600 * scale}  ${file}`);
+  await page.close();
+}
+await browser.close();
