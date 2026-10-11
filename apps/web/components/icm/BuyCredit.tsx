@@ -43,6 +43,8 @@ export type BuyDeposit = {
   tokensPerUsd?: string;
   minimumTokens?: string;
   paymentIsBurn?: boolean;
+  /** True when buying destroys the token, by either route: a burn address, or the host burning what lands. */
+  burns?: boolean;
 };
 
 /** Trim a float string to what the token can actually represent, so parseUnits never throws on a long decimal. */
@@ -188,7 +190,7 @@ export function BuyCredit({ deposit, onDone }: { deposit: BuyDeposit; onDone?: (
     <div className="buy">
       <div className="buy-head">
         <h3>Buy credit</h3>
-        <span className="buy-sub">{deposit.paymentIsBurn ? `Burned on the way in` : `Paid to the desk`}</span>
+        <span className={deposit.burns ? "buy-sub buy-burn" : "buy-sub"}>{deposit.burns ? `Burns ${symbol}` : `Paid to the desk`}</span>
       </div>
 
       <div className="buy-tabs" role="tablist" aria-label="What to pay with">
@@ -261,6 +263,7 @@ export function BuyCredit({ deposit, onDone }: { deposit: BuyDeposit; onDone?: (
         {pay === "eth"
           ? `Routed by the pool, ${Number(SLIPPAGE_BPS) / 100}% slippage. The credit lands on the wallet that signed, not on the pool.`
           : `Sent straight to the desk. The credit lands on the wallet it came from.`}
+        {deposit.burns && ` Every ${symbol} spent here is destroyed, so buying inference takes supply off the market for good.`}
       </p>
     </div>
   );

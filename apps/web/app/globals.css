@@ -1741,10 +1741,14 @@ html.no-motion .rv { opacity: 1 !important; }
 /* A desk. The endpoint is the hero because it is the product: everything else on the page exists to get a key
    into that one line of configuration. Nothing here uses .rv — these panels mount on a signature, long after
    the reveal observer has run. */
-.icm { display: grid; gap: 56px; }
+/* One aside width for the whole page, so the rate card, the buy panel and anything added later share a right
+   edge instead of each picking its own and leaving the column ragged down the page. */
+.icm { --aside: 400px; display: grid; gap: 34px; }
+/* `.section` carries its own 56px margins for use elsewhere; inside this grid they double the 34px gap. */
+.icm > .section { margin: 0; }
 
 /* the wire, and the terms beside it */
-.icm-desk { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.icm-desk { display: grid; grid-template-columns: minmax(0, 1fr) var(--aside); gap: 22px; align-items: start; }
 .icm-wire { border: 1px solid var(--rule-2); border-radius: var(--r); background: #06050a; overflow: hidden; }
 .icm-wire-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--rule); }
 .icm-wire-head span { font-size: 12px; color: var(--dim); }
@@ -1765,11 +1769,11 @@ html.no-motion .rv { opacity: 1 !important; }
 .icm-warn { margin: 0; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 13px; line-height: 1.5; color: var(--gold); }
 
 /* funding */
-.icm-fund { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; }
-.icm-fund-say h2 { margin: 0 0 12px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
+.icm-fund { display: grid; grid-template-columns: minmax(0, 1fr) var(--aside); gap: 22px; align-items: start; }
+.icm-fund-say h2 { margin: 0 0 10px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .icm-fund-say p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: #b9b3a6; max-width: 58ch; }
 /* ---- getting here from another chain: three steps, stated once */
-.icm-route { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--rule); display: grid; gap: 14px; max-width: 58ch; }
+.icm-route { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--rule); display: grid; gap: 14px; max-width: 58ch; }
 .icm-route h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--parch); }
 .icm-steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 14px; }
 .icm-steps li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 12px; }
@@ -1782,8 +1786,14 @@ html.no-motion .rv { opacity: 1 !important; }
 .icm-steps b { font-size: 13.5px; font-weight: 600; color: #d8d1c0; }
 .icm-steps span { font-size: 13px; line-height: 1.55; color: var(--muted); }
 
+/* the one line a holder is looking for, so it is not set in the same grey as the rest of the terms */
+.icm-burnline { color: #d8d1c0 !important; }
+.icm-burnline b { color: var(--orange); font-weight: 600; }
+.buy-burn { color: var(--orange); }
+
 /* ---- buying credit from the page, rather than being handed an address */
-.icm-buyside { display: grid; gap: 14px; align-content: start; }
+.icm-buyside { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.icm-buyside > * { min-width: 0; }
 .buy {
   display: grid; gap: 14px; padding: 20px;
   border: 1px solid color-mix(in srgb, var(--gold) 22%, var(--rule));
@@ -1804,11 +1814,14 @@ html.no-motion .rv { opacity: 1 !important; }
 .buy-tabs button:hover { color: var(--parch); }
 .buy-tabs button.on { background: color-mix(in srgb, var(--gold) 16%, #15110a); color: var(--gold); }
 
-.buy-field { display: grid; gap: 7px; padding: 13px 14px; border: 1px solid var(--rule); border-radius: var(--r-sm); background: #000; }
+/* An <input> carries an intrinsic width of about twenty characters, and at 26px monospace that is wider than
+   the column it sits in. A grid item's automatic minimum is its min-content, so without these the field, the
+   panel and the whole aside grow to fit the input instead of the input fitting the panel. */
+.buy-field { display: grid; gap: 7px; min-width: 0; padding: 13px 14px; border: 1px solid var(--rule); border-radius: var(--r-sm); background: #000; }
 .buy-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-.buy-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.buy-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
 .buy-row input {
-  flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; color: var(--parch);
+  flex: 1 1 0; width: 100%; min-width: 0; border: 0; background: transparent; padding: 0; color: var(--parch);
   font-family: var(--font-mono); font-size: 26px; letter-spacing: -0.02em;
 }
 .buy-row input:focus { outline: none; }
@@ -1850,7 +1863,7 @@ html.no-motion .rv { opacity: 1 !important; }
 /* the account */
 .icm-gate { display: grid; gap: 14px; justify-items: start; max-width: 560px; padding: 24px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1); }
 .icm-gate p { margin: 0; font-size: 15px; line-height: 1.55; }
-.icm-account { display: grid; gap: 32px; }
+.icm-account { display: grid; gap: 24px; }
 .icm-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; }
 .icm-stat { background: #06050a; padding: 18px 18px 16px; display: grid; gap: 5px; }
 .icm-stat b { font-size: 25px; font-weight: 600; color: var(--parch); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -1873,14 +1886,28 @@ html.no-motion .rv { opacity: 1 !important; }
 .icm-history .rows li + li { border-top: 1px solid var(--rule); }
 .icm-history .rows li > :first-child { min-width: 132px; color: var(--dim); }
 .icm-history .rows li > :last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
-.icm-foot { border-top: 1px solid var(--rule); padding-top: 18px; margin: 0; }
+.icm-foot { border-top: 1px solid var(--rule); padding-top: 16px; margin: 0 0 4px; }
 
 @media (max-width: 1000px) {
-  .icm { gap: 42px; }
+  .icm { gap: 30px; }
   .icm-desk, .icm-fund { grid-template-columns: minmax(0, 1fr); }
   .icm-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .icm-mint { grid-template-columns: minmax(0, 1fr); }
   .icm-history .rows li { flex-wrap: wrap; gap: 6px 14px; }
+  /* Stacked, the panel goes above the prose. Side by side the explanation sits beside the thing it explains and
+     costs nothing; in one column it becomes four screens of reading between the heading and the only control on
+     the page. Whoever came here to buy credit should reach it without scrolling past an essay. */
+  .icm-buyside { order: -1; }
+}
+
+/* A phone reads at a shorter measure, so the same copy at desktop size turns every sentence into five lines */
+@media (max-width: 620px) {
+  .icm-fund-say p, .icm-steps span { font-size: 13.5px; line-height: 1.55; }
+  .icm-fund-say h2 { font-size: 20px; }
+  .icm-route { margin-top: 16px; padding-top: 14px; gap: 12px; }
+  .icm-steps { gap: 11px; }
+  .icm-steps b { font-size: 13px; }
+  .icm-wire-foot, .icm-terms dd { font-size: 13.5px; }
 }
 
 /* ─── the front door ───────────────────────────────────────────────────────── */

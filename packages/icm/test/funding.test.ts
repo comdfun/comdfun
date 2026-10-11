@@ -157,8 +157,30 @@ test("the instructions say where to pay, what it buys and the floor", () => {
   assert.equal(i.tokensPerUsd, "1000");
   assert.equal(i.minimumTokens, "1000", "the $1 floor is 1,000 COMD");
   assert.equal(i.paymentIsBurn, true);
-  assert.match(i.note, /destroyed on the way in/);
+  assert.equal(i.burns, true);
+  assert.match(i.note, /destroyed/);
   assert.match(i.note, /send from the wallet you want credited/);
+});
+
+test("a desk whose host burns what lands says so, even when the address is an ordinary one", () => {
+  // The two ways the token ends up destroyed look nothing alike from the outside: one is visible in the address,
+  // the other is only in the configured sink. A desk that burns and says "paid to the desk" is hiding the part
+  // a holder cares about most.
+  const { watcher } = setup(TREASURY, { token: { symbol: "COMD", address: "0xbFdAc6235dBE77C0CD6EDB01c810c7da858c6c41", decimals: 18, chainId: 4663, tokensPerUsd: "1000", sink: "burn" } });
+  const i = watcher.instructions();
+  assert.equal(i.paymentIsBurn, false, "the address is not the fire");
+  assert.equal(i.burns, true, "but the token is still destroyed");
+  assert.equal(i.sink, "burn");
+  assert.match(i.note, /destroyed/);
+});
+
+test("a desk that keeps what it takes does not claim to burn it", () => {
+  const { watcher } = setup(TREASURY, { token: { symbol: "COMD", address: "0xbFdAc6235dBE77C0CD6EDB01c810c7da858c6c41", decimals: 18, chainId: 4663, tokensPerUsd: "1000", sink: "treasury" } });
+  const i = watcher.instructions();
+  assert.equal(i.paymentIsBurn, false);
+  assert.equal(i.burns, false);
+  assert.equal(i.sink, "treasury");
+  assert.ok(!/destroyed/.test(i.note), "nothing is destroyed, so the note must not say so");
 });
 
 test("a deposit address that is not an address is refused when the watcher is built", () => {

@@ -89,6 +89,16 @@ export class DepositWatcher {
   }
 
   /**
+   * True when buying credit destroys the token, by either route: the address people pay to is the fire itself,
+   * or the host burns what lands there afterwards. Only the first is visible in the address, which is why this
+   * reads the configured sink rather than guessing from the shape of a string. A desk that burns and does not
+   * say so is throwing away the only part of the arrangement a holder cares about.
+   */
+  get burns(): boolean {
+    return this.paymentIsBurn || this.ledger.config.token.sink === "burn";
+  }
+
+  /**
    * One pass. Reads payments since the cursor, credits each one, and advances the cursor only after the credits
    * are written — so a crash mid-pass replays the same payments, and `ledger.deposit`'s idempotency on `ref`
    * means replaying them credits nothing twice.
@@ -147,7 +157,7 @@ export class DepositWatcher {
   }
 
   /** What a payer needs to be told, in one object: where to send, what it buys, and the floor. */
-  instructions(): { address: string; token: string; symbol: string; chainId: number; decimals: number; tokensPerUsd: string; minimumTokens: string; paymentIsBurn: boolean; note: string } {
+  instructions(): { address: string; token: string; symbol: string; chainId: number; decimals: number; tokensPerUsd: string; minimumTokens: string; paymentIsBurn: boolean; burns: boolean; sink: string; note: string } {
     const cfg = this.ledger.config;
     const perUsd = BigInt(10) ** BigInt(cfg.token.decimals) * BigInt(cfg.token.tokensPerUsd.split(".")[0] || "0");
     const minimum = (cfg.minDepositMicroUsd * perUsd) / 1_000_000n;
@@ -161,8 +171,10 @@ export class DepositWatcher {
       tokensPerUsd: cfg.token.tokensPerUsd,
       minimumTokens: formatUnits(minimum, cfg.token.decimals).replace(/\.?0+$/, "") || "0",
       paymentIsBurn: this.paymentIsBurn,
-      note: this.paymentIsBurn
-        ? `Send ${cfg.token.symbol} to this address and it is destroyed on the way in. The credit lands on the wallet that sent it. Nothing custodies your tokens, so send from the wallet you want credited.`
+      burns: this.burns,
+      sink: cfg.token.sink,
+      note: this.burns
+        ? `Send ${cfg.token.symbol} to this address and it is destroyed: credit is bought by taking the token out of supply for good. The credit lands on the wallet that sent it, so send from the wallet you want credited.`
         : `Send ${cfg.token.symbol} to this address. The credit lands on the wallet that sent it, so send from the wallet you want credited.`,
     };
   }

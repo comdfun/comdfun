@@ -16,7 +16,7 @@ type Rate = {
   reason: string | null;
   endpoint: string;
   rate: { tokensPerUsd: string; symbol: string; marginBps: number };
-  deposit: { address: string | null; token?: string; symbol?: string; decimals?: number; tokensPerUsd?: string; paymentIsBurn?: boolean; minimumTokens?: string; note: string; problem?: string | null; chainId?: number };
+  deposit: { address: string | null; token?: string; symbol?: string; decimals?: number; tokensPerUsd?: string; paymentIsBurn?: boolean; burns?: boolean; sink?: string; minimumTokens?: string; note: string; problem?: string | null; chainId?: number };
 };
 type Key = { id: string; display: string; label: string | null; disabled: boolean; createdAt: string; lastUsedAt: string | null; spentMicroUsd: string; spendLimitMicroUsd: string | null; models: string[] };
 type Charge = { id: string; at: string; model: string; state: string; costMicroUsd: string; tokensIn: number; tokensOut: number };
@@ -173,6 +173,12 @@ export function Icm() {
             <dd>{rate?.deposit.minimumTokens ? `${Number(rate.deposit.minimumTokens).toLocaleString()} $COMD` : "—"}</dd>
             <dt>Settlement</dt>
             <dd>Held when the call opens, settled on the provider's own figure.</dd>
+            {rate?.deposit.burns && (
+              <>
+                <dt>Supply</dt>
+                <dd className="icm-burnline">Every $COMD spent here is <b>burned</b>. Inference bought is supply gone.</dd>
+              </>
+            )}
           </dl>
           {rate && !rate.enabled && (
             <p className="icm-warn">
@@ -240,7 +246,7 @@ export function Icm() {
                 <ul className="icm-ticket-fine">
                   <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
                   <li>$COMD only. Anything else sent here is lost.</li>
-                  {rate.deposit.paymentIsBurn && <li className="warn">This is the burn address: what you send is destroyed on the way in.</li>}
+                  {rate.deposit.burns && <li className="warn">What you send is destroyed. Credit is bought by taking $COMD out of supply.</li>}
                 </ul>
               </details>
             </>
