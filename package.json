@@ -12,7 +12,7 @@
   "scripts": {
     "build": "npm run build:packages && npm run build -w @company/api && npm run build -w @company/worker && npm run build -w @company/web",
     "build:packages": "npm run build -w @company/art --if-present && npm run build -w @company/abi --if-present && npm run build -w @company/services",
-    "test": "npm test -w @company/art && npm test -w @company/protocol && npm test -w @company/services && npm test -w @company/api && npm test -w @company/worker",
+    "test": "npm test -w @company/art && npm test -w @company/protocol && npm test -w @company/icm && npm test -w @company/services && npm test -w @company/api && npm test -w @company/worker",
     "e2e": "npm --prefix e2e run e2e",
     "e2e:ui": "npm --prefix e2e run e2e:ui",
     "typecheck": "npm run typecheck --workspaces --if-present",

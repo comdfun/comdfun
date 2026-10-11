@@ -99,7 +99,7 @@ test("a key is stored only as a hash, and authenticates", () => {
 });
 
 test("a key that is missing, wrong, off, expired or suspended is refused, each for its own reason", () => {
-  const { ledger, account, secret, tick } = funded();
+  const { ledger, account, secret, tick, at } = funded();
   assert.throws(() => ledger.authenticate(null), /No API key/);
   assert.throws(() => ledger.authenticate("cicm_live_" + "0".repeat(48)), /not one of ours/);
 
@@ -107,7 +107,9 @@ test("a key that is missing, wrong, off, expired or suspended is refused, each f
   ledger.setKey(off.key.id, { disabled: true });
   assert.throws(() => ledger.authenticate(off.secret), /turned off/);
 
-  const expiring = ledger.issueKey({ accountId: account.id, expiresAt: new Date(Date.now()).toISOString() });
+  // the ledger's own clock, not the wall clock: a test that compares the two passes or fails by the hour it runs
+  const expiring = ledger.issueKey({ accountId: account.id, expiresAt: new Date(at() + 30_000).toISOString() });
+  assert.ok(ledger.authenticate(expiring.secret), "not expired yet");
   tick(60_000);
   assert.throws(() => ledger.authenticate(expiring.secret), /expired/);
 
