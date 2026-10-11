@@ -1884,196 +1884,204 @@ html.no-motion .rv { opacity: 1 !important; }
 }
 
 /* ─── the front door ───────────────────────────────────────────────────────── */
-/* A diptych: two desks, side by side, each showing its own substance. No chrome — the header, ticker, footer
-   and status bar are suppressed on this route (components/Chrome.tsx) — because a nav listing the insides of
-   both desks is the thing this page exists to spare people.
+/* An index, not a pair of cards: a number, a name, a rule across the page, and a look at what is behind it.
+   No chrome — the header, ticker, footer and status bar are suppressed on this route (components/Chrome.tsx).
 
-   Built so nothing here can fail visibly: no API call, no wallet, and every Counsel card sits on a numbered
-   plate, so an image that never arrives reads as a plate rather than a broken frame. */
-/* The choice has to be whole on one screen: a CTA below the fold on a page whose entire job is two CTAs is the
-   page failing. The stage gives way before the words do, down to a floor where the art is still worth seeing. */
-.gate { min-height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #000; }
+   Each line owns a colour, set on `--c`, and everything in the line takes its accent from that one place. Built
+   so nothing here can fail visibly: no API call, no wallet, and every Counsel plate carries its own number so an
+   image that never arrives reads as a plate rather than a broken frame. */
+.gate {
+  --cy: var(--cyan);
+  --gd: var(--gold);
+  min-height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #000; position: relative; isolation: isolate; overflow: hidden;
+}
+/* two soft fields of colour, one per desk, so the page is not a black rectangle before anything is read */
+.gate::before {
+  content: ""; position: absolute; inset: -20% -10% auto; height: 120%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(44% 38% at 14% 22%, color-mix(in srgb, var(--cy) 13%, transparent) 0%, transparent 70%),
+    radial-gradient(48% 42% at 88% 52%, color-mix(in srgb, var(--gd) 14%, transparent) 0%, transparent 72%),
+    radial-gradient(38% 30% at 62% 96%, color-mix(in srgb, var(--violet) 11%, transparent) 0%, transparent 70%);
+}
 
-/* the brand line: small, centred, and the only thing above the choice */
-.gate-brand { display: flex; align-items: center; justify-content: center; gap: 13px; padding: clamp(14px, 2.6vh, 24px) 24px clamp(12px, 2.2vh, 20px); flex-wrap: wrap; }
-.gate-mark { width: 24px; height: 24px; }
-.gate-word { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
+.gate-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px clamp(20px, 3vw, 40px); border-bottom: 1px solid var(--rule);
+}
+.gate-brand { display: inline-flex; align-items: center; gap: 10px; }
+.gate-mark { width: 22px; height: 22px; }
+.gate-word { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .gate-word b { color: var(--gold); font-weight: 600; }
-.gate-rule { width: 1px; height: 15px; background: var(--rule-2); }
-.gate-brand p { margin: 0; font-size: 14.5px; color: var(--dim); }
+.gate-at { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--dim); }
 
-/* Two rows shared by both doors, so the stages are one height and the two headlines sit on one line. Done any
-   other way the halves drift apart by whatever their copy happens to measure, and a diptych that does not line
-   up reads as a mistake. */
-.gate-pair {
-  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(190px, 1fr) auto; gap: 1px;
-  background: var(--rule); border-top: 1px solid var(--rule);
+.gate-body {
+  display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 64px); padding: clamp(22px, 3.2vh, 40px) clamp(20px, 3vw, 40px) 0; align-content: start;
 }
 
-.gate-door {
-  --c: var(--cyan);
-  position: relative; isolation: isolate; overflow: hidden; text-decoration: none;
-  grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; min-height: 0;
-  background: radial-gradient(120% 86% at 50% -8%, color-mix(in srgb, var(--c) 7%, #000) 0%, #000 62%);
-  transition: background 0.3s ease;
+/* ---- the firm's card, set like one: label, leader, value */
+.gate-meta { margin: 0; display: grid; gap: 7px; align-content: start; font-family: var(--font-mono); font-size: 11.5px; }
+.meta-row { display: grid; grid-template-columns: auto minmax(10px, 1fr) auto; align-items: baseline; gap: 8px; }
+.meta-row dt { margin: 0; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+/* the leader: a dotted rule that takes up whatever room is left between the two words */
+/* Row 1 as well as column 2: a pseudo-element is placed after the real children, and auto-placement only moves
+   forward, so with the value already sitting in column 3 the leader would drop to a row of its own underneath. */
+.meta-row::after {
+  content: ""; grid-row: 1; grid-column: 2; align-self: center; height: 1px; transform: translateY(-1px);
+  background: repeating-linear-gradient(90deg, var(--rule-2) 0 2px, transparent 2px 5px);
 }
-.door-icm { --c: var(--gold); }
-/* the door being chosen warms; its neighbour is left alone, so the page never flickers as a whole */
-.gate-door:hover { background: radial-gradient(120% 86% at 50% -8%, color-mix(in srgb, var(--c) 13%, #000) 0%, #000 66%); }
-.gate-door:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
-/* a hairline of the door's own colour across the top, so the two halves are told apart before any reading */
-.gate-door::before {
-  content: ""; position: absolute; inset: 0 0 auto; height: 2px; z-index: 3;
-  background: linear-gradient(90deg, transparent, var(--c) 22%, var(--c) 78%, transparent);
-  opacity: 0.5; transition: opacity 0.25s ease;
-}
-.gate-door:hover::before { opacity: 1; }
+/* column 3 explicitly: the leader is a pseudo-element and sorts after the real children, so left to auto-place
+   the value takes the leader's column and the leader wraps onto a line of its own underneath it */
+.meta-row dd { grid-column: 3; margin: 0; color: #cdc6b5; white-space: nowrap; }
+.meta-row dd a { color: #cdc6b5; text-decoration: none; border-bottom: 1px solid transparent; }
+.meta-row dd a:hover { color: var(--gold); border-bottom-color: color-mix(in srgb, var(--gold) 50%, transparent); }
 
-/* ---- the stage: whatever is behind the door, shown rather than illustrated */
-.door-stage { position: relative; overflow: hidden; display: grid; place-items: center; padding: clamp(14px, 2.4vh, 36px) 34px clamp(8px, 1.4vh, 18px); }
-/* A short fade where the stage meets the type, so a stage taller than its room ends in shadow rather than a
-   cut edge. It is deliberately shallow: the board underneath it is content, not texture. */
-.door-stage::after {
-  content: ""; position: absolute; inset: auto 0 0; height: 40px; z-index: 2; pointer-events: none;
-  background: linear-gradient(0deg, #000 0%, rgba(0,0,0,.6) 50%, transparent 100%);
+/* ---- the index */
+.gate-index { display: grid; align-content: start; gap: 0; }
+.index-kicker {
+  display: block; padding: 0 0 14px; font-size: 13.5px; color: var(--muted);
+}
+.index-kicker i { font-style: normal; color: var(--dim); }
+
+.idx {
+  --c: var(--cy);
+  position: relative; display: grid; align-items: baseline; text-decoration: none;
+  grid-template-columns: auto auto auto minmax(24px, 1fr) auto;
+  grid-template-areas: "no name note rule thumb" ".  say  say  say  thumb";
+  column-gap: 14px; row-gap: 10px;
+  padding: clamp(18px, 2.4vh, 28px) 0; border-top: 1px solid var(--rule);
+  transition: border-color 0.22s ease;
+}
+.idx:last-child { border-bottom: 1px solid var(--rule); }
+.idx-icm { --c: var(--gd); }
+.idx:hover { border-color: color-mix(in srgb, var(--c) 42%, var(--rule)); }
+/* a wash of the line's own colour, bleeding off the left edge the way the rule runs off the right */
+.idx::before {
+  content: ""; position: absolute; inset: 0 -40px 0 calc(-1 * clamp(20px, 3vw, 40px)); z-index: -1;
+  /* fades in rather than starting at full strength: the row does not reach the left edge of the page, so a
+     gradient that began opaque would put a hard vertical seam down the middle of the screen */
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--c) 11%, transparent) 16%, transparent 66%);
+  opacity: 0; transition: opacity 0.22s ease;
+}
+.idx:hover::before { opacity: 1; }
+.idx:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
+
+.idx-no {
+  grid-area: no; font-family: var(--font-mono); font-size: 12px; color: var(--c); opacity: 0.8;
+}
+.idx-name {
+  grid-area: name; font-size: clamp(26px, 3.4vw, 42px); font-weight: 600; letter-spacing: -0.035em;
+  line-height: 1; color: var(--parch); transition: color 0.22s ease;
+}
+.idx:hover .idx-name { color: color-mix(in srgb, var(--c) 42%, var(--parch)); }
+.idx-note { grid-area: note; font-size: 12px; color: var(--dim); white-space: nowrap; }
+.idx-new { color: var(--c); }
+/* the rule that gives the index its spine: it runs out to the thumbnail and lights up on the way */
+.idx-rule {
+  grid-area: rule; align-self: center; height: 1px; min-width: 24px;
+  background: linear-gradient(90deg, var(--rule) 0%, color-mix(in srgb, var(--c) 34%, var(--rule)) 100%);
+  transition: background 0.22s ease;
+}
+.idx:hover .idx-rule { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--rule)) 0%, var(--c) 100%); }
+.idx-say {
+  grid-area: say; max-width: 62ch; margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted);
 }
 
-/* ---- the swarm's stage: four Counsel, dealt */
-.deal { display: flex; justify-content: center; align-items: flex-end; padding-bottom: 8px; }
+/* ---- what is behind each line, at the end of its rule */
+.idx-thumb {
+  grid-area: thumb; align-self: center; position: relative;
+  width: clamp(190px, 21vw, 290px); height: clamp(104px, 11.4vw, 158px);
+  border: 1px solid color-mix(in srgb, var(--c) 22%, var(--rule)); border-radius: 6px; overflow: hidden;
+  background: linear-gradient(168deg, #0b0a12 0%, #040406 72%);
+  transition: border-color 0.22s ease, transform 0.22s var(--rv-ease), box-shadow 0.22s ease;
+}
+.idx:hover .idx-thumb {
+  border-color: color-mix(in srgb, var(--c) 50%, var(--rule));
+  transform: translateY(-3px);
+  box-shadow: 0 20px 44px -22px color-mix(in srgb, var(--c) 46%, #000);
+}
+/* the colour sits behind the contents of the thumbnail, not over them */
+.idx-thumb::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(74% 90% at 50% 112%, color-mix(in srgb, var(--c) 24%, transparent) 0%, transparent 70%);
+}
+
+/* three Counsel, dealt */
+.thumb-hand { display: flex; align-items: center; justify-content: center; }
 .dealt {
-  --lift: calc(var(--i) * 1px);
-  position: relative; display: block; width: clamp(92px, 11.8vw, 152px); aspect-ratio: 64 / 80; flex: none;
-  margin-inline: clamp(-26px, -2.1vw, -13px);
-  border: 1px solid color-mix(in srgb, var(--cyan) 26%, #211d28);
-  border-radius: 4px; background: linear-gradient(168deg, #10131a 0%, #07080b 70%);
-  box-shadow: 0 18px 34px -16px #000, inset 0 1px 0 rgba(255,255,255,.05);
-  transform: rotate(calc((var(--i) - 1.5) * 5deg)) translateY(calc(var(--i) * -2px));
-  transition: transform 0.34s var(--rv-ease), border-color 0.34s ease;
+  position: relative; display: block; width: 24%; aspect-ratio: 64 / 80; flex: none; margin-inline: -3.4%;
+  border: 1px solid color-mix(in srgb, var(--cy) 26%, #211d28); border-radius: 3px;
+  background: linear-gradient(168deg, #10131a 0%, #07080b 70%);
+  transform: rotate(calc((var(--i) - 1) * 6deg)) translateY(calc(var(--i) * -2px));
+  transition: transform 0.3s var(--rv-ease);
 }
 .dealt:nth-child(1) { z-index: 1; }
 .dealt:nth-child(2) { z-index: 2; }
 .dealt:nth-child(3) { z-index: 3; }
-.dealt:nth-child(4) { z-index: 4; }
 /* the plate's own number, which is what shows if the art never arrives */
 .dealt-no {
-  position: absolute; inset: auto 0 7%; z-index: 0; text-align: center;
-  font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.1em;
-  color: color-mix(in srgb, var(--cyan) 38%, transparent);
+  position: absolute; inset: auto 0 8%; z-index: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 8px; font-weight: 400; letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--cy) 40%, transparent);
 }
-.dealt img {
-  position: relative; z-index: 1; width: 100%; height: 100%; display: block; object-fit: contain;
-  image-rendering: pixelated; border-radius: 3px;
-}
-/* the hand opens towards whoever is choosing */
-.door-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1.5) * 8deg)) translateY(calc(var(--i) * -3px - 6px)); border-color: color-mix(in srgb, var(--cyan) 46%, #211d28); }
+.dealt img { position: relative; z-index: 1; width: 100%; height: 100%; display: block; object-fit: contain; image-rendering: pixelated; }
+.idx-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1) * 9deg)) translateY(calc(var(--i) * -3px - 4px)); }
 
-/* ---- the desk's stage: a board of what a request can name */
-.board {
-  width: min(420px, 100%); display: grid; gap: 1px; align-self: center;
-  font-family: var(--font-mono); font-size: 12.5px;
-  border: 1px solid color-mix(in srgb, var(--gold) 20%, var(--rule));
-  border-radius: var(--r); overflow: hidden; background: color-mix(in srgb, var(--gold) 9%, var(--rule));
-  box-shadow: 0 22px 44px -22px #000, inset 0 0 40px -18px color-mix(in srgb, var(--gold) 30%, transparent);
+/* the board of what a request can name */
+.thumb-board { display: grid; align-content: start; gap: 3px; padding: 9px 11px; font-family: var(--font-mono); font-size: 9px; }
+.board-bar { display: flex; gap: 4px; padding-bottom: 5px; }
+.board-bar i { width: 6px; height: 6px; border-radius: 50%; background: var(--rule-2); }
+.board-bar i:first-child { background: color-mix(in srgb, var(--gd) 70%, transparent); }
+.thumb-board code {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 3.5px 7px; border-radius: 3px; color: #d9cfb6;
+  background: color-mix(in srgb, var(--gd) 7%, #0b0906);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.board-head, .board-row, .board-foot { background: linear-gradient(180deg, #0e0b06 0%, #080705 100%); padding: clamp(5px, 0.95vh, 9px) 14px; }
-.board-head {
-  display: flex; justify-content: space-between;
-  font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: color-mix(in srgb, var(--gold) 60%, var(--dim));
-}
-.board-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.board-row code { color: #e6dcc2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.board-row code i { color: var(--dim); font-style: normal; padding: 0 1px; }
-/* the lamp that says the house is reachable: lit, staggered, never alarming */
-.board-dot {
-  flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--lime);
-  box-shadow: 0 0 9px -1px var(--lime); opacity: 0.85;
-  animation: boardPulse 3.2s ease-in-out infinite; animation-delay: calc(var(--d, 0) * 1s);
-}
-.board-row:nth-child(3) .board-dot { --d: 0.4; }
-.board-row:nth-child(4) .board-dot { --d: 0.8; }
-.board-row:nth-child(5) .board-dot { --d: 1.2; }
-.board-row:nth-child(6) .board-dot { --d: 1.6; }
-.board-row:nth-child(7) .board-dot { --d: 2; }
-.board-row:nth-child(8) .board-dot { --d: 2.4; }
-.board-row:nth-child(9) .board-dot { --d: 2.8; }
-@keyframes boardPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
-.board-foot {
-  font-family: var(--font-sans); font-size: 12px; color: var(--dim);
-  border-top: 1px solid color-mix(in srgb, var(--gold) 14%, transparent);
-}
-.door-icm:hover .board { border-color: color-mix(in srgb, var(--gold) 38%, var(--rule)); }
+.thumb-board code em { flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 6px -1px var(--lime); }
 
-/* ---- the words */
-.door-body {
-  position: relative; z-index: 3; display: grid; max-width: 48ch;
-  /* every measure here answers to the window's height as well as its width, because the thing that runs out
-     on a 768-tall laptop is vertical room, and the button at the end of the body is the point of the page */
-  gap: clamp(9px, 1.5vh, 15px);
-  padding: 0 clamp(26px, 3.4vw, 46px) clamp(20px, 3.4vh, 40px);
+/* the quieter doors, set after the index the way a contents page ends with its appendices */
+.index-more { display: flex; justify-content: flex-end; gap: 22px; padding-top: 14px; }
+.index-more a { font-size: 13px; color: var(--dim); text-decoration: none; transition: color 0.18s ease; }
+.index-more a:hover { color: var(--parch); }
+.index-more i { font-style: normal; }
+
+/* ---- the line at the bottom, which is the whole firm in one sentence */
+.gate-say {
+  margin: 0; padding: clamp(28px, 4vh, 56px) clamp(20px, 3vw, 40px) clamp(24px, 3.4vh, 44px);
+  font-size: clamp(38px, min(7.4vw, 10vh), 104px); font-weight: 600;
+  letter-spacing: -0.045em; line-height: 0.94; color: var(--parch);
 }
-.door-tag {
-  justify-self: start; font-family: var(--font-sans); font-size: 10.5px; font-weight: 600;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+.say-hot {
+  background: linear-gradient(96deg, var(--cyan) 0%, var(--gold) 58%, var(--pink) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.door-new { color: var(--gold); }
-.gate-door h1 {
-  margin: 0; font-size: clamp(34px, min(4.6vw, 6.6vh), 58px); font-weight: 600;
-  letter-spacing: -0.04em; line-height: 0.94; color: var(--parch);
-}
-.door-swarm:hover h1 { color: color-mix(in srgb, var(--cyan) 30%, var(--parch)); }
-.door-icm:hover h1 { color: color-mix(in srgb, var(--gold) 34%, var(--parch)); }
-.gate-door h1 { transition: color 0.25s ease; }
-.door-say { margin: 0; font-size: clamp(14px, 1.75vh, 15.5px); line-height: 1.58; color: #b5afa2; max-width: 46ch; }
-.door-facts {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0; margin: 4px 0 0; font-size: 13.5px;
-  border-top: 1px solid var(--rule);
-}
-.door-facts dt {
-  margin: 0; padding: clamp(6px, 0.95vh, 9px) 18px clamp(6px, 0.95vh, 9px) 0; white-space: nowrap;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  color: color-mix(in srgb, var(--c) 52%, var(--dim));
-  border-bottom: 1px solid var(--rule);
-}
-.door-facts dd { margin: 0; padding: clamp(6px, 0.95vh, 9px) 0; color: #c9c2b1; border-bottom: 1px solid var(--rule); }
-.door-go {
-  justify-self: start; margin-top: clamp(4px, 0.9vh, 10px); font-size: 14.5px; font-weight: 600; color: #000;
-  background: var(--parch); border-radius: var(--r-sm); padding: clamp(10px, 1.4vh, 13px) 20px;
-  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
-}
-.door-icm .door-go { background: var(--gold); }
-.gate-door:hover .door-go { transform: translateY(-2px); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--c) 70%, transparent); }
-.door-swarm:hover .door-go { background: var(--cyan); }
-.door-go::after { content: " →"; }
+.gate-say sup { font-size: 0.26em; vertical-align: super; letter-spacing: 0; color: var(--dim); }
 
 @media (prefers-reduced-motion: reduce) {
-  .gate-door, .gate-door::before, .dealt, .door-go, .gate-door h1, .board { transition: none; }
-  .board-dot { animation: none; opacity: 0.85; }
-  .door-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1.5) * 5deg)) translateY(calc(var(--i) * -2px)); }
-  .gate-door:hover .door-go { transform: none; }
+  .idx, .idx::before, .idx-thumb, .idx-rule, .idx-name, .dealt { transition: none; }
+  .idx:hover .idx-thumb { transform: none; }
+  .idx-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1) * 6deg)) translateY(calc(var(--i) * -2px)); }
 }
 
-/* one above the other, and the stages shrink before the words do: the words are the point */
-@media (max-width: 920px) {
-  /* stacked, each door is its own pair of rows again: sharing a row height across doors that are no longer
-     side by side would only force the shorter stage to match the taller one for no reason. */
-  .gate-pair { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
-  .gate-door { min-height: 0; grid-row: auto; grid-template-rows: auto auto; }
-  /* stacked, the stage is sized by what is in it and the fade comes off: there is nothing to fade into, and
-     it was dimming the board's last line, which is copy rather than texture */
-  .door-stage { padding: 26px 22px 20px; min-height: 0; }
-  .door-stage::after { content: none; }
-  .dealt { width: clamp(84px, 21vw, 122px); margin-inline: -18px; }
-  .board { width: min(380px, 100%); font-size: 12px; }
-  .board-head, .board-row, .board-foot { padding: 8px 12px; }
-  .door-body { padding: 0 22px 30px; gap: 13px; }
-  .gate-door h1 { font-size: clamp(34px, 9vw, 46px); }
-  .gate-brand { padding: 18px 20px 16px; gap: 10px; }
-  .gate-brand p { font-size: 13.5px; }
+/* the card drops below the index before anything has to shrink: the index is what the page is for */
+@media (max-width: 1040px) {
+  .gate-body { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .gate-meta { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 7px 26px; order: 2; }
+  .gate-index { order: 1; }
 }
-/* on a phone the board's longest slugs would set the column width, so the names clip rather than the layout */
-@media (max-width: 520px) {
-  .board-row:nth-child(n + 7) { display: none; }
-  .door-facts { font-size: 13px; }
-  .door-facts dt { padding-right: 14px; }
+/* stacked: the thumbnail goes full width under its line rather than squeezing the words into a column */
+@media (max-width: 760px) {
+  .idx {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "no name" "no note" "say say" "thumb thumb";
+    row-gap: 8px; padding: 20px 0;
+  }
+  .idx-rule { display: none; }
+  .idx-note { white-space: normal; }
+  .idx-thumb { width: 100%; height: clamp(120px, 34vw, 170px); margin-top: 4px; }
+  .idx-say { font-size: 13.5px; }
+  .gate-say { font-size: clamp(32px, 11vw, 54px); }
+  .gate-body { padding-inline: 20px; }
 }
