@@ -19,6 +19,7 @@ import { Footer } from "@/components/Footer";
 import { StatusBar } from "@/components/StatusBar";
 import { SigRoot } from "@/components/SigRoot";
 import { Ticker } from "@/components/fx/Ticker";
+import { Chrome } from "@/components/Chrome";
 import { FxRuntime } from "@/components/fx/FxRuntime";
 import { HEAD_SCRIPT_PREFS } from "@/lib/head-script";
 import { getActivity } from "@/lib/activity";
@@ -54,11 +55,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="sr-only">Skip to content</a>
         <Providers initialState={initialState}>
           <SigRoot>
-            <Header />
-            <Ticker initial={activity.events ?? []} />
+            <Chrome>
+              <Header />
+              <Ticker initial={activity.events ?? []} />
+            </Chrome>
             <main id="main">{children}</main>
-            <Footer />
-            <StatusBar initial={activity} />
+            <Chrome>
+              <Footer />
+              <StatusBar initial={activity} />
+            </Chrome>
           </SigRoot>
           <FxRuntime />
         </Providers>
