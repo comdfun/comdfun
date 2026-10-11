@@ -1768,6 +1768,79 @@ html.no-motion .rv { opacity: 1 !important; }
 .icm-fund { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; }
 .icm-fund-say h2 { margin: 0 0 12px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .icm-fund-say p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: #b9b3a6; max-width: 58ch; }
+/* ---- getting here from another chain: three steps, stated once */
+.icm-route { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--rule); display: grid; gap: 14px; max-width: 58ch; }
+.icm-route h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--parch); }
+.icm-steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 14px; }
+.icm-steps li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 12px; }
+.icm-steps li::before {
+  content: counter(s); grid-row: 1 / span 2; align-self: start;
+  width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--gold) 34%, var(--rule));
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--gold);
+}
+.icm-steps b { font-size: 13.5px; font-weight: 600; color: #d8d1c0; }
+.icm-steps span { font-size: 13px; line-height: 1.55; color: var(--muted); }
+
+/* ---- buying credit from the page, rather than being handed an address */
+.icm-buyside { display: grid; gap: 14px; align-content: start; }
+.buy {
+  display: grid; gap: 14px; padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, var(--rule));
+  border-radius: var(--r); background: linear-gradient(176deg, #0d0b07 0%, #07060a 64%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 14%, transparent), 0 24px 48px -30px #000;
+}
+.buy-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.buy-head h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--parch); }
+.buy-sub { font-size: 11.5px; color: var(--dim); }
+
+/* which currency is being paid, as a segmented control rather than a dropdown: there are two of them */
+.buy-tabs { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-sm); background: #000; border: 1px solid var(--rule); }
+.buy-tabs button {
+  flex: 1; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.buy-tabs button:hover { color: var(--parch); }
+.buy-tabs button.on { background: color-mix(in srgb, var(--gold) 16%, #15110a); color: var(--gold); }
+
+.buy-field { display: grid; gap: 7px; padding: 13px 14px; border: 1px solid var(--rule); border-radius: var(--r-sm); background: #000; }
+.buy-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+.buy-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.buy-row input {
+  flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; color: var(--parch);
+  font-family: var(--font-mono); font-size: 26px; letter-spacing: -0.02em;
+}
+.buy-row input:focus { outline: none; }
+.buy-row input::placeholder { color: #332e3c; }
+.buy-row b { font-family: var(--font-mono); font-size: 26px; font-weight: 400; letter-spacing: -0.02em; color: var(--parch); }
+.buy-get .buy-row b { color: var(--gold); }
+.buy-unit { flex: none; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.buy-under { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--dim); }
+.buy-max {
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  font-size: 11.5px; font-weight: 600; color: var(--gold);
+}
+.buy-max:hover { text-decoration: underline; }
+
+.buy-go { width: 100%; justify-content: center; text-align: center; }
+.buy-go:disabled { opacity: 0.45; cursor: not-allowed; }
+.buy-note { display: grid; gap: 10px; justify-items: start; padding: 13px 14px; border: 1px dashed var(--rule-2); border-radius: var(--r-sm); }
+.buy-note p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.buy-err { margin: 0; font-size: 13px; line-height: 1.5; color: var(--crimson); }
+.buy-ok { margin: 0; font-size: 13px; line-height: 1.5; color: var(--lime); }
+.buy-foot { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--dim); }
+
+/* the address, for anyone who would rather do it from their own wallet */
+.icm-manual { border: 1px dashed var(--rule-2); border-radius: var(--r); background: #06050a; }
+.icm-manual summary { padding: 13px 18px; cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
+.icm-manual summary::-webkit-details-marker { display: none; }
+.icm-manual summary::before { content: "+ "; color: var(--dim); }
+.icm-manual[open] summary::before { content: "- "; }
+.icm-manual summary:hover { color: var(--parch); }
+.icm-manual > :not(summary) { margin: 0 18px 14px; }
+.icm-manual .icm-addr { display: block; margin-bottom: 10px; }
+
 .icm-ticket { display: grid; gap: 12px; justify-items: start; padding: 22px; border: 1px dashed var(--rule-2); border-radius: var(--r); background: #06050a; }
 .icm-ticket-label { font-size: 12px; color: var(--dim); }
 .icm-addr { font-family: var(--font-mono); font-size: 14px; color: var(--gold); overflow-wrap: anywhere; line-height: 1.5; }

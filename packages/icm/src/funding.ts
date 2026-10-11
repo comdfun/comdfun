@@ -147,12 +147,14 @@ export class DepositWatcher {
   }
 
   /** What a payer needs to be told, in one object: where to send, what it buys, and the floor. */
-  instructions(): { address: string; symbol: string; chainId: number; decimals: number; tokensPerUsd: string; minimumTokens: string; paymentIsBurn: boolean; note: string } {
+  instructions(): { address: string; token: string; symbol: string; chainId: number; decimals: number; tokensPerUsd: string; minimumTokens: string; paymentIsBurn: boolean; note: string } {
     const cfg = this.ledger.config;
     const perUsd = BigInt(10) ** BigInt(cfg.token.decimals) * BigInt(cfg.token.tokensPerUsd.split(".")[0] || "0");
     const minimum = (cfg.minDepositMicroUsd * perUsd) / 1_000_000n;
     return {
       address: this.depositAddress,
+      // the token to send, so a page can offer to send it rather than only print an address to copy
+      token: cfg.token.address,
       symbol: cfg.token.symbol,
       chainId: cfg.token.chainId,
       decimals: cfg.token.decimals,

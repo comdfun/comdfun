@@ -103,6 +103,9 @@ export interface Config {
     minDepositUsd: string;
     maxHoldUsd: string;
     confirmations: number;
+    /** Contracts trusted to pay into the desk on a buyer's behalf, so a swap routed in credits whoever signed
+     *  the transaction rather than the pool that moved the tokens. The buyback swapper is included on its own. */
+    forwarders: string[];
     burnOnDeposit: boolean;
     environment: "live" | "test";
     allowModels: string[];
@@ -257,6 +260,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       minDepositUsd: unquote(env.ICM_MIN_DEPOSIT_USD) || "1",
       maxHoldUsd: unquote(env.ICM_MAX_HOLD_USD) || "5",
       confirmations: int(env.ICM_CONFIRMATIONS, 12),
+      forwarders: (unquote(env.ICM_FORWARDERS) || "").split(",").map((x) => x.trim()).filter(Boolean),
       /** The operator burns what lands in the deposit address. Changes what the house book claims, nothing else. */
       burnOnDeposit: env.ICM_BURN_ON_DEPOSIT === "1" || env.ICM_BURN_ON_DEPOSIT === "true",
       environment: unquote(env.ICM_ENVIRONMENT) === "test" ? "test" : "live",

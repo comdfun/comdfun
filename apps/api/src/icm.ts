@@ -68,13 +68,37 @@ function storeAdapter(app: App): IcmStore {
 
 /** Reads $COMD transfers into the deposit address straight off the chain. Nothing is trusted from a third party:
  *  the token address, the topic and the destination all come from config and are matched here. */
-class ChainPayments implements PaymentSource {
+export class ChainPayments implements PaymentSource {
   private readonly app: App;
   private readonly token: Address;
   private readonly to: Address;
   private readonly confirmations: number;
-  constructor(app: App, token: Address, to: Address, confirmations: number) {
+  /** Contracts allowed to pay on somebody else's behalf, lower-cased. See `creditedSender`. */
+  private readonly forwarders: Set<string>;
+  constructor(app: App, token: Address, to: Address, confirmations: number, forwarders: Address[] = []) {
     this.app = app; this.token = token; this.to = to; this.confirmations = confirmations;
+    this.forwarders = new Set(forwarders.map((f) => f.toLowerCase()));
+  }
+
+  /**
+   * Who to credit for a transfer into the desk.
+   *
+   * Normally the wallet in the Transfer's `from` is the buyer, and that is the end of it. A swap is the exception:
+   * when somebody pays in ETH, the pool moves the $COMD, so the transfer arrives `from` the pool and crediting it
+   * literally would put every ETH purchase on one account belonging to nobody. For those, and only those, the
+   * wallet that signed the transaction is the buyer.
+   *
+   * This is deliberately a closed list rather than a rule about contracts in general. Anything may send tokens
+   * here; if an unknown contract could nominate its own transaction's signer as the beneficiary, then a contract
+   * that batches several people's payments into one transaction would credit all of them to whoever sent it.
+   * Only contracts the operator has named are trusted to be paying on one person's behalf.
+   */
+  private async creditedSender(from: string, txHash: Hex): Promise<string> {
+    if (!this.forwarders.has(from.toLowerCase())) return from;
+    const signer = this.app.chain.txSender ? await this.app.chain.txSender(txHash) : null;
+    // No signer means the RPC would not say. Keeping the forwarder is wrong but inert: it credits an account
+    // nobody can sign for, which is recoverable by hand, where guessing a buyer would not be.
+    return signer ? signer.toLowerCase() : from;
   }
 
   async since(cursor: string | null): Promise<{ payments: ConfirmedPayment[]; cursor: string }> {
@@ -91,15 +115,20 @@ class ChainPayments implements PaymentSource {
     // there is nothing to watch rather than something to crash over.
     if (!this.app.chain.rawLogs) return { payments: [], cursor: String(safe) };
     const logs = await this.app.chain.rawLogs(this.token, [TRANSFER_TOPIC, null, pad(this.to, { size: 32 })], from, to);
-    const payments = logs.filter((l) => l.topics.length >= 3).map((l): ConfirmedPayment => ({
-      // the log index makes two transfers in one transaction two payments
-      ref: `${l.txHash}:${l.logIndex}`,
-      from: `0x${(l.topics[1] ?? "").slice(26)}`.toLowerCase(),
-      to: `0x${(l.topics[2] ?? "").slice(26)}`.toLowerCase(),
-      tokenUnits: BigInt(l.data === "0x" ? 0 : l.data),
-      at: new Date().toISOString(),
-      blockNumber: l.blockNumber,
-    }));
+    const payments: ConfirmedPayment[] = [];
+    for (const l of logs) {
+      if (l.topics.length < 3) continue;
+      const sender = `0x${(l.topics[1] ?? "").slice(26)}`.toLowerCase();
+      payments.push({
+        // the log index makes two transfers in one transaction two payments
+        ref: `${l.txHash}:${l.logIndex}`,
+        from: await this.creditedSender(sender, l.txHash),
+        to: `0x${(l.topics[2] ?? "").slice(26)}`.toLowerCase(),
+        tokenUnits: BigInt(l.data === "0x" ? 0 : l.data),
+        at: new Date().toISOString(),
+        blockNumber: l.blockNumber,
+      });
+    }
     return { payments, cursor: String(to) };
   }
 }
@@ -230,12 +259,26 @@ export class Icm {
     }
   }
 
+  /** Contracts allowed to pay into the desk for somebody else: the buyback swapper, which is what a "pay in ETH"
+   *  purchase routes through, plus anything else named in ICM_FORWARDERS. Anything unparseable is dropped with a
+   *  line in the log rather than taking payment watching down with it. */
+  private forwarders(d: IcmDeps): Address[] {
+    const named = [d.app.cfg.swapper, ...d.app.cfg.icm.forwarders];
+    const out: Address[] = [];
+    for (const a of named) {
+      if (!a) continue;
+      try { out.push(getAddress(a)); }
+      catch { console.warn(`[icm] ignoring forwarder that is not an address: ${JSON.stringify(String(a).slice(0, 48))}`); }
+    }
+    return out;
+  }
+
   private makeWatcher(d: IcmDeps, token: Address, depositAddress: string): DepositWatcher {
     const settings = d.app.cfg.icm;
     return token && depositAddress && d.app.chain.configured
       ? new DepositWatcher({
           ledger: this.ledger,
-          source: new ChainPayments(d.app, token, getAddress(depositAddress), settings.confirmations),
+          source: new ChainPayments(d.app, token, getAddress(depositAddress), settings.confirmations, this.forwarders(d)),
           depositAddress,
           cursor: {
             read: () => (d.app.store.c<Rec & { value?: string }>("kv").get("icm:cursor")?.value ?? null),

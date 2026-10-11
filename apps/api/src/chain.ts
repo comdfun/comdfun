@@ -60,6 +60,9 @@ export interface ChainReader {
   erc20TotalSupply(token: Address): Promise<bigint>;
   /** Raw logs for an address + topic filter (chunked); optional — the BurnTracker is off without it. */
   rawLogs?(address: Address, topics: (Hex | null)[], fromBlock: number, toBlock: number): Promise<RawLog[]>;
+  /** The wallet that signed a transaction. Optional, and used only to see through a contract that moved tokens
+   *  on somebody's behalf: a swap routed into the desk arrives `from` the pool, not from whoever paid for it. */
+  txSender?(txHash: Hex): Promise<Address | null>;
   erc20Allowance(token: Address, owner: Address, spender: Address): Promise<bigint>;
   ethBalance(address: Address): Promise<bigint>;
   /** RewardDistributor.unallocated(asset): balance not committed to posted roots. */
@@ -233,6 +236,14 @@ export class ViemChain implements ChainReader {
       for (const l of logs) out.push({ topics: l.topics, data: l.data, blockNumber: Number(l.blockNumber), txHash: l.transactionHash, logIndex: Number(l.logIndex) });
     }
     return out;
+  }
+  async txSender(txHash: Hex): Promise<Address | null> {
+    try {
+      const tx = (await this.client.request({ method: "eth_getTransactionByHash", params: [txHash] as any })) as { from?: Hex } | null;
+      return tx?.from ? getAddress(tx.from) : null;
+    } catch {
+      return null;
+    }
   }
   balance(address: Address, blockNumber?: number) { return this.client.getBalance({ address, blockNumber: blockNumber !== undefined ? BigInt(blockNumber) : undefined }); }
   async getCode(address: Address) { return ((await this.client.getCode({ address })) ?? "0x") as Hex; }

@@ -9,13 +9,14 @@ import Link from "next/link";
 import { useAccount, useSignMessage } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { CopyButton } from "@/components/CopyButton";
+import { BuyCredit } from "./BuyCredit";
 
 type Rate = {
   enabled: boolean;
   reason: string | null;
   endpoint: string;
   rate: { tokensPerUsd: string; symbol: string; marginBps: number };
-  deposit: { address: string | null; paymentIsBurn?: boolean; minimumTokens?: string; note: string; problem?: string | null; chainId?: number };
+  deposit: { address: string | null; token?: string; symbol?: string; decimals?: number; tokensPerUsd?: string; paymentIsBurn?: boolean; minimumTokens?: string; note: string; problem?: string | null; chainId?: number };
 };
 type Key = { id: string; display: string; label: string | null; disabled: boolean; createdAt: string; lastUsedAt: string | null; spentMicroUsd: string; spendLimitMicroUsd: string | null; models: string[] };
 type Charge = { id: string; at: string; model: string; state: string; costMicroUsd: string; tokensIn: number; tokensOut: number };
@@ -188,32 +189,68 @@ export function Icm() {
         <div className="icm-fund-say">
           <h2>Putting credit on</h2>
           <p>
-            Send $COMD from the wallet you want credited. There is no memo, no account number and nothing to get
-            wrong: the credit lands on whatever wallet the transfer came from, usually within a minute of it
-            confirming.
+            Pay in $COMD, or in ETH and the pool does the swap on the way in. Either way it is one transaction,
+            there is no memo and no account number, and the credit lands on the wallet that paid, usually within
+            a minute of it confirming.
           </p>
           <p className="muted small">
             Then one signature proves that wallet is yours and you can mint a key. The signature is not a
             transaction: nothing moves and there is no gas.
           </p>
+
+          {/* Coming from anywhere else. Robinhood Chain is new, so no card processor sells onto it directly;
+              what does exist is a short hop from a chain that every exchange already withdraws to. Saying that
+              plainly beats an on-ramp widget that would quietly not cover this chain. */}
+          <div className="icm-route">
+            <h3>Arriving from another chain, or from cash</h3>
+            <ol className="icm-steps">
+              <li>
+                <b>Get ETH anywhere you already can</b>
+                <span>An exchange, a card on-ramp, a wallet you already hold it in. Any chain those will send to.</span>
+              </li>
+              <li>
+                <b>Bridge it to Robinhood Chain</b>
+                <span>
+                  <a className="ext" href="https://relay.link/bridge/robinhood" target="_blank" rel="noreferrer">Relay</a>{" "}
+                  and <a className="ext" href="https://across.to/?to=robinhood" target="_blank" rel="noreferrer">Across</a>{" "}
+                  take seconds from most chains.{" "}
+                  <a className="ext" href="https://portal.arbitrum.io/bridge?destinationChain=robinhood-chain&sourceChain=ethereum" target="_blank" rel="noreferrer">The canonical bridge</a>{" "}
+                  is the slower, trust-minimised route from Ethereum.
+                </span>
+              </li>
+              <li>
+                <b>Come back and pay in ETH</b>
+                <span>The panel does the rest in one transaction. Nothing else to buy or approve by hand.</span>
+              </li>
+            </ol>
+            <p className="muted small" style={{ margin: 0 }}>
+              Those are third-party services. Nothing here is financial advice.
+            </p>
+          </div>
         </div>
 
-        <div className="icm-ticket">
-          <span className="icm-ticket-label">Send $COMD to</span>
+        <div className="icm-buyside">
           {rate?.deposit.address ? (
             <>
-              <code className="icm-addr">{rate.deposit.address}</code>
-              <CopyButton text={rate.deposit.address} label="Copy address" />
-              <ul className="icm-ticket-fine">
-                <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
-                <li>$COMD only. Anything else sent here is lost.</li>
-                {rate.deposit.paymentIsBurn && <li className="warn">This is the burn address: what you send is destroyed on the way in.</li>}
-              </ul>
+              <BuyCredit deposit={rate.deposit} onDone={() => { if (view) void load(); }} />
+              <details className="icm-manual">
+                <summary>Or send it yourself</summary>
+                <code className="icm-addr">{rate.deposit.address}</code>
+                <CopyButton text={rate.deposit.address} label="Copy address" />
+                <ul className="icm-ticket-fine">
+                  <li>Robinhood Chain{rate.deposit.chainId ? `, chain ${rate.deposit.chainId}` : ""}</li>
+                  <li>$COMD only. Anything else sent here is lost.</li>
+                  {rate.deposit.paymentIsBurn && <li className="warn">This is the burn address: what you send is destroyed on the way in.</li>}
+                </ul>
+              </details>
             </>
           ) : (
-            <p className="muted small" style={{ margin: 0 }}>
-              {rate?.deposit.problem ?? "Payments are not being watched yet, so credit cannot be bought."}
-            </p>
+            <div className="icm-ticket">
+              <span className="icm-ticket-label">Send $COMD to</span>
+              <p className="muted small" style={{ margin: 0 }}>
+                {rate?.deposit.problem ?? "Payments are not being watched yet, so credit cannot be bought."}
+              </p>
+            </div>
           )}
         </div>
       </section>
