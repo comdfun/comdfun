@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // The 3:1 promo banner: the name in the middle, the product's own screens set round it, the collection behind.
 //
-//   node scripts/promo.mjs --base http://localhost:3124        → public/banner-3x1.png (1800×600) and @2x
+//   node scripts/promo.mjs --base http://localhost:3124        → public/banner-3x1.png (1800×600) and @2x,
+//                                                                 plus banner-3x1-text.png: the same without screens
 //
 // Every screen is photographed from the running site rather than drawn, so the banner shows the product as it
 // is and ages with it. Element-level captures (the buy panel, the catalogue, the dashboard) are taken at 2×, so
@@ -70,9 +71,11 @@ for (const s of SHOTS) {
   await page.close();
 }
 
-for (const [scale, name] of [[1, "banner-3x1.png"], [2, "banner-3x1@2x.png"]]) {
+// the full banner, and a text-only one (no screens, larger type) from the same template
+const bare = html.replace('<div class="p">', '<div class="p bare">');
+for (const [scale, name, doc] of [[1, "banner-3x1.png", html], [2, "banner-3x1@2x.png", html], [1, "banner-3x1-text.png", bare], [2, "banner-3x1-text@2x.png", bare]]) {
   const page = await browser.newPage({ viewport: { width: 1800, height: 600 }, deviceScaleFactor: scale });
-  await page.setContent(html, { waitUntil: "load" });
+  await page.setContent(doc, { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 30_000 });
   await page.waitForTimeout(500);

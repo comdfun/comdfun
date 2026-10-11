@@ -4,6 +4,7 @@ import { Film } from "@/components/fx/Film";
 import { MintFilm } from "@/components/fx/MintFilm";
 import { AnnounceFilm } from "@/components/fx/AnnounceFilm";
 import { ProFilm } from "@/components/fx/ProFilm";
+import { PRO_KINDS, type ProKind } from "@/components/fx/proKinds";
 import "./film.css";
 import "./pro.css";
 
@@ -31,7 +32,7 @@ export default async function FilmPage({ searchParams }: { searchParams: Promise
     </div>
   );
   // the cICM films run on one clock (components/fx/ProFilm.tsx) so their scenes can crossfade
-  if (sp.v === "icmx" || sp.v === "icmeth") return <ProFilm kind={sp.v} logo={art.logo} mode={mode} />;
+  if (PRO_KINDS.includes(sp.v as ProKind)) return <ProFilm kind={sp.v as ProKind} logo={art.logo} mode={mode} />;
   if (sp.v === "mint") return <>{preload}<MintFilm logo={art.logo} portraits={WALL} mode={mode} /></>;
   if (sp.v === "minted" || sp.v === "comd" || sp.v === "register" || sp.v === "tasks" || sp.v === "steps" || sp.v === "build" || sp.v === "imd" || sp.v === "fomo" || sp.v === "wheel" || sp.v === "dev" || sp.v === "gm" || sp.v === "burn" || sp.v === "backend" || sp.v === "receipt" || sp.v === "working" || sp.v === "major" || sp.v === "burn2" || sp.v === "traits" || sp.v === "trades" || sp.v === "fwtrack" || sp.v === "versus" || sp.v === "pushed" || sp.v === "burn3" || sp.v === "burn4" || sp.v === "burn5" || sp.v === "burn6" || sp.v === "burn7" || sp.v === "burn8" || sp.v === "burn9" || sp.v === "contest" || sp.v === "today" || sp.v === "matters" || sp.v === "agentfi" || sp.v === "activity" || sp.v === "oracle" || sp.v === "coins" || sp.v === "clerk" || sp.v === "x402" || sp.v === "upgrade" || sp.v === "hack" || sp.v === "soon" || sp.v === "burn10" || sp.v === "state" || sp.v === "found" || sp.v === "retain" || sp.v === "bench" || sp.v === "epochs" || sp.v === "flow" || sp.v === "filed" || sp.v === "wallet" || sp.v === "gate" || sp.v === "screen" || sp.v === "watch" || sp.v === "holders" || sp.v === "proof" || sp.v === "what" || sp.v === "cost" || sp.v === "ident" || sp.v === "money" || sp.v === "read" || sp.v === "again" || sp.v === "card" || sp.v === "shelf" || sp.v === "review" || sp.v === "cicm") return <>{preload}<AnnounceFilm kind={sp.v} logo={art.logo} portraits={WALL} mode={mode} /></>;
   return <>{preload}<Film art={art} mode={mode} /></>;

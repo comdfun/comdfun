@@ -12,8 +12,8 @@
 import { Fragment, useEffect, type CSSProperties, type ReactNode } from "react";
 import { Svg } from "../Svg";
 
-export type ProKind = "icmx" | "icmeth";
-export const PRO_LENGTH: Record<ProKind, number> = { icmx: 38_000, icmeth: 32_000 };
+import { PRO_LENGTH, type ProKind } from "./proKinds";
+export type { ProKind };
 
 const v = (o: Record<string, string | number>) => o as CSSProperties;
 const ms = (n: number) => `${n}ms`;
@@ -105,7 +105,13 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         <div className="pv-grid" aria-hidden="true" />
         <div className="pv-brand" aria-hidden="true"><Svg svg={logo} className="pv-brand-mark" /><span>Company<b>.md</b></span><em>cICM</em></div>
         <div className="pv-progress" aria-hidden="true"><i /></div>
-        {kind === "icmx" ? <Intro logo={logo} /> : <Eth logo={logo} />}
+        {kind === "icmx" && <Intro logo={logo} />}
+        {kind === "icmeth" && <Eth logo={logo} />}
+        {kind === "icmagents" && <Agents logo={logo} />}
+        {kind === "icmburn" && <Burn logo={logo} />}
+        {kind === "icmsettle" && <Settle logo={logo} />}
+        {kind === "icmmodels" && <Models logo={logo} />}
+        {kind === "icmeco" && <Eco logo={logo} />}
       </div>
     </div>
   );
@@ -387,6 +393,451 @@ function Eth({ logo }: { logo: string }) {
       {/* 06 · out */}
       <Scene t0={28500} t1={32000} last>
         <Outro logo={logo} a="Bring ETH." b="Leave with inference." />
+      </Scene>
+    </>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ Built for agents */
+
+const KEYS = [
+  ["research-bot", "cicm_live_3a9f…e21c", "ceiling $5"],
+  ["support-agent", "cicm_live_b71d…0f4a", "ceiling $20"],
+  ["counsel #1776", "cicm_live_c0de…9b2e", "ceiling $10"],
+  ["my laptop", "cicm_live_77e1…a5d0", "no ceiling"],
+] as const;
+const KEY_Y = [372, 482, 592, 702];
+const AGENT_LOG = [
+  ["planning the task", "claude-opus-4.1", "200"],
+  ["searching sources", "gemini-2.5-flash", "200"],
+  ["drafting part one", "gpt-5", "200"],
+  ["checking the draft", "claude-sonnet-4", "200"],
+  ["drafting part two", "gpt-5", "200"],
+  ["final review", "claude-opus-4.1", "402"],
+] as const;
+
+function Agents({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--cyan)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Humans buy it." d={300} /></span>
+            <span className="pv-line"><span className="pv-c" style={v({ "--c": "var(--cyan)" })}><W text="Agents" d={800} /></span> <W text="buy it." d={880} /></span>
+            <span className="pv-line"><span className="pv-c" style={v({ "--c": "var(--gold)" })}><W text="Counsel" d={1300} /></span> <W text="buy it." d={1380} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>One endpoint, a key each, paid in $COMD.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={11000}>
+        <Head eyebrow="Who it's for" c="var(--violet)"><W text="Anyone with a key." d={200} /></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[460, 960, 1460].map((x, i) => {
+            const p = `M ${x} 676 C ${x} 740, 960 740, 960 800`;
+            return (
+              <g key={x}>
+                <path className="a-draw" pathLength={1} d={p} style={v({ "--d": ms(1300 + i * 100) })} />
+                <path className="a-pulse" pathLength={1} d={p} style={v({ "--d": ms(2200 + i * 320), "--pc": ["var(--parch)", "var(--cyan)", "var(--gold)"][i] })} />
+              </g>
+            );
+          })}
+        </svg>
+        {[
+          { t: "People", s: "Point a chat app or a script at it. No card and no subscription.", c: "var(--parch)", g: <span className="a2-glyph">“ ”</span> },
+          { t: "Agents", s: "A key in an environment variable. It calls models on its own and pays as it goes.", c: "var(--cyan)", g: <span className="a2-glyph pv-mono">&gt;_</span> },
+          { t: "Counsel", s: "The swarm's own NFT agents can buy their thinking at the same desk.", c: "var(--gold)", g: <img className="a2-face" src="/art/1776.svg" alt="" /> },
+        ].map((k, i) => (
+          <div key={k.t} className="a2-card a-from" style={v({ left: `${290 + i * 500}px`, "--cc": k.c, "--d": ms(400 + i * 180), "--fx": "0px", "--fy": "50px" })}>
+            <div className="a2-top">{k.g}</div>
+            <b>{k.t}</b>
+            <span>{k.s}</span>
+          </div>
+        ))}
+        <div className="a2-node a-pop" style={v({ "--d": "1000ms" })}><b>cICM</b><code>api.comd.fun/icm/v1</code></div>
+      </Scene>
+
+      <Scene t0={10500} t1={19000}>
+        <Head eyebrow="For agents" c="var(--cyan)"><W text="Give it a key" d={200} /> <span className="pv-c"><W text="with a ceiling." d={480} /></span></Head>
+        <div className="a3-term a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>research-bot</span></div>
+          <div className="a3-log pv-mono">
+            {AGENT_LOG.map(([task, model, code], i) => (
+              <div key={task} className={code === "402" ? "a3-l a3-stop a-fade" : "a3-l a-fade"} style={v({ "--d": ms(900 + i * 800) })}>
+                <u>agent ›</u><span>{task}</span><em>{model}</em><b>{code === "402" ? "402 ceiling" : "200 OK"}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="a3-meter a-rise" style={v({ "--d": "600ms", "--dy": "40px" })}>
+          <span className="pv-k">research-bot</span>
+          <b>Spent by this key</b>
+          <div className="a3-track"><i className="a3-fill" style={v({ "--d": "900ms" })} /><span className="a3-cap" /></div>
+          <div className="a3-legend"><span>$0</span><span>ceiling $5.00</span></div>
+          <div className="a3-flag a-pop" style={v({ "--d": "4950ms" })}>Ceiling reached</div>
+        </div>
+        <p className="pv-cap a3-capline a-rise" style={v({ "--d": "5700ms" })}>The key stops. The account, and every other key, carries on.</p>
+      </Scene>
+
+      <Scene t0={18500} t1={25000}>
+        <Head eyebrow="Keys" c="var(--gold)"><W text="A key for" d={200} /> <span className="pv-c"><W text="every agent." d={430} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {KEY_Y.map((y, i) => {
+            const p = `M 620 580 C 760 580, 760 ${y + 46}, 900 ${y + 46}`;
+            return (
+              <g key={y}>
+                <path className="a-draw" pathLength={1} d={p} style={v({ "--d": ms(900 + i * 120) })} />
+                <path className="a-pulse" pathLength={1} d={p} style={v({ "--d": ms(1800 + i * 280), "--pc": i === 1 ? "var(--crimson)" : "var(--gold)" })} />
+              </g>
+            );
+          })}
+        </svg>
+        <div className="a4-wallet a-pop" style={v({ "--d": "400ms" })}><span className="pv-k">Your wallet</span><code>0x8f2c…41ab</code><em>one account</em></div>
+        {KEYS.map(([name, disp, ceil], i) => (
+          <div key={name} className={i === 1 ? "a4-key a4-revoke" : "a4-key"} style={v({ top: `${KEY_Y[i]}px`, "--d": ms(700 + i * 160), "--dr": "4300ms" })}>
+            <div><b>{name}</b><code>{disp}</code></div>
+            <span className={ceil === "no ceiling" ? "a4-ceil a4-none" : "a4-ceil"}>{ceil}</span>
+            {i === 1 && <span className="a4-stamp">Revoked</span>}
+          </div>
+        ))}
+        <p className="pv-cap a4-capline a-rise" style={v({ "--d": "4900ms" })}>Revoke one in a click. The others keep working.</p>
+      </Scene>
+
+      <Scene t0={24500} t1={28000} last>
+        <Outro logo={logo} a="For humans, agents and Counsel." b="One key each." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ Where the $COMD goes */
+
+const ROUTE_B = [
+  { x: 360, c: "var(--gold)", k: "You pay", b: "$COMD", s: "from the wallet you pay with" },
+  { x: 760, c: "var(--violet)", k: "Arrives at", b: "The desk", s: "the cICM deposit address" },
+  { x: 1160, c: "var(--orange)", k: "And is", b: "Burned", s: "gone from supply for good" },
+  { x: 1560, c: "var(--lime)", k: "You get", b: "Credit", s: "to spend on any model" },
+];
+const STAIR = (() => {
+  // a supply line that only ever steps down: flat while nothing is bought, a drop each time credit is
+  let x = 70, y = 70; const pts = [`M ${x} ${y}`];
+  const drops = [26, 14, 40, 18, 30, 22, 48, 20, 34];
+  for (const d of drops) { x += 128; pts.push(`L ${x} ${y}`); y += d; pts.push(`L ${x} ${y}`); }
+  pts.push(`L 1250 ${y}`);
+  return pts.join(" ");
+})();
+
+function Burn({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--orange)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Every $COMD spent" d={300} /></span>
+            <span className="pv-line"><W text="on inference" d={850} /></span>
+            <span className="pv-line"><HL d={1900} c="var(--orange)"><W text="is burned" d={1300} /></HL><Dot d={1460} /></span>
+          </h1>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12000}>
+        <Head eyebrow="Where it goes" c="var(--orange)"><W text="Pay." d={200} /> <span className="pv-c"><W text="Burn." d={380} /></span> <W text="Use." d={560} /></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <path key={i} className="a-draw" pathLength={1} d={`M ${ROUTE_B[i].x + 130} 600 L ${ROUTE_B[i + 1].x - 130} 600`} style={v({ "--d": ms(900 + i * 220) })} />
+          ))}
+          <path className="a-draw e4-brace" pathLength={1} d="M 250 770 Q 250 800 280 800 L 1640 800 Q 1670 800 1670 770" style={v({ "--d": "5100ms", "--lc": "var(--orange)" })} />
+        </svg>
+        {ROUTE_B.map((r, i) => (
+          <div key={r.b} className="e4-node" style={v({ left: `${r.x - 130}px`, "--cc": r.c, "--d": ms(400 + i * 230), "--hit": ms([1840, 2560, 3600, 4720][i]) })}>
+            {i === 2 && <div className="e4-fire" aria-hidden="true">{Array.from({ length: 9 }, (_, k) => <i key={k} style={v({ "--e": k })} />)}</div>}
+            <u>{r.k}</u><b>{r.b}</b><span>{r.s}</span>
+            {i === 3 && <span className="e4-done" style={v({ "--d": "5000ms" })}><Tick /></span>}
+          </div>
+        ))}
+        <div className="e4-token b2-token" style={v({ "--d": "1600ms" })} aria-hidden="true" />
+        <div className="e4-pill b2-pill a-pop" style={v({ "--d": "5450ms" })}>every time, on the way in</div>
+      </Scene>
+
+      <Scene t0={11500} t1={19000}>
+        <Head eyebrow="Supply" c="var(--orange)"><W text="Only ever" d={200} /> <span className="pv-c"><W text="goes down." d={400} /></span></Head>
+        <div className="b3-chart a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <span className="b3-y">$COMD supply</span>
+          <span className="b3-x">time</span>
+          <svg viewBox="0 0 1320 470" aria-hidden="true">
+            <path className="b3-axis" d="M 50 30 L 50 430 L 1290 430" />
+            <path className="a-draw b3-line" pathLength={1} d={STAIR} style={v({ "--d": "900ms", "--du": "3600ms", "--lc": "var(--orange)" })} />
+            {[198, 326, 454, 582, 710, 838, 966, 1094, 1222].map((x, i) => (
+              <circle key={x} className="b3-drop a-pop" cx={x} cy={[70, 96, 110, 150, 168, 198, 220, 268, 288][i]} r="7" style={v({ "--d": ms(1250 + i * 340) })} />
+            ))}
+          </svg>
+          <span className="b3-tag a-pop" style={v({ "--d": "2400ms" })}>credit bought</span>
+        </div>
+        <p className="pv-cap b3-capline a-rise" style={v({ "--d": "4700ms" })}>Nothing mints more. Every credit bought takes some out.</p>
+      </Scene>
+
+      <Scene t0={18500} t1={24500}>
+        <Head eyebrow="Demand" c="var(--gold)"><W text="Demand that isn't" d={200} /> <span className="pv-c"><W text="speculation." d={480} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[560, 960, 1360].map((x, i) => {
+            const p = `M ${x} 560 C ${x} 640, 960 600, 960 680`;
+            return (
+              <g key={x}>
+                <path className="a-draw" pathLength={1} d={p} style={v({ "--d": ms(1000 + i * 100) })} />
+                <path className="a-pulse" pathLength={1} d={p} style={v({ "--d": ms(1700 + i * 300), "--pc": "var(--gold)" })} />
+              </g>
+            );
+          })}
+        </svg>
+        {[["People", "who need a model"], ["Agents", "that call models all day"], ["Counsel", "doing the swarm's work"]].map(([t, s], i) => (
+          <div key={t} className="b4-src a-from" style={v({ left: `${560 + i * 400}px`, "--d": ms(400 + i * 160), "--fx": "0px", "--fy": "40px" })}><b>{t}</b><span>{s}</span></div>
+        ))}
+        <div className="b4-coin a-pop" style={v({ "--d": "1300ms" })}><b>$COMD</b><span>bought first</span></div>
+        <p className="pv-cap b4-capline a-rise" style={v({ "--d": "3000ms" })}>Every credit, whoever buys it, starts as $COMD.</p>
+      </Scene>
+
+      <Scene t0={24000} t1={28000} last>
+        <Outro logo={logo} a="Inference bought" b="is supply gone." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ You pay for what ran */
+
+function Settle({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--violet)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="You pay for" d={300} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--violet)"><W text="what actually ran" d={800} /></HL><Dot d={1040} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>Held when a call opens. Settled when it closes.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Head eyebrow="When a call opens" c="var(--violet)"><W text="A hold," d={200} /> <span className="pv-c"><W text="not a charge." d={380} /></span></Head>
+        <Bar cls="s2" d={0} />
+        <div className="s-call a-rise" style={v({ "--d": "1000ms", "--dy": "30px" })}>
+          <div className="s-call-h"><i className="s-live" />anthropic/claude-opus-4.1<em>streaming</em></div>
+          <div className="s-call-b pv-mono"><Type text="The plan has three parts. First, map every module that…" d={1800} per={42} caret /></div>
+        </div>
+        <p className="pv-cap s-capline a-rise" style={v({ "--d": "4400ms" })}>An estimate is held while the model works. Nothing is spent yet.</p>
+      </Scene>
+
+      <Scene t0={12000} t1={19500}>
+        <Head eyebrow="When it closes" c="var(--lime)"><W text="Settled on the" d={200} /> <span className="pv-c"><W text="provider's own figure." d={500} /></span></Head>
+        <Bar cls="s3" d={1300} />
+        <div className="s3-receipt a-rise" style={v({ "--d": "700ms", "--dy": "30px" })}>
+          <span className="pv-k">Receipt</span>
+          <dl>
+            <dt>Model</dt><dd className="pv-mono">anthropic/claude-opus-4.1</dd>
+            <dt>Input</dt><dd className="pv-mono">1,284 tokens</dd>
+            <dt>Output</dt><dd className="pv-mono">412 tokens</dd>
+            <dt>Settled from</dt><dd>the provider&apos;s usage figure <Tick /></dd>
+          </dl>
+        </div>
+        <div className="s3-note a-rise" style={v({ "--d": "2100ms", "--dy": "30px" })}>
+          <b>Released</b>
+          <span>The part of the hold the call did not use goes straight back to your balance.</span>
+        </div>
+      </Scene>
+
+      <Scene t0={19000} t1={25500}>
+        <Head eyebrow="If it never finishes" c="var(--orange)"><W text="The hold" d={200} /> <span className="pv-c"><W text="comes back." d={380} /></span></Head>
+        <Bar cls="s4" d={2700} />
+        <div className="s-call s4-call a-rise" style={v({ "--d": "700ms", "--dy": "30px" })}>
+          <div className="s-call-h"><i className="s-live s4-live" style={v({ "--d": "2000ms" })} /><Swap a={<>openai/gpt-5 <em>streaming</em></>} b={<span className="s4-drop">connection dropped</span>} d={2000} /></div>
+          <div className="s-call-b pv-mono"><Type text="Here is a summary of the three…" d={1000} per={38} /></div>
+        </div>
+        <div className="pv-tiles s4-tiles">
+          {[["$0", "for a call that never ran"], ["Every hold", "settled or released"], ["Every charge", "on your own ledger"]].map(([b, s], i) => (
+            <div key={b} className="pv-tile a-rise" style={v({ "--d": ms(3500 + i * 150) })}><b>{b}</b><span>{s}</span></div>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={25000} t1={29000} last>
+        <Outro logo={logo} a="You pay for what ran." b="Held, settled, released." />
+      </Scene>
+    </>
+  );
+}
+
+/** The balance, as one bar. Each scene's class gives it its own story: a hold opening, settling, or returning. */
+function Bar({ cls, d }: { cls: string; d: number }) {
+  return (
+    <div className={`s-bar ${cls} a-rise`} style={v({ "--d": "400ms", "--dy": "30px", "--b": ms(d) })}>
+      <div className="s-bar-h"><span>Your balance</span><span className="s-legend"><i className="lg-av" />available<i className="lg-hold" />held<i className="lg-spent" />spent</span></div>
+      <div className="s-track">
+        <i className="s-av" />
+        <i className="s-hold" />
+        <i className="s-spent" />
+        <i className="s-rel" />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ One line to switch */
+
+const WALL = [
+  ["Claude Opus 4.1", "anthropic"], ["Claude Sonnet 4", "anthropic"], ["GPT-5", "openai"], ["GPT-5 mini", "openai"],
+  ["Gemini 2.5 Pro", "google"], ["Gemini 2.5 Flash", "google"], ["Grok 4", "x-ai"], ["DeepSeek R1", "deepseek"],
+  ["Llama 4 Maverick", "meta"], ["Mistral Large", "mistral"], ["Qwen3 235B", "qwen"], ["Kimi K2", "moonshot"],
+] as const;
+const HOUSE: Record<string, string> = { anthropic: "var(--orange)", openai: "var(--lime)", google: "var(--cyan)", "x-ai": "var(--parch)", deepseek: "var(--violet)", meta: "var(--pink)", mistral: "var(--orange)", qwen: "var(--violet)", moonshot: "var(--cyan)" };
+
+function Models({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--gold)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Switch models" d={300} /></span>
+            <span className="pv-line"><W text="by changing" d={800} /> <HL d={1700} c="var(--gold)"><W text="one line" d={1150} /></HL><Dot d={1310} /></span>
+          </h1>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12000}>
+        <Head eyebrow="Same code" c="var(--gold)"><W text="Change one string." d={200} /></Head>
+        <div className="m2-code a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>agent.ts</span></div>
+          <pre className="pv-mono">
+            <span className="pv-tl"><s>const</s> reply = <s>await</s> fetch(<q>&quot;https://api.comd.fun/icm/v1/chat/completions&quot;</q>, &#123;</span>
+            <span className="pv-tl">  headers: &#123; Authorization: <q>{"`Bearer ${CICM_KEY}`"}</q> &#125;,</span>
+            <span className="pv-tl">  body: JSON.stringify(&#123;</span>
+            <span className="pv-tl m2-line">    model: <span className="m2-slot"><span className="m2-roll"><q>&quot;openai/gpt-5&quot;,</q><q>&quot;anthropic/claude-opus-4.1&quot;,</q><q>&quot;google/gemini-2.5-pro&quot;,</q></span></span></span>
+            <span className="pv-tl">    messages,</span>
+            <span className="pv-tl">  &#125;),</span>
+            <span className="pv-tl">&#125;);</span>
+          </pre>
+        </div>
+        <div className="m2-same">
+          {["Same key", "Same endpoint", "Same code"].map((t, i) => (
+            <span key={t} className="a-pop" style={v({ "--d": ms(4600 + i * 160) })}><Tick /> {t}</span>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={11500} t1={18500}>
+        <Head eyebrow="The catalogue" c="var(--cyan)"><W text="Every frontier model," d={200} /> <span className="pv-c"><W text="one key." d={560} /></span></Head>
+        <div className="m3-grid">
+          {WALL.map(([n, h], i) => {
+            const r = Math.floor(i / 4), c = i % 4;
+            return (
+              <div key={n} className="m3-tile" style={v({ "--cc": HOUSE[h], "--d": ms(400 + (r + c) * 120), "--w": ms(2300 + (r + c) * 140) })}>
+                <i /><b>{n}</b><span className="pv-mono">{h}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="pv-cap m3-capline a-rise" style={v({ "--d": "3600ms" })}>And every other model the router carries.</p>
+      </Scene>
+
+      <Scene t0={18000} t1={25000}>
+        <Head eyebrow="Pick per task" c="var(--violet)"><W text="The right model" d={200} /> <span className="pv-c"><W text="for each job." d={500} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[0, 1, 2].map((i) => {
+            const y = 418 + i * 130;
+            return <path key={i} className="a-draw" pathLength={1} d={`M 930 ${y} L 1090 ${y}`} style={v({ "--d": ms(1000 + i * 600), "--lc": "var(--violet)" })} />;
+          })}
+        </svg>
+        {[
+          ["Plan a change across a codebase", "anthropic/claude-opus-4.1", "deep reasoning", "var(--orange)"],
+          ["Read a 500-page filing in one go", "google/gemini-2.5-pro", "1M context", "var(--cyan)"],
+          ["Sort ten thousand support tickets", "openai/gpt-5-mini", "fast and light", "var(--lime)"],
+        ].map(([task, model, why, c], i) => (
+          <div key={task} className="m4-row" style={v({ top: `${372 + i * 130}px` })}>
+            <div className="m4-task a-from" style={v({ "--d": ms(600 + i * 600), "--fx": "-40px", "--fy": "0px" })}>{task}</div>
+            <div className="m4-model a-from" style={v({ "--d": ms(1300 + i * 600), "--fx": "40px", "--fy": "0px", "--cc": c })}><i /><code>{model}</code><em>{why}</em></div>
+          </div>
+        ))}
+        <p className="pv-cap m4-capline a-rise" style={v({ "--d": "3400ms" })}>The same key for all three.</p>
+      </Scene>
+
+      <Scene t0={24500} t1={28000} last>
+        <Outro logo={logo} a="Every model." b="One key." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ One firm, two desks */
+
+function Eco({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--gold)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="One firm." d={300} /></span>
+            <span className="pv-line"><W text="Two desks." d={800} /></span>
+            <span className="pv-line"><HL d={1800} c="var(--gold)"><W text="One token" d={1300} /></HL><Dot d={1460} /></span>
+          </h1>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={11500}>
+        <Head eyebrow="Two desks" c="var(--cyan)"><W text="The work," d={200} /> <span className="pv-c"><W text="and the models behind it." d={420} /></span></Head>
+        <div className="c2-door a-from" style={v({ left: "300px", "--cc": "var(--cyan)", "--d": "500ms", "--fx": "-50px", "--fy": "0px" })}>
+          <u>01 · The Swarm</u>
+          <div className="c2-faces">{[7, 1313, 988, 1776].map((id) => <img key={id} src={`/art/${id}.svg`} alt="" />)}</div>
+          <b>Retain the firm.</b>
+          <span>2,000 Counsel do the work, a second checks it, and the result is filed in public.</span>
+        </div>
+        <div className="c2-door a-from" style={v({ left: "990px", "--cc": "var(--gold)", "--d": "800ms", "--fx": "50px", "--fy": "0px" })}>
+          <u>02 · cICM</u>
+          <div className="c2-board pv-mono">
+            {["anthropic/claude-opus-4.1", "openai/gpt-5", "google/gemini-2.5-pro"].map((m) => <span key={m}>{m}<i /></span>)}
+          </div>
+          <b>Buy the models.</b>
+          <span>One key reaches every frontier model. No card and no subscription.</span>
+        </div>
+      </Scene>
+
+      <Scene t0={11000} t1={19000}>
+        <Head eyebrow="One token" c="var(--gold)"><W text="Both run on" d={200} /> <span className="pv-c"><W text="$COMD." d={420} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path className="a-draw" pathLength={1} d="M 640 590 C 720 480, 790 470, 850 520" style={v({ "--d": "1100ms", "--lc": "var(--cyan)" })} />
+          <path className="a-draw" pathLength={1} d="M 850 760 C 790 810, 720 800, 640 700" style={v({ "--d": "1400ms", "--lc": "var(--cyan)" })} />
+          <path className="a-draw" pathLength={1} d="M 1070 520 C 1130 470, 1200 480, 1280 590" style={v({ "--d": "1700ms", "--lc": "var(--gold)" })} />
+          <path className="a-draw" pathLength={1} d="M 1450 720 L 1450 820" style={v({ "--d": "2300ms", "--lc": "var(--orange)" })} />
+          <path className="a-pulse" pathLength={1} d="M 640 590 C 720 480, 790 470, 850 520" style={v({ "--d": "2100ms", "--pc": "var(--cyan)" })} />
+          <path className="a-pulse" pathLength={1} d="M 850 760 C 790 810, 720 800, 640 700" style={v({ "--d": "2500ms", "--pc": "var(--cyan)" })} />
+          <path className="a-pulse" pathLength={1} d="M 1070 520 C 1130 470, 1200 480, 1280 590" style={v({ "--d": "2800ms", "--pc": "var(--gold)" })} />
+          <path className="a-pulse" pathLength={1} d="M 1450 720 L 1450 820" style={v({ "--d": "3200ms", "--pc": "var(--orange)" })} />
+        </svg>
+        <div className="c3-side a-from" style={v({ left: "300px", "--cc": "var(--cyan)", "--d": "500ms", "--fx": "-40px", "--fy": "0px" })}><u>The Swarm</u><b>Matters</b></div>
+        <div className="c3-side a-from" style={v({ left: "1280px", "--cc": "var(--gold)", "--d": "700ms", "--fx": "40px", "--fy": "0px" })}><u>cICM</u><b>Inference</b></div>
+        <div className="c3-coin a-pop" style={v({ "--d": "800ms" })}><b>$COMD</b></div>
+        <span className="c3-lab a-pop" style={v({ left: "640px", top: "438px", "--cc": "var(--cyan)", "--d": "1800ms" })}>matters paid in $COMD</span>
+        <span className="c3-lab a-pop" style={v({ left: "600px", top: "806px", "--cc": "var(--cyan)", "--d": "2100ms" })}>80% to the Counsel who did it</span>
+        <span className="c3-lab a-pop" style={v({ left: "1090px", top: "438px", "--cc": "var(--gold)", "--d": "2400ms" })}>credit bought with $COMD</span>
+        <div className="c3-flame a-pop" style={v({ "--d": "2700ms" })}><div className="e4-fire" aria-hidden="true">{Array.from({ length: 7 }, (_, k) => <i key={k} style={v({ "--e": k })} />)}</div><b>burned</b></div>
+      </Scene>
+
+      <Scene t0={18500} t1={24500}>
+        <Head eyebrow="For holders" c="var(--lime)"><W text="Three reasons" d={200} /> <span className="pv-c"><W text="to need $COMD." d={420} /></span></Head>
+        <div className="pv-tiles c4-tiles">
+          {[["Work", "every matter on the docket is paid in $COMD"], ["Models", "every credit is bought with $COMD, and burned"], ["Counsel", "NFT agents that earn it for accepted work"]].map(([b, s], i) => (
+            <div key={b} className="pv-tile c4-tile a-rise" style={v({ "--d": ms(600 + i * 180), "--cc": ["var(--cyan)", "var(--gold)", "var(--lime)"][i] })}><i /><b>{b}</b><span>{s}</span></div>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={24000} t1={28000} last>
+        <Outro logo={logo} a="One firm. Two desks." b="One token." />
       </Scene>
     </>
   );
