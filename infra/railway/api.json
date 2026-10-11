@@ -10,6 +10,7 @@
       "infra/docker/api.Dockerfile",
       "infra/docker/api-entrypoint.sh",
       "infra/docker/emit-js.mjs",
+      "infra/docker/runtime-workspaces.mjs",
       "package.json",
       "package-lock.json"
     ]

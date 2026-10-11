@@ -76,10 +76,12 @@ RUN npm run build -w @company/art --if-present
 # (bundler style), which plain node cannot resolve: emit sibling .js files in the image (sources untouched).
 RUN npm run build -w @company/abi --if-present && node infra/docker/emit-js.mjs packages/abi
 RUN npm run build -w @company/services && npm run build -w @company/api
-# Assemble what the runtime needs, without node_modules (re-installed below with --omit=dev).
+# Assemble what the runtime needs, without node_modules (re-installed below with --omit=dev). The workspace list
+# is derived from apps/api's own dependencies rather than written out here: a package added to the api and left
+# out of this line ships an image that dies on its first import.
 RUN mkdir -p /out \
  && tar -c --exclude=node_modules --exclude=.next --exclude='*.tsbuildinfo' \
-      packages/protocol packages/services packages/art packages/abi apps/api skills \
+      $(node infra/docker/runtime-workspaces.mjs --dirs) apps/api skills \
     | tar -x -C /out
 
 # ------------------------------------------------------------------------------------------------ runtime
@@ -92,15 +94,20 @@ ENV NODE_ENV=production \
     STORAGE_DIR=/data/storage \
     SKILLS_DIR=/app/skills
 COPY --from=manifests /manifests/ ./
+# Kept inside /app, not beside the node install: --check imports the packages by name, and a bare specifier
+# resolves against the node_modules above the importing file.
+COPY infra/docker/runtime-workspaces.mjs ./infra/docker/runtime-workspaces.mjs
 # Production deps of the api and the workspaces it imports at runtime only (no Next.js / wagmi / esbuild).
-RUN npm ci --omit=dev \
-      -w @company/api -w @company/protocol -w @company/services -w @company/art -w @company/abi \
+RUN npm ci --omit=dev -w @company/api $(node infra/docker/runtime-workspaces.mjs --w) \
  && npm cache clean --force
 COPY --from=build /out/ ./
 COPY infra/docker/api-entrypoint.sh /usr/local/bin/api-entrypoint
-# fail the build (not the deploy) if a runtime workspace import cannot load under plain node
+# Fail the build (not the deploy) if a runtime workspace cannot be imported under plain node. The list is read
+# from the api's own dependencies, so this guards every package the api imports rather than the four somebody
+# remembered to type here. A package missing from the image used to get through this line and die in the
+# container instead, on its first request, as ERR_MODULE_NOT_FOUND.
 RUN chmod +x /usr/local/bin/api-entrypoint \
- && node -e "Promise.all(['@company/protocol','@company/abi','@company/services','@company/art'].map(m => import(m))).then(() => console.log('workspace imports ok'))"
+ && node infra/docker/runtime-workspaces.mjs --check
 
 EXPOSE 8787
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/api-entrypoint"]
