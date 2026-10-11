@@ -1730,3 +1730,46 @@ html.no-motion .rv { opacity: 1 !important; }
   .report-body { padding: 18px 16px 4px; }
   .report-cut { padding: 0 16px 16px; }
 }
+
+/* ─── cICM ─────────────────────────────────────────────────────────────────── */
+/* Nothing here uses .rv: these panels mount on a signature, long after the reveal observer has run. */
+.icm { display: grid; gap: 32px; }
+.icm-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.icm-what, .icm-endpoint { display: grid; gap: 10px; align-content: start; }
+.icm-what h3, .icm-endpoint h3 { margin: 0; }
+.icm-what p, .icm-endpoint p { margin: 0; font-size: 15px; line-height: 1.55; }
+.icm-code { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r-sm); background: #07060a; }
+.icm-code code { font-family: var(--font-mono); font-size: 13px; color: var(--cyan); overflow-wrap: anywhere; flex: 1; }
+.icm-endpoint pre.code { margin: 10px 0 0; font-size: 12px; }
+
+.icm-buy { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px; align-items: start; }
+.icm-deposit { display: grid; gap: 4px; }
+.icm-deposit .label { margin-bottom: 6px; }
+
+.icm-gate { display: grid; gap: 14px; justify-items: start; max-width: 560px; }
+.icm-gate p { margin: 0; font-size: 15px; }
+
+.icm-account { display: grid; gap: 28px; }
+.icm-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.icm-stat { border: 1px solid var(--rule); border-radius: var(--r); background: #07060a; padding: 14px 16px; display: grid; gap: 4px; }
+.icm-stat b { font-size: 22px; font-weight: 600; color: var(--parch); font-variant-numeric: tabular-nums; }
+.icm-stat span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+
+.icm-keys { display: grid; gap: 14px; }
+.icm-fresh { display: grid; gap: 10px; }
+.icm-fresh h4 { margin: 0; font-size: 15px; }
+.icm-keylist li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; }
+.icm-mint { display: grid; grid-template-columns: minmax(0, 1fr) 220px auto; gap: 10px; }
+.icm-mint input { font-size: 14px; padding: 0 12px; min-height: 40px; }
+
+.icm-history h3 { margin: 0 0 8px; font-size: 15px; }
+.icm-history .rows li { display: flex; gap: 16px; align-items: baseline; padding: 7px 0; }
+.icm-history .rows li > :first-child { min-width: 120px; color: var(--muted); }
+.icm-history .rows li > :last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
+.icm-foot { border-top: 1px solid var(--rule); padding-top: 16px; margin: 0; }
+
+@media (max-width: 1000px) {
+  .icm-top, .icm-buy { grid-template-columns: minmax(0, 1fr); }
+  .icm-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .icm-mint { grid-template-columns: minmax(0, 1fr); }
+}

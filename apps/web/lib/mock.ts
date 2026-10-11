@@ -714,6 +714,28 @@ function mockDeliverable(j: MockJob): string | null {
   ].join("\n");
 }
 
+/** A cICM account with a little history, so the page can be seen without a live API. */
+function mockIcmAccount() {
+  const at = (ms: number) => new Date(Date.now() - ms).toISOString();
+  return {
+    account: { id: "acct-1", owner: "0x2e81aa0000000000000000000000000000c067aa", balanceMicroUsd: "7412300", heldMicroUsd: "23000", depositedMicroUsd: "20000000", spentMicroUsd: "12587700", suspended: false },
+    keys: [
+      { id: "key-1", display: "cicm_live_9f2c…a41e", label: "agent swarm", disabled: false, createdAt: at(9 * DAY), lastUsedAt: at(4 * MIN), spentMicroUsd: "11204400", spendLimitMicroUsd: null, models: [] },
+      { id: "key-2", display: "cicm_live_1b07…cc92", label: "laptop", disabled: false, createdAt: at(2 * DAY), lastUsedAt: at(6 * HOUR), spentMicroUsd: "1383300", spendLimitMicroUsd: "5000000", models: [] },
+    ],
+    deposits: [
+      { id: "dep-1", createdAt: at(9 * DAY), tokenUnits: (1_500_000n * 10n ** 18n).toString(), creditedMicroUsd: "15000000", burnTx: `0x${hex(64)}`, ref: `0x${hex(64)}:0` },
+      { id: "dep-2", createdAt: at(2 * DAY), tokenUnits: (500_000n * 10n ** 18n).toString(), creditedMicroUsd: "5000000", burnTx: `0x${hex(64)}`, ref: `0x${hex(64)}:0` },
+    ],
+    charges: [
+      { id: "ch-1", at: at(4 * MIN), model: "anthropic/claude-sonnet-4", state: "settled", costMicroUsd: "4312", tokensIn: 1840, tokensOut: 622 },
+      { id: "ch-2", at: at(38 * MIN), model: "openai/gpt-5", state: "settled", costMicroUsd: "11907", tokensIn: 9120, tokensOut: 1455 },
+      { id: "ch-3", at: at(2 * HOUR), model: "anthropic/claude-sonnet-4", state: "settled", costMicroUsd: "2044", tokensIn: 740, tokensOut: 310 },
+      { id: "ch-4", at: at(5 * HOUR), model: "google/gemini-2.5-pro", state: "settled", costMicroUsd: "890", tokensIn: 512, tokensOut: 204 },
+    ],
+  };
+}
+
 export function mockFetch(method: string, rawPath: string, body?: unknown): MockResponse {
   const url = new URL(rawPath, "http://mock");
   const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -799,6 +821,13 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       if (seg[2] === "panel") return j.template === "research" ? ok({ state: "closed", wanted: 5, quorum: 3, answers: [] }) : notFound("no_panel");
       if (seg[2] === "fuzz") return j.template === "fuzz" ? ok({ state: "closed", runs: 100000, confirmed: 0, results: [] }) : notFound("no_fuzz");
     }
+    if (p === "/icm") return ok({
+      enabled: true, reason: null, environment: "live",
+      endpoint: "https://api.comd.fun/icm/v1",
+      rate: { tokensPerUsd: "100000", symbol: "COMD", marginBps: 1500 },
+      deposit: { address: "0x000000000000000000000000000000000000dead", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: true, note: "Send COMD to this address and it is destroyed on the way in." },
+      compatible: "OpenAI chat completions.",
+    });
     if (p === "/workflows") return ok({ count: 0, workflows: [] });
     if (p === "/oracle/counts") {
       const byStatus: Record<string, number> = {};
@@ -963,6 +992,10 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
     o.createdAt = Date.now();
     return { status: 202, json: { status: "payment_pending", order: { id: o.id, status: "quoted", quote: { action: o.action, expiresAt: Math.floor(Date.now() / 1000) + 600 } }, payment: { status: "pending", paid: false, transactionHash: null }, admission: null } };
   }
+  if (p === "/icm/nonce") return ok({ nonce: hex(32), message: "Company.md — cICM\n\nSign in to manage your inference API keys." });
+  if (p === "/icm/account") return ok(mockIcmAccount());
+  if (p === "/icm/keys") return { status: 201, json: { secret: `cicm_live_${hex(48)}`, key: { id: `key-${hex(4)}`, display: `cicm_live_${hex(4)}…${hex(4)}`, label: (b.label as string) ?? null, createdAt: new Date().toISOString() } } };
+  if (/^\/icm\/keys\/[^/]+\/revoke$/.test(p)) return ok({ revoked: p.split("/")[3] });
   if (p === "/agents/bind") return ok({ tokenId: b.tokenId, agentId: b.agentId ?? null, status: b.pending ? "pending" : "bound" });
   if (p === "/pair/complete") return ok({ ok: true, enrolled: true, tokenId: (b.message as Record<string, unknown>)?.tokenId });
   if (p === "/pair/start") return ok({ code: "K7Q2-M9", nonce: hex(64), expiresAt: new Date(Date.now() + 10 * MIN).toISOString(), relayOrigin: "wss://api.comd.fun/agent", chainId: CH, nftContract: COUNSEL_ADDR });

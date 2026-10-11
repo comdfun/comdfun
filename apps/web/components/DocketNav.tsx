@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/today", label: "Today", c: "cyan", m: ["/today"] },
   { href: "/leaderboard", label: "Leaderboard", c: "gold", m: ["/leaderboard"] },
   { href: "/try", label: "Try it free", c: "lime", m: ["/try"] },
+  { href: "/icm", label: "cICM", c: "gold", m: ["/icm"] },
   { href: "/launch", label: "Retain ›", c: "pink", m: ["/launch"] },
 ];
 
