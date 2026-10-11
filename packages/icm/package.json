@@ -1,0 +1,21 @@
+{
+  "name": "@company/icm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Inference Capital Markets: sell LLM inference for a token. A ledger in integer micro-dollars, an OpenAI-compatible proxy that bills what the upstream actually charged, and a house book that never lets the liability go unstated. No token, chain, brand or provider is compiled in.",
+  "engines": { "node": ">=22.18" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}
