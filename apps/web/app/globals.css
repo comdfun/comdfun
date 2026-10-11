@@ -811,6 +811,12 @@ figure + .kv, figure + dl { margin-top: 16px; }
 .split { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* ---------------------------------------------------------------------------------------------- reduced motion: full static fallback */
+/* A short window is the common laptop, not an edge case: the board gives up its last line before the page
+   gives up its button. Side by side only, since the stacked layout scrolls anyway. */
+@media (min-width: 921px) and (max-height: 840px) {
+  .board-row:nth-child(7) { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition: none !important; }
   .crt, .ticker .tk-track { animation: none !important; }
@@ -1805,76 +1811,196 @@ html.no-motion .rv { opacity: 1 !important; }
 }
 
 /* ─── the front door ───────────────────────────────────────────────────────── */
-/* A diptych: two doors, each showing the texture of what is behind it. No chrome — the header, ticker, footer
+/* A diptych: two desks, side by side, each showing its own substance. No chrome — the header, ticker, footer
    and status bar are suppressed on this route (components/Chrome.tsx) — because a nav listing the insides of
-   both desks is the thing this page exists to spare people. */
-.gate { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; gap: 0; }
+   both desks is the thing this page exists to spare people.
 
-.gate-top { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 24px 22px; flex-wrap: wrap; }
-.gate-mark { width: 26px; height: 26px; }
-.gate-word { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
+   Built so nothing here can fail visibly: no API call, no wallet, and every Counsel card sits on a numbered
+   plate, so an image that never arrives reads as a plate rather than a broken frame. */
+/* The choice has to be whole on one screen: a CTA below the fold on a page whose entire job is two CTAs is the
+   page failing. The stage gives way before the words do, down to a floor where the art is still worth seeing. */
+.gate { min-height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #000; }
+
+/* the brand line: small, centred, and the only thing above the choice */
+.gate-brand { display: flex; align-items: center; justify-content: center; gap: 13px; padding: clamp(14px, 2.6vh, 24px) 24px clamp(12px, 2.2vh, 20px); flex-wrap: wrap; }
+.gate-mark { width: 24px; height: 24px; }
+.gate-word { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .gate-word b { color: var(--gold); font-weight: 600; }
-.gate-top p { margin: 0 0 0 4px; font-size: 15px; color: var(--dim); }
+.gate-rule { width: 1px; height: 15px; background: var(--rule-2); }
+.gate-brand p { margin: 0; font-size: 14.5px; color: var(--dim); }
 
-.gate-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
+/* Two rows shared by both doors, so the stages are one height and the two headlines sit on one line. Done any
+   other way the halves drift apart by whatever their copy happens to measure, and a diptych that does not line
+   up reads as a mistake. */
+.gate-pair {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(190px, 1fr) auto; gap: 1px;
+  background: var(--rule); border-top: 1px solid var(--rule);
+}
+
 .gate-door {
-  position: relative; isolation: isolate; overflow: hidden; background: #000; text-decoration: none;
-  display: grid; align-content: end; min-height: 560px; padding: 44px 44px 40px;
+  --c: var(--cyan);
+  position: relative; isolation: isolate; overflow: hidden; text-decoration: none;
+  grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; min-height: 0;
+  background: radial-gradient(120% 86% at 50% -8%, color-mix(in srgb, var(--c) 7%, #000) 0%, #000 62%);
+  transition: background 0.3s ease;
 }
-/* the art is the backdrop, pushed back far enough to read type over and no further */
-.door-art { position: absolute; inset: 0; z-index: -2; }
-/* The veil has to be opaque by the time it reaches the type: the art is texture, not a background image to
-   read words off. It clears at the top, where there is nothing but art. */
-.door-art::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(0deg, #000 42%, rgba(0,0,0,.97) 54%, rgba(0,0,0,.82) 72%, rgba(0,0,0,.45) 100%);
+.door-icm { --c: var(--gold); }
+/* the door being chosen warms; its neighbour is left alone, so the page never flickers as a whole */
+.gate-door:hover { background: radial-gradient(120% 86% at 50% -8%, color-mix(in srgb, var(--c) 13%, #000) 0%, #000 66%); }
+.gate-door:focus-visible { outline: 2px solid var(--c); outline-offset: -3px; }
+/* a hairline of the door's own colour across the top, so the two halves are told apart before any reading */
+.gate-door::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 2px; z-index: 3;
+  background: linear-gradient(90deg, transparent, var(--c) 22%, var(--c) 78%, transparent);
+  opacity: 0.5; transition: opacity 0.25s ease;
 }
-/* A Counsel card is 64×80, so the cells are too, or the faces crop and the nameplates lose their bottom row. */
-.door-wall { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: min-content; gap: 7px; padding: 12px; opacity: 0.55; }
-.door-wall img { width: 100%; aspect-ratio: 64 / 80; height: auto; object-fit: contain; display: block; image-rendering: pixelated; border-radius: 2px; }
-/* The money side of the building: the firm's own plaques, at the cards' geometry so the two walls rhyme. */
-.door-plaques { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: min-content; gap: 7px; padding: 12px; opacity: 0.62; }
-.plaque {
-  display: grid; place-items: center; aspect-ratio: 64 / 80; border-radius: 2px;
-  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
-  background: linear-gradient(170deg, #1d1609 0%, #0d0a06 60%, #060504 100%);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 20%, transparent), inset 0 0 22px -8px color-mix(in srgb, var(--gold) 28%, transparent);
-}
-/* The icons ship with their own fills; recolour them so the wall is brass rather than grey. */
-.plaque svg { width: 48%; height: auto; display: block; }
-.plaque svg [fill]:not([fill="none"]) { fill: currentColor; }
-.plaque { color: var(--gold); }
-/* a wall is not uniform: a few plaques catch the light and a few sit back */
-.plaque:nth-child(3n) { color: color-mix(in srgb, var(--gold) 62%, #6a4a12); }
-.plaque:nth-child(4n) { color: color-mix(in srgb, var(--gold) 80%, #8a6a1c); border-color: color-mix(in srgb, var(--gold) 22%, transparent); }
-.plaque:nth-child(5n) { color: color-mix(in srgb, var(--goldHi, #ffe9a8) 85%, var(--gold)); }
-.plaque:nth-child(7n) { background: linear-gradient(170deg, #201808 0%, #0d0a06 62%, #050404 100%); }
+.gate-door:hover::before { opacity: 1; }
 
-.door-body { display: grid; gap: 16px; max-width: 46ch; }
-.door-since { font-size: 12px; color: var(--dim); }
+/* ---- the stage: whatever is behind the door, shown rather than illustrated */
+.door-stage { position: relative; overflow: hidden; display: grid; place-items: center; padding: clamp(14px, 2.4vh, 36px) 34px clamp(8px, 1.4vh, 18px); }
+/* A short fade where the stage meets the type, so a stage taller than its room ends in shadow rather than a
+   cut edge. It is deliberately shallow: the board underneath it is content, not texture. */
+.door-stage::after {
+  content: ""; position: absolute; inset: auto 0 0; height: 40px; z-index: 2; pointer-events: none;
+  background: linear-gradient(0deg, #000 0%, rgba(0,0,0,.6) 50%, transparent 100%);
+}
+
+/* ---- the swarm's stage: four Counsel, dealt */
+.deal { display: flex; justify-content: center; align-items: flex-end; padding-bottom: 8px; }
+.dealt {
+  --lift: calc(var(--i) * 1px);
+  position: relative; display: block; width: clamp(92px, 11.8vw, 152px); aspect-ratio: 64 / 80; flex: none;
+  margin-inline: clamp(-26px, -2.1vw, -13px);
+  border: 1px solid color-mix(in srgb, var(--cyan) 26%, #211d28);
+  border-radius: 4px; background: linear-gradient(168deg, #10131a 0%, #07080b 70%);
+  box-shadow: 0 18px 34px -16px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  transform: rotate(calc((var(--i) - 1.5) * 5deg)) translateY(calc(var(--i) * -2px));
+  transition: transform 0.34s var(--rv-ease), border-color 0.34s ease;
+}
+.dealt:nth-child(1) { z-index: 1; }
+.dealt:nth-child(2) { z-index: 2; }
+.dealt:nth-child(3) { z-index: 3; }
+.dealt:nth-child(4) { z-index: 4; }
+/* the plate's own number, which is what shows if the art never arrives */
+.dealt-no {
+  position: absolute; inset: auto 0 7%; z-index: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--cyan) 38%, transparent);
+}
+.dealt img {
+  position: relative; z-index: 1; width: 100%; height: 100%; display: block; object-fit: contain;
+  image-rendering: pixelated; border-radius: 3px;
+}
+/* the hand opens towards whoever is choosing */
+.door-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1.5) * 8deg)) translateY(calc(var(--i) * -3px - 6px)); border-color: color-mix(in srgb, var(--cyan) 46%, #211d28); }
+
+/* ---- the desk's stage: a board of what a request can name */
+.board {
+  width: min(420px, 100%); display: grid; gap: 1px; align-self: center;
+  font-family: var(--font-mono); font-size: 12.5px;
+  border: 1px solid color-mix(in srgb, var(--gold) 20%, var(--rule));
+  border-radius: var(--r); overflow: hidden; background: color-mix(in srgb, var(--gold) 9%, var(--rule));
+  box-shadow: 0 22px 44px -22px #000, inset 0 0 40px -18px color-mix(in srgb, var(--gold) 30%, transparent);
+}
+.board-head, .board-row, .board-foot { background: linear-gradient(180deg, #0e0b06 0%, #080705 100%); padding: clamp(5px, 0.95vh, 9px) 14px; }
+.board-head {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--gold) 60%, var(--dim));
+}
+.board-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.board-row code { color: #e6dcc2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-row code i { color: var(--dim); font-style: normal; padding: 0 1px; }
+/* the lamp that says the house is reachable: lit, staggered, never alarming */
+.board-dot {
+  flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--lime);
+  box-shadow: 0 0 9px -1px var(--lime); opacity: 0.85;
+  animation: boardPulse 3.2s ease-in-out infinite; animation-delay: calc(var(--d, 0) * 1s);
+}
+.board-row:nth-child(3) .board-dot { --d: 0.4; }
+.board-row:nth-child(4) .board-dot { --d: 0.8; }
+.board-row:nth-child(5) .board-dot { --d: 1.2; }
+.board-row:nth-child(6) .board-dot { --d: 1.6; }
+.board-row:nth-child(7) .board-dot { --d: 2; }
+.board-row:nth-child(8) .board-dot { --d: 2.4; }
+.board-row:nth-child(9) .board-dot { --d: 2.8; }
+@keyframes boardPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+.board-foot {
+  font-family: var(--font-sans); font-size: 12px; color: var(--dim);
+  border-top: 1px solid color-mix(in srgb, var(--gold) 14%, transparent);
+}
+.door-icm:hover .board { border-color: color-mix(in srgb, var(--gold) 38%, var(--rule)); }
+
+/* ---- the words */
+.door-body {
+  position: relative; z-index: 3; display: grid; max-width: 48ch;
+  /* every measure here answers to the window's height as well as its width, because the thing that runs out
+     on a 768-tall laptop is vertical room, and the button at the end of the body is the point of the page */
+  gap: clamp(9px, 1.5vh, 15px);
+  padding: 0 clamp(26px, 3.4vw, 46px) clamp(20px, 3.4vh, 40px);
+}
+.door-tag {
+  justify-self: start; font-family: var(--font-sans); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+}
 .door-new { color: var(--gold); }
-.gate-door h1 { margin: 0; font-size: clamp(38px, 5.2vw, 58px); font-weight: 600; letter-spacing: -0.035em; line-height: 0.95; color: var(--parch); }
-.door-say { margin: 0; font-size: 15.5px; line-height: 1.6; color: #b9b3a6; }
-.door-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 16px; margin: 2px 0 0; font-size: 14px; }
-.door-facts dt { margin: 0; color: var(--dim); white-space: nowrap; }
-.door-facts dd { margin: 0; color: #cfc8b6; }
+.gate-door h1 {
+  margin: 0; font-size: clamp(34px, min(4.6vw, 6.6vh), 58px); font-weight: 600;
+  letter-spacing: -0.04em; line-height: 0.94; color: var(--parch);
+}
+.door-swarm:hover h1 { color: color-mix(in srgb, var(--cyan) 30%, var(--parch)); }
+.door-icm:hover h1 { color: color-mix(in srgb, var(--gold) 34%, var(--parch)); }
+.gate-door h1 { transition: color 0.25s ease; }
+.door-say { margin: 0; font-size: clamp(14px, 1.75vh, 15.5px); line-height: 1.58; color: #b5afa2; max-width: 46ch; }
+.door-facts {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0; margin: 4px 0 0; font-size: 13.5px;
+  border-top: 1px solid var(--rule);
+}
+.door-facts dt {
+  margin: 0; padding: clamp(6px, 0.95vh, 9px) 18px clamp(6px, 0.95vh, 9px) 0; white-space: nowrap;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--c) 52%, var(--dim));
+  border-bottom: 1px solid var(--rule);
+}
+.door-facts dd { margin: 0; padding: clamp(6px, 0.95vh, 9px) 0; color: #c9c2b1; border-bottom: 1px solid var(--rule); }
 .door-go {
-  justify-self: start; margin-top: 8px; font-size: 14.5px; font-weight: 600; color: #000;
-  background: var(--parch); border-radius: var(--r-sm); padding: 11px 18px;
-  transition: background 0.14s ease, transform 0.14s ease;
+  justify-self: start; margin-top: clamp(4px, 0.9vh, 10px); font-size: 14.5px; font-weight: 600; color: #000;
+  background: var(--parch); border-radius: var(--r-sm); padding: clamp(10px, 1.4vh, 13px) 20px;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
 .door-icm .door-go { background: var(--gold); }
-.gate-door:hover .door-go { transform: translateY(-1px); }
+.gate-door:hover .door-go { transform: translateY(-2px); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--c) 70%, transparent); }
 .door-swarm:hover .door-go { background: var(--cyan); }
-.gate-door:focus-visible { outline: 2px solid var(--parch); outline-offset: -3px; }
-/* the art lifts a little towards whoever is choosing */
-.door-art { transition: opacity 0.2s ease; }
-.gate-door:hover .door-art { opacity: 0.7; }
-.door-icm:hover .door-plaques { opacity: 0.78; }
+.door-go::after { content: " →"; }
 
-@media (prefers-reduced-motion: reduce) { .gate-door, .door-art, .door-go { transition: none; } }
-@media (max-width: 900px) {
-  .gate-pair { grid-template-columns: minmax(0, 1fr); }
-  .gate-door { min-height: 440px; padding: 32px 24px 28px; }
-  .door-wall { grid-template-columns: repeat(4, 1fr); }
+@media (prefers-reduced-motion: reduce) {
+  .gate-door, .gate-door::before, .dealt, .door-go, .gate-door h1, .board { transition: none; }
+  .board-dot { animation: none; opacity: 0.85; }
+  .door-swarm:hover .dealt { transform: rotate(calc((var(--i) - 1.5) * 5deg)) translateY(calc(var(--i) * -2px)); }
+  .gate-door:hover .door-go { transform: none; }
+}
+
+/* one above the other, and the stages shrink before the words do: the words are the point */
+@media (max-width: 920px) {
+  /* stacked, each door is its own pair of rows again: sharing a row height across doors that are no longer
+     side by side would only force the shorter stage to match the taller one for no reason. */
+  .gate-pair { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .gate-door { min-height: 0; grid-row: auto; grid-template-rows: auto auto; }
+  /* stacked, the stage is sized by what is in it and the fade comes off: there is nothing to fade into, and
+     it was dimming the board's last line, which is copy rather than texture */
+  .door-stage { padding: 26px 22px 20px; min-height: 0; }
+  .door-stage::after { content: none; }
+  .dealt { width: clamp(84px, 21vw, 122px); margin-inline: -18px; }
+  .board { width: min(380px, 100%); font-size: 12px; }
+  .board-head, .board-row, .board-foot { padding: 8px 12px; }
+  .door-body { padding: 0 22px 30px; gap: 13px; }
+  .gate-door h1 { font-size: clamp(34px, 9vw, 46px); }
+  .gate-brand { padding: 18px 20px 16px; gap: 10px; }
+  .gate-brand p { font-size: 13.5px; }
+}
+/* on a phone the board's longest slugs would set the column width, so the names clip rather than the layout */
+@media (max-width: 520px) {
+  .board-row:nth-child(n + 7) { display: none; }
+  .door-facts { font-size: 13px; }
+  .door-facts dt { padding-right: 14px; }
 }

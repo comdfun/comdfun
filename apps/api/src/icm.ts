@@ -14,7 +14,7 @@
  *   2. the watcher sees the transfer, credits the sending wallet, and — because the payment went to the burn
  *      address — the payment *is* the burn. The firm never holds the token
  *   3. sign a message to prove the wallet is theirs, and mint an API key
- *   4. point any OpenAI-compatible client at `api.comd.fun/icm/v1` with that key
+ *   4. point any chat-completions client at `api.comd.fun/icm/v1` with that key, naming any model it routes to
  *
  * The honest part, which `/icm/admin/book` states in money: burning the $COMD means the treasury takes in nothing
  * it can spend, while owing a real dollar bill to the model provider for every credit sold. The book shows the
@@ -131,6 +131,8 @@ export class Icm {
   readonly reason: string | null;
   /** Set when cICM could not be configured at all. Every route then answers 503 with this. */
   readonly fault: string | null;
+  /** Why payments are not being watched, or null when they are. Shown on /icm and /health. */
+  readonly depositProblem: string | null;
   private readonly app: App;
   private readonly surface: (req: IcmRequest) => Promise<IcmResponse>;
   /** One-time nonces for proving a wallet, held in memory: a nonce that does not survive a restart is a nonce
@@ -150,9 +152,18 @@ export class Icm {
     // The shared burn address is where the Flywheel, Incorporations and every manual burn already send $COMD.
     // Watching it would read every buyback as a payment for inference and fill the house book with credit
     // nobody bought. cICM needs an address nothing else pays into, so this refuses the trap outright.
-    const shared = settings.depositAddress && SHARED_BURN.test(settings.depositAddress);
-    if (shared) console.error(`[icm] ICM_DEPOSIT_ADDRESS is the shared burn address; payment watching is off. Use an address nothing else pays into.`);
-    const depositAddress = shared ? null : settings.depositAddress;
+    // Why payments are not being watched, in words, carried all the way to the page. Refusing an address and
+    // then reporting "not configured" is a lie that costs somebody an afternoon looking for a variable they
+    // already set.
+    const set = settings.depositAddress;
+    this.depositProblem =
+      !set ? "ICM_DEPOSIT_ADDRESS is not set, so there is nowhere to send $COMD yet."
+      : SHARED_BURN.test(set) ? `ICM_DEPOSIT_ADDRESS is the shared burn address. Everything already burns there — the Flywheel's buybacks, Incorporations' cut, every manual burn — so cICM cannot tell a payment for inference from any of them. Use an address nothing else pays into, and set ICM_BURN_ON_DEPOSIT=1 to burn what lands in it.`
+      : !/^0x[0-9a-fA-F]{40}$/.test(set) ? `ICM_DEPOSIT_ADDRESS is not an address: it must be 0x and 40 hex characters. Got ${JSON.stringify(set.slice(0, 48))}.`
+      : !d.app.cfg.comd ? "COMD_TOKEN is not set, so there is no token to watch for."
+      : !d.app.chain.configured ? "No RPC is configured, so the chain cannot be watched for payments."
+      : null;
+    const depositAddress = this.depositProblem ? null : set;
 
     let config: IcmConfig | null = null;
     let fault: string | null = null;
@@ -282,10 +293,10 @@ export class Icm {
       enabled: this.enabled,
       reason: this.reason,
       environment: this.config.environment,
-      deposit: card ?? { address: null, note: "payment watching is not configured on this deployment" },
+      deposit: card ?? { address: null, problem: this.depositProblem, note: this.depositProblem ?? "Payments are not being watched on this deployment." },
       rate: { tokensPerUsd: this.config.token.tokensPerUsd, symbol: this.config.token.symbol, marginBps: this.config.marginBps },
       endpoint: `${this.app.cfg.publicApiUrl}/icm/v1`,
-      compatible: "OpenAI chat completions. Point any client at the endpoint with your cICM key as the bearer.",
+      compatible: "Standard chat completions. Point any client at the endpoint with your cICM key as the bearer, and name the model you want in the request.",
     };
   }
 
@@ -316,6 +327,7 @@ export class Icm {
       enabled: this.enabled,
       reason: this.reason,
       watching: this.watcher !== null,
+      depositProblem: this.depositProblem,
       sink: this.config.token.sink,
       tokensPerUsd: this.config.token.tokensPerUsd,
       marginBps: this.config.marginBps,

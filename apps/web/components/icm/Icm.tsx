@@ -15,7 +15,7 @@ type Rate = {
   reason: string | null;
   endpoint: string;
   rate: { tokensPerUsd: string; symbol: string; marginBps: number };
-  deposit: { address: string | null; paymentIsBurn?: boolean; minimumTokens?: string; note: string; chainId?: number };
+  deposit: { address: string | null; paymentIsBurn?: boolean; minimumTokens?: string; note: string; problem?: string | null; chainId?: number };
 };
 type Key = { id: string; display: string; label: string | null; disabled: boolean; createdAt: string; lastUsedAt: string | null; spentMicroUsd: string; spendLimitMicroUsd: string | null; models: string[] };
 type Charge = { id: string; at: string; model: string; state: string; costMicroUsd: string; tokensIn: number; tokensOut: number };
@@ -41,11 +41,17 @@ const tokens = (units: string) => { try { return (BigInt(units) / 10n ** 18n).to
 const when = (iso: string) => new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 async function api<T>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
+  // The route handler this calls has its own deadline, but a button must never be able to spin forever: if the
+  // handler itself is wedged, this is the thing that unsticks it and puts a sentence on the screen.
   const res = await fetch(`/api/icm${path}`, {
     method: opts.method ?? "GET",
     headers: { "content-type": "application/json" },
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
     cache: "no-store",
+    signal: AbortSignal.timeout(25_000),
+  }).catch((e: Error) => {
+    if (e.name === "TimeoutError" || e.name === "AbortError") throw new Error("cICM did not answer in time. Try again in a moment.");
+    throw new Error("cICM could not be reached from this browser. Check your connection and try again.");
   });
   const text = await res.text();
   let data: unknown = null;
@@ -65,6 +71,10 @@ export function Icm() {
   const [rate, setRate] = useState<Rate | null>(null);
   const [view, setView] = useState<AccountView | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // What the button should say while it is busy. "Check your wallet" is a promise, so it is only made once the
+  // wallet has actually been asked: before that the page is still talking to the control plane, and telling
+  // somebody to look at a wallet that was never prompted sends them hunting for a window that does not exist.
+  const [stage, setStage] = useState<"server" | "wallet">("server");
   const [err, setErr] = useState<string | null>(null);
   const [fresh, setFresh] = useState<{ secret: string; label: string | null } | null>(null);
   const [label, setLabel] = useState("");
@@ -76,24 +86,32 @@ export function Icm() {
 
   /** Ask for a nonce, sign it, and post the proof with whatever else the call needs. */
   const proved = useCallback(async (extra: Record<string, unknown> = {}) => {
-    if (!address) throw new Error("connect a wallet first");
+    if (!address) throw new Error("Connect a wallet first.");
     const { message } = await api<{ nonce: string; message: string }>("/nonce", { method: "POST", body: { address } });
+    setStage("wallet");
     const signature = await signMessageAsync({ message });
+    setStage("server");
     return { address, signature, ...extra };
   }, [address, signMessageAsync]);
 
   const run = async (what: string, fn: () => Promise<void>) => {
-    setBusy(what); setErr(null);
+    setBusy(what); setErr(null); setStage("server");
     try { await fn(); }
     catch (e) {
       const m = (e as Error).message;
-      setErr(/denied|rejected|User rejected/i.test(m) ? "You cancelled the signature, so nothing happened." : m);
+      setErr(/denied|rejected|User rejected|user rejected/i.test(m) ? "You cancelled the signature, so nothing happened." : m);
     }
-    finally { setBusy(null); }
+    finally { setBusy(null); setStage("server"); }
   };
+
+  /** What a busy button says. One label for the wait on us, another for the wait on them. */
+  const saying = (own: string, idle: string) =>
+    busy === own ? (stage === "wallet" ? "Check your wallet…" : "Working…") : idle;
 
   const load = () => run("load", async () => { setView(await api<AccountView>("/account", { method: "POST", body: await proved() })); });
 
+  // One action, one signature. Reloading the whole account view after a write would mean a second prompt for the
+  // same click, which reads like something went wrong, so the write's own answer is folded into the view instead.
   const mint = () => run("mint", async () => {
     const out = await api<{ secret: string; key: Key }>("/keys", {
       method: "POST",
@@ -101,12 +119,12 @@ export function Icm() {
     });
     setFresh({ secret: out.secret, label: out.key.label });
     setLabel(""); setLimit("");
-    setView(await api<AccountView>("/account", { method: "POST", body: await proved() }));
+    setView((v) => (v ? { ...v, keys: [out.key, ...v.keys] } : v));
   });
 
   const revoke = (id: string) => run(`revoke:${id}`, async () => {
     await api(`/keys/${id}/revoke`, { method: "POST", body: await proved() });
-    setView(await api<AccountView>("/account", { method: "POST", body: await proved() }));
+    setView((v) => (v ? { ...v, keys: v.keys.map((k) => (k.id === id ? { ...k, disabled: true } : k)) } : v));
   });
 
   const endpoint = rate?.endpoint ?? "https://api.comd.fun/icm/v1";
@@ -130,8 +148,8 @@ export function Icm() {
   -d '{"model":"anthropic/claude-sonnet-4",
        "messages":[{"role":"user","content":"hello"}]}'`}</code></pre>
           <p className="icm-wire-foot">
-            Anything that speaks to OpenAI speaks to this. Set the base URL, put your cICM key in the bearer, and
-            nothing else about your code changes.
+            One endpoint, every model: Claude, GPT, Gemini, Llama, DeepSeek and the rest, named in the one field.
+            Set the base URL, put your cICM key in the bearer, and nothing else about your code changes.
           </p>
         </div>
 
@@ -194,7 +212,7 @@ export function Icm() {
             </>
           ) : (
             <p className="muted small" style={{ margin: 0 }}>
-              No deposit address is configured on this deployment yet, so credit cannot be bought.
+              {rate?.deposit.problem ?? "Payments are not being watched yet, so credit cannot be bought."}
             </p>
           )}
         </div>
@@ -213,7 +231,7 @@ export function Icm() {
           <div className="panel icm-gate">
             <p>One signature opens your account: the balance, the keys and every call they have made.</p>
             <button type="button" className="btn primary" onClick={load} disabled={busy !== null}>
-              {busy === "load" ? "Check your wallet…" : "Sign in"}
+              {saying("load", "Sign in")}
             </button>
             <p className="muted small" style={{ margin: 0 }}>Not a transaction. Nothing moves, and there is no gas.</p>
           </div>
@@ -279,7 +297,7 @@ export function Icm() {
                 <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="What is it for? (optional)" maxLength={80} />
                 <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Spend ceiling in $ (optional)" inputMode="decimal" />
                 <button type="button" className="btn primary" onClick={mint} disabled={busy !== null}>
-                  {busy === "mint" ? "Check your wallet…" : "Make a key"}
+                  {saying("mint", "Make a key")}
                 </button>
               </div>
               <p className="muted small" style={{ margin: 0 }}>

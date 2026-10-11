@@ -152,6 +152,19 @@ function deploymentBook(env: Record<string, string | undefined>, chainId: number
   return { file, abi };
 }
 
+/**
+ * A value from a hosting panel, with surrounding quotes taken off.
+ *
+ * Typing `"0xabc…"` into a Railway or Heroku variable field stores the quote characters, and then an address
+ * check fails on a value the operator can see is correct. Nothing this package reads from the environment ever
+ * legitimately begins and ends with a quote, so stripping a matched pair costs nothing and saves an afternoon.
+ */
+export function unquote(v: string | undefined): string {
+  const t = (v ?? "").trim();
+  if (t.length >= 2 && ((t[0] === '"' && t.at(-1) === '"') || (t[0] === "'" && t.at(-1) === "'"))) return t.slice(1, -1).trim();
+  return t;
+}
+
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
   const chainId = int(env.CHAIN_ID, 4663);
   const production = env.NODE_ENV === "production";
@@ -234,21 +247,21 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     rewardGenesisMs: env.REWARD_GENESIS ? Date.parse(env.REWARD_GENESIS) || Date.UTC(2026, 9, 5) : Date.UTC(2026, 9, 5),
     adminToken: env.ADMIN_TOKEN || null,
     icm: {
-      openRouterKey: env.OPENROUTER_API_KEY || null,
+      openRouterKey: unquote(env.OPENROUTER_API_KEY) || null,
       // No default, deliberately. The obvious choice — the burn address — is already where the Flywheel,
       // Incorporations and every manual burn send $COMD, so watching it would read every buyback as somebody
       // paying for inference. cICM needs an address nothing else pays into; see icm.ts.
-      depositAddress: env.ICM_DEPOSIT_ADDRESS || null,
-      comdPerUsd: env.ICM_COMD_PER_USD || "100000",
+      depositAddress: unquote(env.ICM_DEPOSIT_ADDRESS) || null,
+      comdPerUsd: unquote(env.ICM_COMD_PER_USD) || "100000",
       marginBps: int(env.ICM_MARGIN_BPS, 1500),
-      minDepositUsd: env.ICM_MIN_DEPOSIT_USD || "1",
-      maxHoldUsd: env.ICM_MAX_HOLD_USD || "5",
+      minDepositUsd: unquote(env.ICM_MIN_DEPOSIT_USD) || "1",
+      maxHoldUsd: unquote(env.ICM_MAX_HOLD_USD) || "5",
       confirmations: int(env.ICM_CONFIRMATIONS, 12),
       /** The operator burns what lands in the deposit address. Changes what the house book claims, nothing else. */
       burnOnDeposit: env.ICM_BURN_ON_DEPOSIT === "1" || env.ICM_BURN_ON_DEPOSIT === "true",
-      environment: env.ICM_ENVIRONMENT === "test" ? "test" : "live",
-      allowModels: (env.ICM_ALLOW_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),
-      denyModels: (env.ICM_DENY_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean),
+      environment: unquote(env.ICM_ENVIRONMENT) === "test" ? "test" : "live",
+      allowModels: (unquote(env.ICM_ALLOW_MODELS) || "").split(",").map((x) => x.trim()).filter(Boolean),
+      denyModels: (unquote(env.ICM_DENY_MODELS) || "").split(",").map((x) => x.trim()).filter(Boolean),
     },
     commit: env.GIT_COMMIT || env.RAILWAY_GIT_COMMIT_SHA || null,
     branch: env.GIT_BRANCH || env.RAILWAY_GIT_BRANCH || null,

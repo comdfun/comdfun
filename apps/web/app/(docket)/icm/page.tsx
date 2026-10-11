@@ -5,7 +5,7 @@ import { Icm } from "@/components/icm/Icm";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "cICM: inference for $COMD",
-  description: "Company Inference Capital Markets: an OpenAI-compatible endpoint you pay for in $COMD. Frontier models, no card, no account with a model provider, and the margin published rather than discovered.",
+  description: "Company Inference Capital Markets: one endpoint for every frontier model, paid for in $COMD. No card, no account with a model provider, and the margin published rather than discovered.",
 };
 
 export default function IcmPage() {
@@ -13,9 +13,9 @@ export default function IcmPage() {
     <>
       <PageHead
         crumbs={[{ label: "The Docket", href: "/jobs" }, { label: "cICM" }]}
-        kicker={<><span className="badge gold fill">cICM</span><span className="badge cyan">OpenAI-compatible</span><span className="badge ok">Paid in $COMD</span></>}
+        kicker={<><span className="badge gold fill">cICM</span><span className="badge cyan">Every frontier model</span><span className="badge ok">Paid in $COMD</span></>}
         title={<>Inference, <span className="accent">bought with $COMD</span></>}
-        lede={<>Company Inference Capital Markets. Send $COMD, get an API key, and point anything that speaks to OpenAI at it. You pay what the model provider charged plus a published margin, and every call is on a ledger you can read.</>}
+        lede={<>Company Inference Capital Markets. Send $COMD, get an API key, and point your client at one endpoint that reaches every frontier model. You pay what the model provider charged plus a published margin, and every call is on a ledger you can read.</>}
       />
       <Icm />
     </>

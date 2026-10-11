@@ -1218,7 +1218,7 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
       title: <>Buy AI inference with <b>$COMD</b></>,
       strap: <>Company Inference Capital Markets. One endpoint, every frontier model, and the token is the only way to pay for it.</>,
       a: { color: "gold", kicker: "What it is", sub: "an endpoint and a key", steps: [
-        ["01", "It speaks OpenAI", <>Point a client, a script or an agent at it and reach <b>Claude, GPT, Gemini and the rest</b>. Nothing in your code changes but the base URL.</>],
+        ["01", "One endpoint, every model", <>Point a client, a script or an agent at it and reach <b>Claude, GPT, Gemini and the rest</b>. Nothing in your code changes but the base URL.</>],
         ["02", "$COMD is the only way in", <>Send the token, sign once, take a key. No card, no account with a model provider, nothing monthly.</>],
         ["03", "Priced at cost", <>You pay <b>what the provider actually charged</b>, and a margin published on the page rather than discovered on the bill.</>],
       ] },

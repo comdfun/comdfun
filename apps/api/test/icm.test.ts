@@ -46,7 +46,30 @@ test("with no deposit address there is nothing to pay into, and the page says so
   const res = await get(h, "/icm");
   assert.equal(res.status, 200);
   assert.equal(res.body.deposit.address, null, "off by default: an address has to be chosen on purpose");
-  assert.match(res.body.deposit.note, /not configured/);
+  assert.match(res.body.deposit.note, /is not set/);
+  assert.match(res.body.deposit.note, /nowhere to send/);
+});
+
+test("a refused deposit address says why, rather than claiming nothing was configured", async (t) => {
+  const { h } = await up({ ICM_DEPOSIT_ADDRESS: "0x000000000000000000000000000000000000dEaD" });
+  t.after(() => h.close());
+  const res = await get(h, "/icm");
+  assert.equal(res.body.deposit.address, null);
+  // the operator set a variable: telling them it is unset would send them looking for a thing they already did
+  assert.match(res.body.deposit.problem, /shared burn address/i);
+  assert.match(res.body.deposit.problem, /nothing else pays into/i);
+  assert.ok(!/is not set/.test(res.body.deposit.problem), "it is set; it is refused");
+
+  const unset = await up();
+  t.after(() => unset.h.close());
+  assert.match((await get(unset.h, "/icm")).body.deposit.problem, /is not set/);
+
+  const junk = await up({ ICM_DEPOSIT_ADDRESS: "my-wallet" });
+  t.after(() => junk.h.close());
+  assert.match((await get(junk.h, "/icm")).body.deposit.problem, /not an address/);
+
+  // and /health carries the same sentence, so it can be read without opening the page
+  assert.match((await get(h, "/health")).body.icm.depositProblem, /shared burn address/i);
 });
 
 test("the shared burn address is refused, because everything else already burns there", async (t) => {
