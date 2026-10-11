@@ -315,7 +315,7 @@ export interface Publication {
   code: { jobId: string; repoUrl: string | null; pullRequestUrl?: string | null; commit?: string | null; skill?: string; publishedAt: string }[];
   media: { jobId: string; cid?: string; files: MediaFile[]; publishedAt: string }[];
   sites: { jobId: string; label: string; url: string; status?: string; publishedAt: string }[];
-  research: { jobId: string; panel: unknown; steps: number; repoUrl: string | null; pullRequestUrl: string | null; publishedAt: string }[];
+  research: { jobId: string; panel: unknown; steps: number; repoUrl: string | null; pullRequestUrl: string | null; publishedAt: string; reportUrl?: string | null }[];
   audits: { jobId: string; reportUrl?: string; findings?: number; publishedAt: string }[];
   contracts: { jobId?: string; launchId?: string; chainId: number; name: string; address: string; role?: string }[];
   release: { launchId: string; launchNumber: number; token?: { name: string; symbol: string; address: string }; chainId: number } | null;

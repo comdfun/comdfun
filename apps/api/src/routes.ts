@@ -1119,10 +1119,12 @@ function publications(app: App) {
     let release: any = null;
     for (const j of js) {
       const isResearch = j.template === "research" || j.nodes.some((n) => n.skill === "research-report");
+      // the written document, if there is one: the filings list should hand people the report, not a result blob
+      const doc = deliverableRef(app, j) ? `/jobs/${j.id}/deliverable.md` : null;
       if (j.delivery?.repoUrl) {
-        if (isResearch) research.push({ jobId: j.id, panel: j.panel ? `/jobs/${j.id}/panel` : null, steps: j.nodes.length, commit: j.delivery.commit, repoUrl: j.delivery.repoUrl, publishedAt: j.delivery.publishedAt, pullRequestUrl: j.delivery.pullRequestUrl });
+        if (isResearch) research.push({ jobId: j.id, panel: j.panel ? `/jobs/${j.id}/panel` : null, steps: j.nodes.length, commit: j.delivery.commit, repoUrl: j.delivery.repoUrl, publishedAt: j.delivery.publishedAt, pullRequestUrl: j.delivery.pullRequestUrl, reportUrl: doc });
         else code.push({ jobId: j.id, repoUrl: j.delivery.repoUrl, commit: j.delivery.commit, pullRequestUrl: j.delivery.pullRequestUrl, publishedAt: j.delivery.publishedAt });
-      } else if (isResearch) research.push({ jobId: j.id, panel: j.panel ? `/jobs/${j.id}/panel` : null, steps: j.nodes.length, commit: null, repoUrl: null, publishedAt: j.updatedAt, pullRequestUrl: null });
+      } else if (isResearch) research.push({ jobId: j.id, panel: j.panel ? `/jobs/${j.id}/panel` : null, steps: j.nodes.length, commit: null, repoUrl: null, publishedAt: j.updatedAt, pullRequestUrl: null, reportUrl: doc });
       for (const m of j.media ?? []) media.push({ jobId: j.id, ...m });
       if (j.site) sites.push({ jobId: j.id, label: j.site.label, url: j.site.url, siteId: j.site.siteId });
       if (j.report) audits.push({ jobId: j.id, reportUrl: `/jobs/${j.id}/report.md` });

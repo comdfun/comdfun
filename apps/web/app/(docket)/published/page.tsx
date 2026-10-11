@@ -48,8 +48,17 @@ function Card({ p, n }: { p: Publication; n: number }) {
         {p.media.flatMap((m) => m.files.slice(0, 3).map((f) => (
           <li key={f.hash}><a className="ext" href={artifactUrl(f.hash)} target="_blank" rel="noreferrer">{f.path.replace("artifacts/", "")}</a> · {f.mediaType.split("/")[1]?.toUpperCase()} · {bytes(f.bytes)}</li>
         )))}
-        {p.research.map((r) => (<li key={r.jobId}>research · {r.steps} step{r.steps === 1 ? "" : "s"}{r.panel ? " · panel" : ""} · <a className="ext" href={apiUrl(`/jobs/${r.jobId}/result`)} target="_blank" rel="noreferrer">report</a></li>))}
-        {p.audits.map((a) => (<li key={a.jobId}>audit · {a.findings ?? 0} findings · <a className="ext" href={apiUrl(`/jobs/${a.jobId}/report.md`)} target="_blank" rel="noreferrer">report.md</a></li>))}
+        {p.research.map((r) => (
+          <li key={r.jobId}>
+            research · {r.steps} step{r.steps === 1 ? "" : "s"}{r.panel ? " · panel" : ""} · <Link href={`/jobs/${r.jobId}#report`}>read the report</Link>
+            {r.reportUrl && <> · <a className="ext" href={apiUrl(r.reportUrl)}>markdown</a></>}
+          </li>
+        ))}
+        {p.audits.map((a) => (
+          <li key={a.jobId}>
+            audit · {a.findings ?? 0} findings · <Link href={`/jobs/${a.jobId}#report`}>read the findings</Link> · <a className="ext" href={apiUrl(`/jobs/${a.jobId}/report.md`)} target="_blank" rel="noreferrer">markdown</a>
+          </li>
+        ))}
       </ul>
       <Link className="small" href={`/jobs/${jobId}`}>Details →</Link>
     </article>
