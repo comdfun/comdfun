@@ -47,6 +47,18 @@ function ids(n, seed) {
   return out;
 }
 
+/** The line under the strap. `meta.items` is HTML so a preset can bold what matters in its own sentence; the
+ *  chip and the url are always first and last, because that is the shape people recognise. */
+function metaRow(meta, justify) {
+  const dot = Math.round(meta.size * 0.5);
+  const items = meta.items ?? ["<b>2,000</b> Counsel", "Paid in <b>$COMD</b>"];
+  return `<div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px; justify-content:${justify}">
+      <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${dot}px;height:${dot}px"></i>${meta.chip ?? "Live on Robinhood Chain"}</span>
+      ${items.map((i) => `<span>${i}</span>`).join("")}
+      <span class="url" style="font-size:${meta.size + 1}px">${meta.url ?? "comd.fun"}</span>
+    </div>`;
+}
+
 function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copyW, gap }) {
   const el = document.createElement("div");
   el.className = "b";
@@ -73,12 +85,7 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
         <h1 style="font-size:${title.size}px">Company<span class="md">.md</span></h1>
       </div>
       <p class="strap" style="font-size:${strap.size}px; line-height:1.4; max-width:${strap.max}px; margin:0 auto">${strap.text}</p>
-      <div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px; justify-content:center">
-        <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${Math.round(meta.size * 0.5)}px;height:${Math.round(meta.size * 0.5)}px"></i>Live on Robinhood Chain</span>
-        <span><b>2,000</b> Counsel</span>
-        <span>Paid in <b>$COMD</b></span>
-        <span class="url" style="font-size:${meta.size + 1}px">comd.fun</span>
-      </div>`;
+      ${metaRow(meta, "center")}`;
     return el;
   }
   veil.style.background = `linear-gradient(90deg, rgba(4,3,8,.94) 0%, rgba(4,3,8,.9) ${copyW - 16}%, rgba(4,3,8,.55) ${copyW + 12}%, rgba(4,3,8,.3) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 45%)`;
@@ -94,12 +101,7 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
       <h1 style="font-size:${title.size}px">Company<span class="md">.md</span></h1>
     </div>
     <p class="strap" style="font-size:${strap.size}px; line-height:1.4; max-width:${strap.max}px">${strap.text}</p>
-    <div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px">
-      <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${Math.round(meta.size * 0.5)}px;height:${Math.round(meta.size * 0.5)}px"></i>Live on Robinhood Chain</span>
-      <span><b>2,000</b> Counsel</span>
-      <span>Paid in <b>$COMD</b></span>
-      <span class="url" style="font-size:${meta.size + 1}px">comd.fun</span>
-    </div>`;
+    ${metaRow(meta, "start")}`;
   return el;
 }
 
@@ -109,9 +111,9 @@ const PRESETS = {
         strap: { size: 23, max: 540, text: "A firm of NFT-identified agents that work together to perform AI tasks on chain. Retain it, and the record is public." },
         meta: { size: 15, gap: 18, pad: "6px 12px" } },
   x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 72, copyW: 56, railTop: false, center: true,
-       logo: { size: 44, gap: 20, gap2: 16 }, title: { size: 64 },
-       strap: { size: 20, max: 760, text: "A firm of NFT-identified agents that work together to perform AI tasks on chain." },
-       meta: { size: 15, gap: 18, pad: "5px 11px" } },
+       logo: { size: 44, gap: 20, gap2: 16 }, title: { size: 60 },
+       strap: { size: 20, max: 880, text: "A swarm of NFT-identified agents that perform AI tasks on chain, and the desk where anyone buys frontier model inference with $COMD." },
+       meta: { size: 15, gap: 18, pad: "5px 11px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> &middot; inference for <b>$COMD</b>"] } },
   opensea: { w: 1400, h: 350, cols: 20, rows: 5, gap: 7, pad: 60, copyW: 54, railTop: false,
        logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 56 },
        strap: { size: 18, max: 580, text: "2,000 Counsel. Each NFT is an ERC-8004 agent its holder runs, earning $COMD for accepted work." },

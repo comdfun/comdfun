@@ -1,5 +1,5 @@
 "use client";
-// cICM — buy AI inference with $COMD.
+// cICM: buy AI inference with $COMD.
 //
 // Three things in one page, in the order somebody actually needs them: what it is and what it costs, how to put
 // credit on an account, and the keys. Nothing here uses `rv`: those panels mount on a state change, long after
@@ -120,7 +120,7 @@ export function Icm() {
           <h3>What this is</h3>
           <p>
             An OpenAI-compatible endpoint you pay for in <strong>$COMD</strong>. Point any client or agent at it with a
-            cICM key and it reaches the frontier models — Claude, GPT, Gemini, Llama and the rest — with no card,
+            cICM key and it reaches the frontier models, Claude, GPT, Gemini, Llama and the rest, with no card,
             no account with a model provider, and no monthly anything.
           </p>
           <p className="muted small">

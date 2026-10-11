@@ -4,7 +4,7 @@ import { Icm } from "@/components/icm/Icm";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "cICM — inference for $COMD",
+  title: "cICM: inference for $COMD",
   description: "Company Inference Capital Markets: an OpenAI-compatible endpoint you pay for in $COMD. Frontier models, no card, no account with a model provider, and the margin published rather than discovered.",
 };
 

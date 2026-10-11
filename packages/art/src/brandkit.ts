@@ -500,6 +500,44 @@ export function xHeader(): Asset {
   return { r, unit: 4 };
 }
 
+/** The positioning as of cICM: a swarm that does the work, and a market where its inference is bought. Two
+ *  lines rather than one, because "agents that work" and "inference you can buy" are different sentences and
+ *  running them together is how a banner ends up saying neither. */
+export const MARKETS_LINE1: [string, Color][] = [
+  ["A SWARM OF AI AGENTS", A.parchment],
+  [" · ", A.gold],
+  ["INFERENCE CAPITAL MARKETS", A.cyan],
+];
+export const MARKETS_LINE2: [string, Color][] = [
+  ["2,000 COUNSEL", A.muted],
+  [" · ", A.goldLo],
+  ["WORK AND INFERENCE PAID IN ", A.muted],
+  ["$COMD", A.gold],
+  [" · ", A.goldLo],
+  ["COMD.FUN", A.cyan],
+];
+
+/** X/Twitter header, the cICM positioning. Same scene as `xHeader`; the avatar overlaps the bottom-left
+ *  (~400px = 100 units), so that corner stays clear. */
+export function xHeaderMarkets(): Asset {
+  const W = 375, H = 125, horizon = 100;
+  const r = nightScene({ w: W, h: H, horizon, seed: "x-markets" });
+  moon(r, 30, 22, 8);
+  city(r, "xm-back", 0, W, horizon, 16, 40, hex("#0D0828"), 0.2);
+  city(r, "xm-front", 0, W, horizon, 8, 24, hex("#160D3A"), 0.3);
+  const cx = 306;
+  const ch = courthouse(r, cx, horizon, 104, { cols: 4, colH: 30, steps: 3 });
+  plaza(r, horizon, { cx, w: ch.doorX1 - ch.doorX0 - 1 });
+  lineup(r, [12, 1, 26, 6, 3, 21], [...spread(4, 106, 262), ...spread(2, 318, 372)], 120);
+  title(r, 152, 8, 2);
+  // the two lines on one knock-out plate, sized to the longer of them
+  const w = Math.max(textWidth(MARKETS_LINE1.map((x) => x[0]).join("")), textWidth(MARKETS_LINE2.map((x) => x[0]).join("")));
+  r.rect(Math.round(152 - w / 2) - 4, 28, w + 8, 17, A.black);
+  subline(r, 152, 30, 1, MARKETS_LINE1, false);
+  subline(r, 152, 38, 1, MARKETS_LINE2, false);
+  return { r, unit: 4 };
+}
+
 export { spread };
 
 // ── share card ──────────────────────────────────────────────────────────────────────────────

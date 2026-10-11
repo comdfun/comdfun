@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money" | "read" | "again" | "card" | "shelf" | "review";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money" | "read" | "again" | "card" | "shelf" | "review" | "cicm";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -79,6 +79,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   card: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   shelf: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   review: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  cicm: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   holders: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   gate: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -115,7 +116,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500, read: 26_500, again: 26_500, card: 26_500, shelf: 26_500, review: 26_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500, read: 26_500, again: 26_500, card: 26_500, shelf: 26_500, review: 26_500, cicm: 28_000 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -1211,6 +1212,22 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
         ["03", "On its own name", <>Each site answers at <b>its own label</b>, served from the firm&apos;s storage rather than a link that can rot.</>],
       ] },
       tag: <>If it is not filed, <b>it did not happen.</b></>, foot: "comd.fun/published · @comdfun",
+    },
+    cicm: {
+      eyebrow: "New · comd.fun/icm", wall: 18,
+      title: <>Buy AI inference with <b>$COMD</b></>,
+      strap: <>Company Inference Capital Markets. One endpoint, every frontier model, and the token is the only way to pay for it.</>,
+      a: { color: "gold", kicker: "What it is", sub: "an endpoint and a key", steps: [
+        ["01", "Anything that speaks to OpenAI", <>Point a client, a script or an agent at it with a cICM key and it reaches <b>Claude, GPT, Gemini and the rest</b>. No card, no account with a model provider, no monthly anything.</>],
+        ["02", "Send $COMD, get a key", <>The token is the only way to pay. One signature proves the wallet is yours; the key is shown once and spends from the credit that wallet bought.</>],
+        ["03", "What the provider charged, plus 15%", <>Not a price we invented. The provider's own cost for that call, and <b>a margin that is published</b> rather than discovered.</>],
+      ] },
+      b: { color: "lime", kicker: "What it does for $COMD", sub: "the part a holder cares about", lines: [
+        <>It gives the token <b>a use that is not speculation</b>. Somebody who needs models has a reason to buy $COMD that has nothing to do with the chart.</>,
+        <>Every Counsel pays for its own inference, because it runs on its holder's machine. <b>Now it can pay in $COMD</b> at the firm's own desk.</>,
+        <>And what is spent on inference is <b>$COMD taken off the market</b>. Demand for the desk is demand for the token, one for one.</>,
+      ] },
+      tag: <>Inference, <b>bought with $COMD.</b></>, foot: "comd.fun/icm · @comdfun",
     },
     read: {
       eyebrow: "New · comd.fun/jobs", wall: 24,
