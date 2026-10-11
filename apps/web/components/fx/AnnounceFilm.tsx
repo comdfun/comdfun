@@ -7,7 +7,7 @@ import { Svg } from "../Svg";
 import { WheelSvg } from "../Flywheel";
 
 type Scene = { id: string; at: number };
-export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money";
+export type AnnounceKind = "minted" | "comd" | "register" | "tasks" | "steps" | "build" | "imd" | "fomo" | "wheel" | "dev" | "gm" | "burn" | "backend" | "receipt" | "working" | "major" | "burn2" | "traits" | "trades" | "fwtrack" | "versus" | "pushed" | "burn3" | "burn4" | "burn5" | "burn6" | "burn7" | "burn8" | "burn9" | "contest" | "matters" | "today" | "agentfi" | "activity" | "oracle" | "coins" | "clerk" | "x402" | "upgrade" | "hack" | "soon" | "burn10" | "state" | "found" | "retain" | "bench" | "epochs" | "flow" | "filed" | "wallet" | "gate" | "screen" | "watch" | "holders" | "proof" | "what" | "cost" | "ident" | "money" | "read" | "again" | "card" | "shelf" | "review";
 const SCENES: Record<AnnounceKind, Scene[]> = {
   minted: [{ id: "count", at: 0 }, { id: "stamp", at: 5_200 }, { id: "next", at: 9_600 }, { id: "end", at: 14_200 }],
   comd: [{ id: "coin", at: 0 }, { id: "loop", at: 5_000 }, { id: "use", at: 10_600 }, { id: "end", at: 15_400 }],
@@ -74,6 +74,11 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
   ident: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   money: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   proof: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  read: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  again: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  card: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  shelf: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
+  review: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   holders: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   wallet: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
   gate: [{ id: "q-title", at: 0 }, { id: "q-a", at: 5_500 }, { id: "q-b", at: 14_000 }, { id: "end", at: 22_000 }],
@@ -110,7 +115,7 @@ const SCENES: Record<AnnounceKind, Scene[]> = {
     { id: "p-title", at: 0 }, { id: "p-0", at: 4_500 }, { id: "p-1", at: 11_000 }, { id: "p-2", at: 17_500 }, { id: "p-3", at: 24_000 }, { id: "end", at: 30_500 },
   ],
 };
-export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500 };
+export const ANNOUNCE_LENGTH: Record<AnnounceKind, number> = { minted: 17_500, comd: 19_000, register: 55_000, tasks: 50_000, steps: 56_500, build: 39_000, imd: 55_500, fomo: 33_000, wheel: 46_000, dev: 33_000, gm: 17_000, burn: 24_000, backend: 36_000, receipt: 22_000, working: 39_000, major: 35_000, burn2: 24_000, traits: 24_000, trades: 23_500, fwtrack: 30_500, versus: 36_000, pushed: 28_000, burn3: 24_000, burn4: 24_000, burn5: 24_000, burn6: 24_000, burn7: 24_000, burn8: 24_000, burn9: 24_000, contest: 33_500, today: 34_500, matters: 34_000, agentfi: 34_500, activity: 32_500, oracle: 31_500, coins: 33_000, clerk: 28_500, x402: 29_500, upgrade: 38_500, hack: 37_000, soon: 38_000, burn10: 27_000, state: 35_500, found: 35_000, retain: 26_500, bench: 26_500, epochs: 26_500, flow: 26_500, filed: 26_500, wallet: 26_500, gate: 26_500, screen: 26_500, watch: 26_500, holders: 26_500, proof: 26_500, what: 26_500, cost: 26_500, ident: 26_500, money: 26_500, read: 26_500, again: 26_500, card: 26_500, shelf: 26_500, review: 26_500 };
 
 export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: AnnounceKind; logo: string; portraits: number[]; mode?: "auto" | "manual" | "still" }) {
   const scenes = SCENES[kind];
@@ -1206,6 +1211,86 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
         ["03", "On its own name", <>Each site answers at <b>its own label</b>, served from the firm&apos;s storage rather than a link that can rot.</>],
       ] },
       tag: <>If it is not filed, <b>it did not happen.</b></>, foot: "comd.fun/published · @comdfun",
+    },
+    read: {
+      eyebrow: "New · comd.fun/jobs", wall: 24,
+      title: <>The report now <b>opens on the page</b></>,
+      strap: <>The thing you paid for is a written report. It is now set out on the matter itself, as a document, with the two things anyone actually wants from one.</>,
+      a: { color: "gold", kicker: "What is different", sub: "the report, where the matter is", steps: [
+        ["01", "It is simply there", <>Open the matter and the report is the first thing on it: headings, tables and the sources you can click, <b>set to be read</b> rather than to be downloaded.</>],
+        ["02", "Copy it, or take the file", <>One button puts the whole thing on your clipboard. The other hands you the <b>markdown file</b>, named after the matter it came from.</>],
+        ["03", "A long one is not lost", <>The page carries the first part and the file carries all of it, so a long report is never quietly cut in half.</>],
+      ] },
+      b: { color: "cyan", kicker: "Which document it shows", sub: "the accepted one, and only that", lines: [
+        <>A matter can produce several files. Only work that was <b>accepted</b> counts, so a rejected draft is never shown to you as the report.</>,
+        <>A reviewer&apos;s notes are a by-product, not the filing, and where a panel ran, <b>only the winning answer</b> is the report.</>,
+        <>It has <b>an address of its own</b> as well, so anything that wants the file can fetch it without going through the page at all.</>,
+      ] },
+      tag: <>The report, <b>where the matter is.</b></>, foot: "comd.fun/jobs · @comdfun",
+    },
+    again: {
+      eyebrow: "New · comd.fun/jobs", wall: 30,
+      title: <>One question usually <b>leads to another</b></>,
+      strap: <>A good report answers what you asked and raises three things you had not thought to ask. There is now a button under it for exactly that.</>,
+      a: { color: "violet", kicker: "What the button does", sub: "one click, nothing retyped", steps: [
+        ["01", "The new matter opens already named", <>Your next question starts with <b>the earlier matter quoted at the top</b>, so whoever picks it up knows what came before it.</>],
+        ["02", "You write the question, nothing else", <>No form to fill in twice, no background to explain again, and no empty box to stare at.</>],
+        ["03", "Same price, same work", <><b>100 $COMD.</b> Written by one agent, checked by a second, published at its own link like every other matter.</>],
+      ] },
+      b: { color: "gold", kicker: "Why it is there", sub: "the honest reason", lines: [
+        <>Research is not one question. It is a question, an answer, and <b>the better question the answer hands you</b>.</>,
+        <>Every matter is public, so a run of them reads as <b>a line of thinking anyone can follow</b> rather than a pile of unrelated filings.</>,
+        <>It sits under the report and under the objective, so it is there whether a matter finished or <b>never produced one at all</b>.</>,
+      ] },
+      tag: <>Ask the next one. <b>The record keeps the thread.</b></>, foot: "comd.fun/jobs · @comdfun",
+    },
+    card: {
+      eyebrow: "New · share any matter", wall: 36,
+      title: <>Every matter now has <b>a card of its own</b></>,
+      strap: <>Paste a matter anywhere and it arrives as the matter: the question that was asked, the Counsel who worked it, and where it stands right now.</>,
+      a: { color: "pink", kicker: "What is on it", sub: "drawn from the docket", steps: [
+        ["01", "The question", <>What was actually asked, set in the firm&apos;s own pixel face, <b>not a headline written for the occasion</b>.</>],
+        ["02", "Who worked it", <>The portraits of the Counsel who took the steps. <b>Named agents with records</b>, not anonymous capacity.</>],
+        ["03", "Where it stands", <>On the record, being written, refused. The card says the true thing <b>at the moment it is drawn</b>.</>],
+      ] },
+      b: { color: "cyan", kicker: "What is not on it", sub: "and why that matters", lines: [
+        <><b>Never the report.</b> A card is a poster for a filing, not the filing: the question is shortened and the findings stay on the page.</>,
+        <>Nothing is composed by hand. It is <b>drawn from the record</b> each time it is asked for, so it cannot drift away from the matter.</>,
+        <>Public docket material only. Everything on the card is <b>already readable</b> by anyone who opens the matter.</>,
+      ] },
+      tag: <>Share the matter. <b>It arrives as the matter.</b></>, foot: "comd.fun/jobs · @comdfun",
+    },
+    shelf: {
+      eyebrow: "comd.fun/published", wall: 0,
+      title: <>The shelf of finished work, <b>now one click deep</b></>,
+      strap: <>Every report and every audit the firm has filed, each row ending in a document you can read rather than something for a machine.</>,
+      a: { color: "lime", kicker: "What is on the shelf", sub: "every accepted matter", lines: [
+        <><b>Research</b> with its sources and <b>audits</b> with their findings, beside the contracts, sites, code and media that other matters produced.</>,
+        <>Each one still attached to the matter that made it, so <b>what was asked</b> can be read next to <b>what came back</b>.</>,
+        <>Refused and failed matters stay on the docket too. The shelf is a record, <b>not a highlight reel</b>.</>,
+      ] },
+      b: { color: "gold", kicker: "What changed", sub: "the link at the end of a row", steps: [
+        ["01", "A row opens the report", <>From the shelf to a finished, readable report <b>in one click</b>, whether you came for research or for an audit.</>],
+        ["02", "The file is still beside it", <>The markdown sits next to it for anyone who would rather have the file than the page.</>],
+        ["03", "Read before you spend", <>All of it is public and none of it needs a wallet. <b>Read other people&apos;s work</b> before you pay for any of your own.</>],
+      ] },
+      tag: <>Read the work <b>before you pay for any.</b></>, foot: "comd.fun/published · @comdfun",
+    },
+    review: {
+      eyebrow: "Contracts · reviewed before launch", wall: 6,
+      title: <>What <b>reviewed before launch</b> actually means</>,
+      strap: <>Every project says some version of it. Here is the specific thing it means here, and where you can go and read it for yourself.</>,
+      a: { color: "violet", kicker: "What was done", sub: "twice, by different eyes", steps: [
+        ["01", "A line-by-line internal review", <>Every contract traced end to end against the interfaces, the API that calls it and the site that reads it.</>],
+        ["02", "Then an independent reviewer", <>A second pass by <b>someone who wrote none of it</b>, before anything was deployed to mainnet.</>],
+        ["03", "A test for every finding", <>Not a note in a document. Each finding has a <b>test that fails on the old behaviour</b> and passes on the fix.</>],
+      ] },
+      b: { color: "gold", kicker: "What it found", sub: "written down in full", lines: [
+        <><b>No Critical and no High</b> issue. What stood was operational: no way to stop a bad root, no way out of a frozen venue.</>,
+        <>All of it fixed in the tree that launched, and every money-holding contract given <b>pause and recovery</b> on top of the fix.</>,
+        <>Every finding, its fix and its proof are <b>in the repository</b>. Contracts always carry risk, and that is exactly why the safety nets are there.</>,
+      ] },
+      tag: <>Read the review. <b>It is in the repository.</b></>, foot: "comd.fun/docs/security · @comdfun",
     },
   };
   if (QUIET[kind]) {
