@@ -117,7 +117,7 @@ function banner({ w, h, cols, rows, pad, logo, title, strap, meta, railTop, copy
   // With the screens on, the art is a texture behind everything rather than a half of the picture, so the veil
   // is even instead of a left-to-right wipe: a bright right edge would fight the screens sitting on top of it.
   veil.style.background = arguments[0].screens
-    ? `linear-gradient(90deg, rgba(4,3,8,.96) 0%, rgba(4,3,8,.93) 46%, rgba(4,3,8,.91) 100%), radial-gradient(60% 120% at 78% 50%, rgba(255,200,61,.07), transparent 70%), radial-gradient(50% 110% at 20% 40%, rgba(45,226,230,.06), transparent 70%)`
+    ? `linear-gradient(90deg, rgba(4,3,8,.965) 0%, rgba(4,3,8,.945) 46%, rgba(4,3,8,.935) 100%), radial-gradient(60% 120% at 78% 50%, rgba(255,200,61,.07), transparent 70%), radial-gradient(50% 110% at 20% 40%, rgba(45,226,230,.06), transparent 70%)`
     : `linear-gradient(90deg, rgba(4,3,8,.94) 0%, rgba(4,3,8,.9) ${copyW - 16}%, rgba(4,3,8,.55) ${copyW + 12}%, rgba(4,3,8,.3) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 45%)`;
   const copy = el.querySelector(".copy");
   copy.style.left = pad + "px";
@@ -162,16 +162,22 @@ function screens(s) {
 const PRESETS = {
   // og and x carry both desks, because those are the cards people meet the project through and the firm is two
   // desks now. opensea stays on the collection: whoever is looking is looking at the NFTs.
-  og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 64, copyW: 94, railTop: false,
-        logo: { size: 44, gap: 18, gap2: 16 }, title: { size: 62 },
-        strap: { size: 21, max: 620, text: "Two thousand NFT agents that do the work, and the desk that sells the models. Both paid in <b style=\"color:#f3ebd3;font-weight:600\">$COMD</b>." },
-        meta: { size: 14, gap: 14, pad: "5px 11px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> inference"] },
-        screens: { place: "bottom", bottom: 16, clear: 300, gap: 24, w: 424, rot: 9, lift: 11, bar: 17, dot: 5, tag: 14 } },
-  x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 76, copyW: 44, railTop: false,
-       logo: { size: 40, gap: 18, gap2: 14 }, title: { size: 56 },
-       strap: { size: 19, max: 470, text: "Two thousand NFT agents that do the work, and the desk that sells the models. Both paid in <b style=\"color:#f3ebd3;font-weight:600\">$COMD</b>." },
-       meta: { size: 14, gap: 14, pad: "4px 10px", items: ["<b>2,000</b> Counsel", "<b>cICM</b> inference"] },
-       screens: { right: 48, gap: 18, w: 388, rot: 11, lift: 13, bar: 16, dot: 5, tag: 13 } },
+  og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 66, copyW: 94, railTop: false,
+        logo: { size: 44, gap: 16, gap2: 16 }, title: { size: 60 },
+        strap: { size: 20, max: 760, text: "A Swarm of <b style=\"color:#f3ebd3;font-weight:600\">2,000 NFT agents</b> and a Desk That Sells <b style=\"color:#f3ebd3;font-weight:600\">Inference</b> to Humans, Agents and Counsel. Both paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
+        meta: { size: 14, gap: 14, pad: "5px 11px", items: ["<b>cICM</b> inference", "Burns <b>$COMD</b>"] },
+        screens: { place: "bottom", bottom: 22, clear: 304, gap: 26, w: 406, rot: 8, lift: 9, bar: 17, dot: 5, tag: 14 } },
+  // 3:1, the same composition with room to breathe
+  wide: { w: 1800, h: 600, cols: 20, rows: 7, gap: 8, pad: 76, copyW: 94, railTop: false,
+        logo: { size: 46, gap: 16, gap2: 17 }, title: { size: 64 },
+        strap: { size: 21, max: 1060, text: "A Swarm of <b style=\"color:#f3ebd3;font-weight:600\">2,000 NFT agents</b> and a Desk That Sells <b style=\"color:#f3ebd3;font-weight:600\">Inference</b> to Humans, Agents and Counsel. Both paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
+        meta: { size: 15, gap: 16, pad: "5px 12px", items: ["<b>cICM</b> inference", "Burns <b>$COMD</b>"] },
+        screens: { place: "bottom", bottom: 26, clear: 300, gap: 32, w: 428, rot: 8, lift: 9, bar: 17, dot: 5, tag: 14 } },
+  x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 76, copyW: 46, railTop: false,
+       logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 54 },
+       strap: { size: 18, max: 560, text: "A Swarm of <b style=\"color:#f3ebd3;font-weight:600\">2,000 NFT agents</b> and a Desk That Sells <b style=\"color:#f3ebd3;font-weight:600\">Inference</b> to Humans, Agents and Counsel. Both paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
+       meta: { size: 14, gap: 14, pad: "4px 10px", items: ["<b>cICM</b> inference", "Burns <b>$COMD</b>"] },
+       screens: { right: 46, gap: 18, w: 372, rot: 11, lift: 13, bar: 16, dot: 5, tag: 13 } },
   opensea: { w: 1400, h: 350, cols: 20, rows: 5, gap: 7, pad: 60, copyW: 54, railTop: false,
        logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 56 },
        strap: { size: 18, max: 580, text: "2,000 Counsel. Each NFT is an ERC-8004 agent its holder runs, earning $COMD for accepted work." },

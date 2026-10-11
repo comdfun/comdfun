@@ -570,14 +570,14 @@ export function AnnounceFilm({ kind, logo, portraits, mode = "auto" }: { kind: A
             {[["Claude Opus 4.1", "anthropic/claude-opus-4.1", "200k"],
               ["GPT-5", "openai/gpt-5", "400k"],
               ["Gemini 2.5 Pro", "google/gemini-2.5-pro", "1M"],
-              ["Grok 4", "x-ai/grok-4", "256k"],
-              ["DeepSeek R1", "deepseek/deepseek-r1", "164k"]].map(([n, id, c], i) => (
+              ["Grok 4", "x-ai/grok-4", "256k"]].map(([n, id, c], i) => (
               <div className="pf-cat-r" key={id} style={{ ["--i" as string]: i }}>
                 <div className="pf-cat-n"><b>{n}</b><code className="pf-mono">{id}</code></div>
                 <div className="pf-cat-p"><b>{c}</b></div>
               </div>
             ))}
           </div>
+          <p className="pf-sub">And every other model the router carries, through the same key.</p>
         </section>
 
         <section className={`pf-s ${on("x-pay")}`} data-scene="x-pay" style={{ ["--c" as string]: "var(--cyan)" }}>

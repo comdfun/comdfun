@@ -19,7 +19,9 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || process.env.PLAYWRIGHT_MODULE || "playwright");
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SIZES = { og: [1200, 630, "og.png"], x: [1500, 500, "banner-x.png"], opensea: [1400, 350, "banner-opensea.png"] };
+// og is the link card, x the profile header, wide a 3:1 crop for anywhere that wants one, opensea the
+// collection banner.
+const SIZES = { og: [1200, 630, "og.png"], x: [1500, 500, "banner-x.png"], wide: [1800, 600, "banner-3x1.png"], opensea: [1400, 350, "banner-opensea.png"] };
 
 const args = process.argv.slice(2);
 const flag = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };

@@ -761,19 +761,30 @@
 .pf img, .pf svg { image-rendering: auto; }
 /* the gate's two colour fields, so the films sit in the same room as the front door */
 .pf-air { position: absolute; inset: -18% -8%; pointer-events: none;
+  animation: pf-drift 26s ease-in-out infinite alternate;
   background:
     radial-gradient(44% 40% at 16% 22%, color-mix(in srgb, var(--cyan) 13%, transparent) 0%, transparent 70%),
     radial-gradient(48% 44% at 86% 56%, color-mix(in srgb, var(--gold) 14%, transparent) 0%, transparent 72%),
     radial-gradient(38% 32% at 60% 96%, color-mix(in srgb, var(--violet) 10%, transparent) 0%, transparent 70%); }
+@keyframes pf-drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-2.2%, 1.6%, 0) scale(1.06); } }
 .pf-hair { position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
   background: linear-gradient(90deg, var(--cyan), var(--gold) 46%, var(--pink)); opacity: 0.85; }
 
 /* a scene: centred, generous, one at a time */
-.pf-s { position: absolute; inset: 0; display: none; align-content: center; justify-items: start;
-  gap: 38px; padding: 96px 150px 118px; }
-.pf-s.on { display: grid; }
-.pf-mid { justify-items: center; text-align: center; }
-@keyframes pf-rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+/* Every scene anchors its first line at the same height. Centring each block instead made the eyebrow and the
+   headline land somewhere different in every scene, depending only on how much copy happened to follow them,
+   and the film read as a series of unrelated slides rather than one piece. */
+.pf-s { position: absolute; inset: 0; display: none; align-content: start; justify-items: start;
+  gap: 38px; padding: 188px 150px 120px; }
+.pf-s.on { display: grid; animation: pf-scene 0.62s var(--rv-ease) both; }
+@keyframes pf-scene { from { opacity: 0; transform: scale(1.014); } to { opacity: 1; transform: none; } }
+/* the title and the outro are centred in the frame, which is what a card should do */
+.pf-mid, .pf-end { align-content: center; justify-items: center; text-align: center; padding: 120px 150px; }
+@keyframes pf-rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+/* a little further, a little softer, for the things that should feel placed rather than appear */
+@keyframes pf-settle { 0% { opacity: 0; transform: translateY(30px) scale(0.985); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+@keyframes pf-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes pf-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pf-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pf-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
@@ -781,16 +792,26 @@
 .pf-eyebrow { display: flex; align-items: center; gap: 14px; font-size: 21px; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--dim); opacity: 0; }
 .pf-s.on .pf-eyebrow { animation: pf-rise 0.6s var(--rv-ease) 0.05s both; }
-.pf-eyebrow i { width: 44px; height: 2px; background: var(--c, var(--gold)); font-style: normal; }
+.pf-eyebrow i { width: 44px; height: 2px; background: var(--c, var(--gold)); font-style: normal; transform-origin: left center; }
+.pf-s.on .pf-eyebrow i { animation: pf-rule 0.5s var(--rv-ease) 0.2s both; }
+/* a grid item that hides its overflow has an automatic minimum size of zero, so a tall one is free to be
+   squashed by the grid instead of overflowing it. These must keep their own height. */
+.pf-s > .pf-cat { min-height: max-content; }
 .pf-eyebrow b { color: var(--c, var(--gold)); font-weight: 600; }
 
 /* the headline, at the gate's weight */
 .pf-h { margin: 0; font-size: 92px; font-weight: 600; letter-spacing: -0.045em; line-height: 1.02;
   color: var(--parch); opacity: 0; max-width: 24ch; }
-.pf-s.on .pf-h { animation: pf-rise 0.7s var(--rv-ease) 0.15s both; }
+.pf-s.on .pf-h { animation: pf-rise 0.8s var(--rv-ease) 0.14s both, pf-wipe 0.9s var(--rv-ease) 0.14s both; }
 .pf-h-sm { font-size: 66px; max-width: 30ch; }
-.pf-h mark { background: var(--gold); color: #120d02; padding: 0.03em 0.14em 0.09em; border-radius: 5px;
-  box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* An inline background fills the font's whole content box, ascender to descender, which on a 92px display
+   face is a slab far taller than the letters. The block is drawn as a pseudo-element instead, so its top and
+   bottom can be pulled in to sit on the cap height and the baseline. */
+.pf-h mark { position: relative; isolation: isolate; background: none; color: #120d02; padding: 0 0.13em; }
+.pf-h mark::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0.13em; bottom: 0.2em;
+  background: var(--gold); border-radius: 6px;
+}
 /* The emphasised phrase takes the scene's own colour. The gate's cyan-to-pink gradient is kept for the one
    line that closes the film: used on every headline it stops being emphasis and becomes wallpaper. */
 .pf-h em { font-style: normal; color: var(--c, var(--gold)); }
@@ -804,7 +825,7 @@
 .pf-figs { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 1px;
   background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; width: 100%; }
 .pf-fig { display: grid; gap: 10px; padding: 34px 32px; background: var(--ink-1); opacity: 0; }
-.pf-s.on .pf-fig { animation: pf-rise 0.6s var(--rv-ease) calc(0.7s + var(--i) * 0.22s) both; }
+.pf-s.on .pf-fig { animation: pf-settle 0.75s var(--rv-ease) calc(0.62s + var(--i) * 0.16s) both; }
 .pf-fig b { font-size: 58px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; color: var(--parch);
   font-variant-numeric: tabular-nums; }
 .pf-fig span { font-size: 21px; line-height: 1.4; color: var(--dim); }
@@ -812,12 +833,12 @@
 
 /* the catalogue, as the page draws it */
 .pf-cat { width: 100%; border: 1px solid var(--rule); border-radius: 14px; background: var(--ink-1); overflow: hidden; opacity: 0; }
-.pf-s.on .pf-cat { animation: pf-rise 0.6s var(--rv-ease) 0.45s both; }
-.pf-cat-h { display: flex; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid var(--rule);
+.pf-s.on .pf-cat { animation: pf-settle 0.8s var(--rv-ease) 0.42s both; }
+.pf-cat-h { display: flex; justify-content: space-between; padding: 17px 30px; border-bottom: 1px solid var(--rule);
   font-family: var(--font-mono); font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-.pf-cat-r { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 22px 30px; opacity: 0; }
+.pf-cat-r { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 19px 30px; opacity: 0; }
 .pf-cat-r + .pf-cat-r { border-top: 1px solid var(--rule); }
-.pf-s.on .pf-cat-r { animation: pf-fade 0.45s var(--rv-ease) calc(0.8s + var(--i) * 0.18s) both; }
+.pf-s.on .pf-cat-r { animation: pf-rise 0.55s var(--rv-ease) calc(0.78s + var(--i) * 0.14s) both; }
 .pf-cat-n { display: grid; gap: 4px; }
 .pf-cat-n b { font-size: 26px; font-weight: 600; color: var(--parch); }
 .pf-cat-n code { font-size: 18px; color: var(--dim); }
@@ -830,7 +851,7 @@
   border: 1px solid color-mix(in srgb, var(--gold) 26%, var(--rule));
   background: linear-gradient(176deg, #0d0b07 0%, #07060a 64%);
   box-shadow: 0 40px 90px -50px #000; opacity: 0; }
-.pf-s.on .pf-buy { animation: pf-rise 0.7s var(--rv-ease) 0.35s both; }
+.pf-s.on .pf-buy { animation: pf-settle 0.85s var(--rv-ease) 0.32s both; }
 .pf-buy-h { display: flex; align-items: baseline; justify-content: space-between; }
 .pf-buy-h b { font-size: 30px; font-weight: 600; color: var(--parch); }
 .pf-buy-h span { font-size: 19px; color: var(--orange); }
@@ -853,19 +874,23 @@
 .pf-plate { flex: none; width: 330px; display: grid; gap: 12px; justify-items: center; align-content: center;
   text-align: center; padding: 36px 26px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--pc) 34%, var(--rule));
   background: linear-gradient(170deg, color-mix(in srgb, var(--pc) 7%, #0a0910) 0%, #06050a 70%); opacity: 0; }
-.pf-s.on .pf-plate { animation: pf-rise 0.55s var(--rv-ease) calc(0.3s + var(--i) * 0.6s) both; }
+.pf-s.on .pf-plate { animation: pf-settle 0.7s var(--rv-ease) calc(0.34s + var(--i) * 0.5s) both; }
 .pf-plate u { text-decoration: none; font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pc); }
 .pf-plate b { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); }
 .pf-plate span { font-size: 19px; line-height: 1.4; color: var(--muted); }
-.pf-link { flex: 1; min-width: 56px; align-self: center; position: relative; height: 2px; background: var(--rule-2); opacity: 0; }
-.pf-s.on .pf-link { animation: pf-fade 0.4s linear calc(0.6s + var(--i) * 0.6s) both; }
+.pf-link { flex: 1; min-width: 56px; align-self: center; position: relative; height: 2px; opacity: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 45%, transparent), color-mix(in srgb, var(--pc) 70%, transparent)); }
+/* pf-rule only moves the transform, so the opacity: 0 that hides it before its cue has to be lifted too */
+.pf-s.on .pf-link { animation: pf-rule 0.45s var(--rv-ease) calc(0.62s + var(--i) * 0.5s) both, pf-fade 0.3s linear calc(0.62s + var(--i) * 0.5s) both; transform-origin: left center; }
 .pf-link::after { content: ""; position: absolute; top: -7px; left: 0; width: 16px; height: 16px; border-radius: 50%;
   background: var(--pc); box-shadow: 0 0 18px -2px var(--pc);
   animation: pf-send 1.5s cubic-bezier(.5,0,.5,1) calc(1.1s + var(--i) * 0.6s) infinite; }
 @keyframes pf-send { from { left: 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } to { left: calc(100% - 16px); opacity: 0; } }
 /* one bracket under the lot */
 .pf-brace { position: relative; width: 100%; height: 72px; opacity: 0; }
-.pf-s.on .pf-brace { animation: pf-rise 0.6s var(--rv-ease) 2.7s both; }
+.pf-s.on .pf-brace { animation: pf-fade 0.4s linear 2.5s both; }
+.pf-s.on .pf-brace::before { animation: pf-rule 0.7s var(--rv-ease) 2.5s both; transform-origin: center; }
+.pf-s.on .pf-brace span { animation: pf-settle 0.6s var(--rv-ease) 2.95s both; }
 .pf-brace::before { content: ""; position: absolute; left: 3%; right: 3%; top: 0; height: 24px;
   border: 2px solid var(--lime); border-top: 0; border-radius: 0 0 12px 12px; }
 .pf-brace span { position: absolute; left: 50%; top: 30px; transform: translateX(-50%); white-space: nowrap;
@@ -877,6 +902,10 @@
   border: 1px solid color-mix(in srgb, var(--orange) 30%, var(--rule)); }
 .pf-burn-bar i { position: absolute; inset: 0; transform-origin: left center;
   background: linear-gradient(90deg, var(--orange), color-mix(in srgb, var(--orange) 55%, var(--crimson))); }
+.pf-burn-bar::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 38%, rgba(255,255,255,.22) 50%, transparent 62%);
+  background-size: 260% 100%; animation: pf-sheen 2.6s linear 1s infinite; }
+@keyframes pf-sheen { from { background-position: 160% 0; } to { background-position: -160% 0; } }
 .pf-s.on .pf-burn-bar i { animation: pf-eat 4.4s cubic-bezier(.4,0,.5,1) 0.8s both; }
 @keyframes pf-eat { from { transform: scaleX(1); } to { transform: scaleX(0.38); } }
 .pf-burn-cap { display: flex; justify-content: space-between; font-size: 23px; color: var(--muted); }
@@ -888,7 +917,7 @@
   border: 1px solid color-mix(in srgb, var(--pc) 28%, var(--rule));
   background: radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--pc) 10%, #07060c) 0%, #05040a 64%);
   opacity: 0; }
-.pf-s.on .pf-door { animation: pf-rise 0.65s var(--rv-ease) calc(0.4s + var(--i) * 0.4s) both; }
+.pf-s.on .pf-door { animation: pf-settle 0.8s var(--rv-ease) calc(0.4s + var(--i) * 0.3s) both; }
 .pf-door u { text-decoration: none; font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pc); }
 .pf-door b { font-size: 50px; font-weight: 600; letter-spacing: -0.035em; color: var(--parch); line-height: 1; }
 .pf-door span { font-size: 22px; line-height: 1.5; color: var(--muted); }
