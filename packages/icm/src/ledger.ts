@@ -213,6 +213,13 @@ export class Ledger {
     return this.store.save(DEPOSITS, d);
   }
 
+  /** The deposit a reference already made, if any. A watcher asks this before crediting, so a replayed block
+   *  does not fire a notification a second time. */
+  depositByRef(ref: string): Deposit | undefined {
+    const key = ref.trim();
+    return key ? this.store.find<Deposit>(DEPOSITS, (d) => d.ref === key) : undefined;
+  }
+
   depositsOf(accountId: string, limit = 50): Deposit[] {
     return this.store.filter<Deposit>(DEPOSITS, (d) => d.accountId === accountId)
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, limit);

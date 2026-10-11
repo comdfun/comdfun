@@ -27,6 +27,7 @@ export { creditForTokens, tokensForCredit, retailOf, marginOf, rateCard, holdFor
 export { Ledger, hashSecret, usdFromInput, type LedgerOptions, type IssuedKey } from "./ledger.ts";
 export { Proxy, type ProxyOptions, type ProxyResult } from "./proxy.ts";
 export { createSurface, type IcmRequest, type IcmResponse, type SurfaceOptions } from "./http.ts";
+export { DepositWatcher, type ConfirmedPayment, type PaymentSource, type WatcherOptions, type PollResult } from "./funding.ts";
 export {
   OpenRouterUpstream, costToMicroUsd, readUsage,
   type Upstream, type UpstreamModel, type UpstreamUsage, type OpenRouterOptions,
