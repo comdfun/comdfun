@@ -44,3 +44,12 @@ test("uploads are rate limited per address", async (t) => {
   for (let i = 0; i < 31; i++) last = (await upload(h, Buffer.concat([PNG, Buffer.from([i])]))).status;
   assert.equal(last, 429);
 });
+
+test("a browser on the site may upload: the preflight allows it", async (t) => {
+  const h = await harness();
+  t.after(() => h.close());
+  const r = await fetch(`${h.url}/media/logo`, { method: "OPTIONS", headers: { origin: "https://comd.fun", "access-control-request-method": "POST", "access-control-request-headers": "content-type" } });
+  assert.equal(r.status, 204);
+  assert.equal(r.headers.get("access-control-allow-origin"), "*");
+  assert.match(r.headers.get("access-control-allow-headers") ?? "", /content-type/);
+});

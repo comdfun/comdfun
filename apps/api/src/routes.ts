@@ -724,7 +724,13 @@ export function handler(app: App) {
     try {
       const site = await app.sites.serve(req.headers.host, req.url?.split("?")[0] ?? path, method, typeof req.headers["if-none-match"] === "string" ? req.headers["if-none-match"] : undefined);
       if (site) return send(res, { status: site.status, raw: site.body, headers: site.headers }, method === "HEAD");
-      const m = app.router.match(method === "OPTIONS" ? "GET" : method, path) ?? (method === "OPTIONS" ? app.router.match("POST", path) : null);
+      // A preflight is answered by whichever route the real request will hit. Matching GET alone is not enough:
+      // for a POST-only path it finds the path with GET not allowed, and its CORS policy would then be missed,
+      // so the browser blocks the upload that follows ("Failed to fetch").
+      const pick = (meth: string) => { const x = app.router.match(meth, path); return x && "route" in x ? x : null; };
+      const m = method === "OPTIONS"
+        ? (pick("GET") ?? pick("POST") ?? app.router.match("GET", path))
+        : app.router.match(method, path);
       const origin = typeof req.headers.origin === "string" ? req.headers.origin.replace(/\/$/, "") : null;
       if (method === "OPTIONS") {
         const allowed = !origin || origin === sameOrigin || app.cfg.allowedOrigins.includes(origin);

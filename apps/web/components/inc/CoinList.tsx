@@ -125,7 +125,9 @@ function Logo({ image, onImage, onBusy }: { image: string; onImage: (url: string
       setState("idle");
     } catch (e) {
       setPreview(null); onImage("");
-      setState("error"); setMsg((e as Error).name === "TimeoutError" ? "The upload took too long. Try again." : (e as Error).message);
+      const err = e as Error;
+      setState("error");
+      setMsg(err.name === "TimeoutError" ? "The upload took too long. Try again." : err instanceof TypeError ? "The upload service could not be reached. Try again in a moment, or paste a link instead." : err.message);
     } finally { onBusy(false); }
   }
 
