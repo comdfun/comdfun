@@ -117,8 +117,12 @@ export function FxRuntime() {
             { rootMargin: "0px 0px -4% 0px", threshold: 0.01 },
           )
         : null;
+    // An added node can itself be the `.rv` (a card appended to a list once its data arrives), not just contain
+    // one; querySelectorAll looks only below the node, so check the node too or it stays at opacity 0 for good.
     const scan = (root: ParentNode) => {
-      root.querySelectorAll(".rv").forEach((el) => {
+      const found = [...root.querySelectorAll(".rv")];
+      if (root instanceof Element && root.matches(".rv")) found.unshift(root);
+      found.forEach((el) => {
         if (seen.has(el)) return;
         seen.add(el);
         if (io) io.observe(el);

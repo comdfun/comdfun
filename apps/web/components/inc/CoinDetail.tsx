@@ -231,6 +231,12 @@ export function CoinDetail({ address }: { address: Address }) {
             <button type="button" aria-pressed={via === "eth"} disabled={!ethEnabled} title={ethEnabled ? undefined : "ETH trading opens once the $COMD pool is configured after graduation on Pons"} onClick={() => setVia("eth")}>{side === "buy" ? "Pay ETH" : "Get ETH"}</button>
           </div>
           {!ethEnabled && <span className="small muted">COMD only for now: ETH trading opens after $COMD graduates on Pons and the pool is configured. <a href={PONS_URL} target="_blank" rel="noreferrer">Get $COMD on Pons</a></span>}
+          {!grad?.done && (
+            <span className="small muted">
+              Until it graduates, this coin trades only here, on its curve. Trackers such as gmgn or DEX Screener look
+              for a DEX pool, so they show no liquidity and cannot buy it; the coin/$COMD pool on Uniswap v4 opens at graduation.
+            </span>
+          )}
           <div className="field">
             <label htmlFor="inc-amt">You pay</label>
             <div className="amount"><input id="inc-amt" inputMode="decimal" placeholder="0.0" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span className="unit">{payUnit}</span></div>
