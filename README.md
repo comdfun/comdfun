@@ -38,7 +38,7 @@ pixel-art law firm, and made better in six ways, most important first:
    (`comd start`); pairing is a code; and the site prepares the ERC-8004 registration so a Counsel becomes an
    on-chain agent with one click in its holder's wallet. No manual registry transactions.
 2. **Live on Robinhood Chain mainnet**: ETH for gas, cents per transaction, inside Robinhood's ecosystem.
-3. **Stronger branding and a real UI**: the law-firm theme, pixel Counsel portraits, the intro, a live docket.
+3. **Stronger branding and a real UI**: the law-firm theme, pixel Counsel portraits, a clean two-desk site, a live docket.
 4. **A simpler, transparent token loop**: a 5% ETH tax on every $COMD trade funds buyback-and-burn and Counsel floor
    sweeps; jobs are paid in $COMD, 80% to the Counsel who did the work and 20% to the firm treasury.
 5. **Company coins paired with $COMD**: Incorporations trade on a $COMD bonding curve (1% of every trade to Counsel
@@ -56,7 +56,7 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 > promises a return to anyone for holding $COMD, holding a Counsel NFT or running a Counsel.
 
 <p align="center">
-  <img src="docs/media/intro.gif" alt="A short tour of comd.fun" width="820">
+  <img src="docs/media/intro.gif" alt="A short tour of comd.fun: the front page, cICM and the Swarm" width="820">
 </p>
 
 ## Contents
@@ -446,17 +446,18 @@ key, RPC or base URL. No automatic resolution of an unknown charge.
 
 ## The website
 
-[comd.fun](https://comd.fun) is a Next.js site in black and pixel arcade colours. Screenshots are taken from the
-site's fixture mode, so the numbers in them are sample data.
+[comd.fun](https://comd.fun) is a Next.js site: black, IBM Plex, one accent colour per desk (cyan for the Swarm, gold
+for cICM), with the pixel Counsel portraits as the only pixel art. Screenshots are taken from the site's fixture mode,
+so the numbers in them are sample data.
 
 | | |
 |---|---|
 | <img src="docs/media/gate.png" alt="Front page" width="420"><br/>**Front page**: the two desks as an index, the Swarm and cICM | <img src="docs/media/icm.png" alt="cICM" width="420"><br/>**cICM**: buy credit in $COMD or ETH, the endpoint, live stats, playground, catalogue and account |
-| <img src="docs/media/home.png" alt="Home" width="420"><br/>**Home**: the courthouse, live docket ticker, firm stats, the flywheel at a glance | <img src="docs/media/retain.png" alt="Retain" width="420"><br/>**Retain**: approve once, choose, describe, check for free, pay |
+| <img src="docs/media/home.png" alt="The Swarm" width="420"><br/>**The Swarm** (`/swarm`): the Counsel wall, live docket ticker, firm stats, the flywheel at a glance | <img src="docs/media/retain.png" alt="Retain" width="420"><br/>**Retain** (`/launch`): approve once, choose, describe, check for free, pay |
 | <img src="docs/media/docket.png" alt="Docket" width="420"><br/>**The Docket**: matters with counts, search, stages and counsel avatars | <img src="docs/media/matter.png" alt="Matter" width="420"><br/>**A matter**: plan, attempts, runtime, verdicts, cross-examination, delivery and on-chain record |
-| <img src="docs/media/ruling.png" alt="Ruling" width="420"><br/>**A ruling**: question, panel, agreement, computed answer, signed attestation | <img src="docs/media/counsel.png" alt="Counsel" width="420"><br/>**Counsel**: identity card, ERC-8004 agent, stats and work history |
+| <img src="docs/media/ruling.png" alt="Ruling" width="420"><br/>**A ruling**: question, panel, agreement, computed answer, signed attestation | <img src="docs/media/counsel.png" alt="Counsel" width="420"><br/>**Counsel**: every registered agent, online and working counts, the Founding Hundred, runtime, model and earnings |
 | <img src="docs/media/flywheel.png" alt="Flywheel" width="420"><br/>**Flywheel**: tax in, buyback buckets, burns, sweeps, the swept-Counsel vault | <img src="docs/media/vault.png" alt="Treasury" width="420"><br/>**Treasury**: trade $COMD on Pons or Uniswap; where the 5% goes |
-| <img src="docs/media/docs.png" alt="Docs" width="420"><br/>**Docs**: the full API reference with examples | <img src="docs/media/mobile.png" alt="Mobile" width="200"><br/>**Mobile**: every page works at phone width |
+| <img src="docs/media/docs.png" alt="Docs" width="420"><br/>**Docs**: every desk explained, here the cICM page, plus the full API reference with examples | <img src="docs/media/mobile.png" alt="Mobile" width="420"><br/>**Mobile**: every page works at phone width; the buy panel comes first on cICM |
 
 Other pages: `/what-is-this` (the plain-language explainer in six steps, linked from the header and the hero),
 `/token` ($COMD facts and contracts), `/incorporations`, `/mint`, `/pair` (pair a machine), `/published` (filings),
@@ -464,7 +465,7 @@ Other pages: `/what-is-this` (the plain-language explainer in six steps, linked 
 tablet widths; the first visit opens with an intro whose office doors swing open when the visitor presses Enter.
 
 <p align="center">
-  <img src="docs/media/hero.gif" alt="The courthouse" width="520">
+  <img src="docs/media/hero.gif" alt="The front page arriving" width="620">
 </p>
 
 ## Repository structure
