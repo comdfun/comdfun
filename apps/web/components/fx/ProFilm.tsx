@@ -116,6 +116,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmlive" && <LiveDesk logo={logo} />}
         {kind === "icmplay" && <Playground logo={logo} />}
         {kind === "icmquick" && <Quickstart logo={logo} />}
+        {kind === "icmgithub" && <GitHub logo={logo} />}
       </div>
     </div>
   );
@@ -1121,6 +1122,93 @@ function Quickstart({ logo }: { logo: string }) {
 
       <Scene t0={18000} t1={22000} last>
         <Outro logo={logo} a="From key to code" b="in a minute." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ The GitHub update */
+
+const G_TREE: [string, number, string, string][] = [
+  // name, depth, note, colour ("" = plain)
+  ["apps/", 0, "", ""],
+  ["api/", 1, "control plane", ""],
+  ["web/", 1, "comd.fun", ""],
+  ["worker/", 1, "the comd CLI", ""],
+  ["packages/", 0, "", ""],
+  ["icm/", 1, "Inference Capital Markets", "var(--gold)"],
+  ["protocol/", 1, "wire types, signatures", ""],
+  ["abi/", 1, "ABIs, addresses", ""],
+  ["contracts/", 0, "Foundry", ""],
+  ["skills/", 0, "the skill catalog", ""],
+];
+const G_STEPS = [
+  ["Pay", "$COMD or ETH", "var(--gold)"],
+  ["Confirm", "buried, once", "var(--cyan)"],
+  ["Credit", "micro-dollars", "var(--lime)"],
+  ["Hold", "before a call", "var(--violet)"],
+  ["Settle", "on usage.cost", "var(--orange)"],
+] as const;
+
+function GitHub({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--violet)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="The whole protocol," d={300} /></span>
+            <span className="pv-line"><HL d={1600} c="var(--violet)"><W text="open source" d={1000} /></HL><Dot d={1160} /></span>
+          </h1>
+          <p className="pv-sub a-rise pv-mono" style={v({ "--d": "2400ms" })}>github.com/comdfun/comdfun</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Head eyebrow="On GitHub" c="var(--violet)"><W text="One repo." d={200} /> <span className="pv-c"><W text="Two desks." d={400} /></span></Head>
+        <div className="g-tree a-from" style={v({ "--d": "400ms", "--fx": "-60px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>comdfun / comdfun</span></div>
+          <ul className="pv-mono">
+            {G_TREE.map(([name, depth, note, c], i) => (
+              <li key={name + i} className={c ? "g-hot a-rise" : "a-rise"} style={v({ paddingLeft: `${30 + depth * 34}px`, "--d": ms(700 + i * 110), "--dy": "12px", "--cc": c || "var(--parch)" })}>
+                <b>{name}</b>{note && <span>{note}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="g-readme a-from" style={v({ "--d": "900ms", "--fx": "60px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>README.md</span></div>
+          <img src="/banner-3x1.png" alt="" />
+          <div className="g-md">
+            <b>Company.md</b>
+            <p>A Swarm of 2,000 NFT agents and a Desk That Sells Inference to Humans, Agents and Counsel.</p>
+            <div className="g-toc">
+              {["The Inference Capital Markets protocol", "Repository structure", "Architecture", "Contracts"].map((t, i) => (
+                <span key={t} className={i === 0 ? "g-new a-rise" : "a-rise"} style={v({ "--d": ms(2200 + i * 200), "--dy": "10px" })}># {t}{i === 0 && <em>new</em>}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "946px", "--d": "4200ms" })}>New README: the banner, fresh screenshots, the full structure and the protocol.</p>
+      </Scene>
+
+      <Scene t0={12000} t1={19500}>
+        <Head eyebrow="The protocol" c="var(--gold)"><W text="Inference Capital Markets," d={200} /> <span className="pv-c"><W text="written down." d={600} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path className="a-draw" pathLength={1} d="M 290 520 L 1630 520" style={v({ "--d": "700ms", "--du": "2200ms", "--lc": "rgba(243,235,211,.25)" })} />
+          <path className="a-pulse" pathLength={1} d="M 290 520 L 1630 520" style={v({ "--d": "2900ms", "--du": "2000ms", "--pc": "var(--gold)" })} />
+        </svg>
+        {G_STEPS.map(([b, s2, c], i) => (
+          <div key={b} className="g-step a-pop" style={v({ left: `${180 + i * 335}px`, "--d": ms(600 + i * 280), "--cc": c })}>
+            <u>{String(i + 1).padStart(2, "0")}</u><b>{b}</b><span>{s2}</span>
+          </div>
+        ))}
+        <div className="g-inv a-rise pv-mono" style={v({ "--d": "3600ms" })}>balance + held == deposited − spent</div>
+        <p className="pv-cap a-rise" style={v({ top: "830px", "--d": "4300ms" })}>Checked after every operation. Every $COMD paid in is burned.</p>
+      </Scene>
+
+      <Scene t0={19000} t1={24000} last>
+        <Outro logo={logo} a="Read the code." b="Fork the protocol." url="github.com/comdfun" />
       </Scene>
     </>
   );

@@ -665,3 +665,28 @@
 @keyframes q-out { to { opacity: 0; transform: translateY(-10px); filter: blur(6px); } }
 .q-conf { top: 360px; }
 .q-conf pre { font-size: 32px; }
+
+/* ── the GitHub update ── */
+.g-tree { position: absolute; left: 150px; top: 318px; width: 700px; border-radius: 18px; overflow: hidden; border: 1px solid var(--rule-2); background: #06050a; box-shadow: 0 50px 110px -50px #000; }
+.g-tree ul { list-style: none; margin: 0; padding: 18px 0 22px; }
+.g-tree li { display: flex; align-items: baseline; gap: 18px; padding-top: 5px; padding-bottom: 5px; padding-right: 30px; font-size: 24px; }
+.g-tree li b { font-weight: 500; color: var(--cc); }
+.g-tree li span { margin-left: auto; font-family: var(--font-sans); font-size: 18px; color: var(--dim); }
+.g-hot { background: linear-gradient(90deg, rgba(255,200,61,.14), rgba(255,200,61,.02)); box-shadow: inset 3px 0 0 var(--gold); }
+.g-hot span { color: var(--gold) !important; }
+.g-readme { position: absolute; left: 900px; top: 318px; width: 870px; border-radius: 18px; overflow: hidden; border: 1px solid var(--rule-2); background: #0b0a10; box-shadow: 0 50px 110px -50px #000; }
+.g-readme img { display: block; width: 100%; height: 236px; object-fit: cover; border-bottom: 1px solid var(--rule); }
+.g-md { display: grid; gap: 12px; padding: 22px 28px 26px; }
+.g-md > b { font-size: 34px; font-weight: 600; letter-spacing: -.03em; color: var(--parch); }
+.g-md p { margin: 0; font-size: 19px; line-height: 1.5; color: var(--muted); }
+.g-toc { display: grid; gap: 8px; margin-top: 4px; }
+.g-toc span { display: flex; align-items: center; gap: 12px; font-size: 19px; color: #cdc6b5; }
+.g-new { color: var(--gold) !important; font-weight: 600; }
+.g-new em { font-style: normal; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent); }
+.g-step { position: absolute; top: 420px; width: 220px; height: 200px; display: grid; align-content: center; justify-items: center; gap: 8px; text-align: center; border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--cc) 45%, var(--rule-2)); background: linear-gradient(170deg, #110f18, #07060b); box-shadow: 0 30px 70px -30px #000, 0 0 50px -24px var(--cc); }
+.g-step u { text-decoration: none; font-family: var(--font-mono); font-size: 16px; color: var(--dim); }
+.g-step b { font-size: 36px; font-weight: 600; letter-spacing: -.03em; color: var(--cc); }
+.g-step span { font-size: 18px; color: var(--muted); }
+.g-inv { position: absolute; left: 0; right: 0; margin: 0 auto; width: max-content; top: 688px; padding: 16px 30px; border-radius: 14px; font-size: 28px; color: var(--parch); white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--rule-2)); background: rgba(140,255,58,.05); }
