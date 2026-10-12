@@ -113,6 +113,9 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmmodels" && <Models logo={logo} />}
         {kind === "icmeco" && <Eco logo={logo} />}
         {kind === "burn118" && <SupplyBurn logo={logo} />}
+        {kind === "icmlive" && <LiveDesk logo={logo} />}
+        {kind === "icmplay" && <Playground logo={logo} />}
+        {kind === "icmquick" && <Quickstart logo={logo} />}
       </div>
     </div>
   );
@@ -909,6 +912,215 @@ function SupplyBurn({ logo }: { logo: string }) {
 
       <Scene t0={12000} t1={16000} last>
         <Outro logo={logo} a="11.8% of supply" b="burned for good." url="comd.fun" />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ The desk, live */
+
+const L_DAYS = [212, 248, 231, 305, 342, 296, 388, 451, 430, 512, 566, 541, 634, 702];
+const L_MODELS: [string, number][] = [["anthropic/claude-opus-4.1", 23], ["openai/gpt-5", 19], ["google/gemini-2.5-pro", 16], ["anthropic/claude-sonnet-4", 14], ["deepseek/deepseek-r1", 9]];
+const L_FEED = [
+  ["12:04", "0x8f2c…41ab", "250,000"],
+  ["12:06", "0x1b07…cc92", "1,200,000"],
+  ["12:09", "0x77e1…a5d0", "90,000"],
+  ["12:11", "0xc0de…9b2e", "500,000"],
+] as const;
+
+function LiveDesk({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--lime)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Every call. Every burn." d={300} /></span>
+            <span className="pv-line"><HL d={1700} c="var(--lime)"><W text="In the open" d={1100} /></HL><Dot d={1260} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2400ms" })}>Live desk stats, now on the cICM page.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Head eyebrow="Live stats" c="var(--lime)"><W text="Straight from" d={200} /> <span className="pv-c"><W text="the ledger." d={420} /></span></Head>
+        <div className="l-dash a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <div className="l-bar"><i className="l-dot" /><span className="pv-mono">api.comd.fun/icm/v1/stats</span><em>sample</em><b>live</b></div>
+          <div className="l-tiles">
+            {[["Calls served", "18.4k", ""], ["Tokens processed", "51M", ""], ["$COMD burned", "413M", "hot"], ["Median response", "1.8 s", ""]].map(([k, val, hot], i) => (
+              <div key={k} className={hot ? "l-tile l-hot" : "l-tile"}><span>{k}</span><b className="a-rise" style={v({ "--d": ms(900 + i * 160), "--dy": "18px" })}>{val}</b></div>
+            ))}
+          </div>
+          <div className="l-panels">
+            <div className="l-panel">
+              <div className="l-ph"><span>Calls per day</span><span>last 14 days</span></div>
+              <div className="l-chart">
+                {L_DAYS.map((n, i) => <i key={i} style={v({ height: `${Math.round((n / 702) * 100)}%`, "--d": ms(1500 + i * 70) })} />)}
+              </div>
+            </div>
+            <div className="l-panel">
+              <div className="l-ph"><span>Most used</span><span>share of calls</span></div>
+              <ul className="l-models">
+                {L_MODELS.map(([m, pct], i) => (
+                  <li key={m}><span className="pv-mono">{m}</span><span className="l-track"><i style={v({ width: `${Math.round((pct / 23) * 100)}%`, "--d": ms(1900 + i * 140) })} /></span><b>{pct}%</b></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "936px", "--d": "4300ms" })}>Settled calls only, no house money, refreshed every 30 seconds.</p>
+      </Scene>
+
+      <Scene t0={12000} t1={18500}>
+        <Head eyebrow="Burned" c="var(--orange)"><W text="Every $COMD paid in," d={200} /> <span className="pv-c"><W text="on the record." d={600} /></span></Head>
+        <div className="l-feed">
+          <div className="l-feed-h"><span>time</span><span>wallet</span><span>paid in</span><span /></div>
+          {L_FEED.map(([t, w, amt], i) => (
+            <div key={w} className="l-row a-from" style={v({ "--d": ms(600 + i * 520), "--fy": "-30px" })}>
+              <span className="pv-mono">{t}</span><span className="pv-mono">{w}</span><span><b>{amt}</b> $COMD</span>
+              <span className="l-burned a-pop" style={v({ "--d": ms(1000 + i * 520) })}><Tick /> burned</span>
+            </div>
+          ))}
+          <div className="l-total a-rise" style={v({ "--d": "2900ms" })}>
+            <span>$COMD burned by cICM</span>
+            <b><Swap a="411.37M" b="413.41M" d={3600} /></b>
+            <em>sample</em>
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "936px", "--d": "4300ms" })}>The sink is the burn. Nothing paid in is kept.</p>
+      </Scene>
+
+      <Scene t0={18000} t1={22000} last>
+        <Outro logo={logo} a="The desk," b="in the open." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ The playground */
+
+const P_ANSWER = "Every purchase destroys the $COMD it is paid with, so supply only shrinks when somebody actually uses a model. Demand for the token becomes a direct reading of demand for inference.";
+
+function Playground({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--gold)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Try any model," d={300} /></span>
+            <span className="pv-line"><W text="right from" d={800} /> <HL d={1700} c="var(--gold)"><W text="the page" d={1150} /></HL><Dot d={1310} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2400ms" })}>The cICM playground. Paste a key, pick a model, press run.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={15000}>
+        <Head eyebrow="Playground" c="var(--gold)"><W text="Paste a key." d={200} /> <span className="pv-c"><W text="Press run." d={420} /></span></Head>
+        <div className="p-play a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="p-form">
+            <div className="p-field"><span>API key</span><div className="p-input pv-mono"><Type text="••••••••••••••••••••••" d={900} per={28} /></div></div>
+            <div className="p-field"><span>Model</span><div className="p-input pv-mono"><Swap a="openai/gpt-5" b="anthropic/claude-sonnet-4" d={1700} /><i className="p-chev" /></div></div>
+            <div className="p-field"><span>Prompt</span><div className="p-input p-area"><span><W text="Why does burning a token on every purchase tie its demand to real usage?" d={2300} step={45} /></span></div></div>
+            <div className="p-run pv-press" style={v({ "--d": "3900ms" })}>Run</div>
+          </div>
+          <div className="p-out">
+            <div className="p-out-h"><i className="l-dot" /><span className="pv-mono">anthropic/claude-sonnet-4</span><em>example</em></div>
+            <p className="p-text"><W text={P_ANSWER} d={4400} step={52} /></p>
+            <div className="p-meta">
+              {[["0.42 s", "first token"], ["31 / 58", "tokens in / out"], ["2.0 s", "total"], ["$0.00094", "this call cost"]].map(([b, s2], i) => (
+                <div key={s2} className={i === 3 ? "p-m p-cost a-rise" : "p-m a-rise"} style={v({ "--d": ms(i === 0 ? 4600 : 6400 + i * 180), "--dy": "14px" })}><b>{b}</b><span>{s2}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Scene>
+
+      <Scene t0={14500} t1={20000}>
+        <Head eyebrow="Every call" c="var(--cyan)"><W text="Its cost," d={200} /> <span className="pv-c"><W text="on the answer." d={400} /></span></Head>
+        <div className="p-json a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>response</span></div>
+          <pre className="pv-mono">
+            <span className="pv-tl">&quot;usage&quot;: &#123;</span>
+            <span className="pv-tl">  &quot;prompt_tokens&quot;: <s>31</s>,</span>
+            <span className="pv-tl">  &quot;completion_tokens&quot;: <s>58</s>,</span>
+            <span className="pv-tl p-costline">  &quot;cost&quot;: <q>0.00094</q></span>
+            <span className="pv-tl">&#125;</span>
+          </pre>
+        </div>
+        <div className="m2-same p-pills">
+          {["Key stays in your tab", "Every model", "Nothing to install"].map((t, i) => (
+            <span key={t} className="a-pop" style={v({ "--d": ms(2600 + i * 160) })}><Tick /> {t}</span>
+          ))}
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "936px", "--d": "3400ms" })}>Streamed or not, usage.cost is exactly what you were charged.</p>
+      </Scene>
+
+      <Scene t0={19500} t1={24000} last>
+        <Outro logo={logo} a="Try any model," b="right from the page." />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ The quickstarts */
+
+const Q_TABS = ["cURL", "Python", "TypeScript", "Agents"];
+const Q_CODE: string[][] = [
+  ["curl https://api.comd.fun/icm/v1/chat/completions \\", "  -H \"Authorization: Bearer $CICM_KEY\" \\", "  -d '{", "    \"model\": \"anthropic/claude-sonnet-4\",", "    \"messages\": [{ \"role\": \"user\", \"content\": \"Hello\" }]", "  }'"],
+  ["import os, requests", "", "r = requests.post(", "    \"https://api.comd.fun/icm/v1/chat/completions\",", "    headers={\"Authorization\": f\"Bearer {os.environ['CICM_KEY']}\"},", "    json={\"model\": \"anthropic/claude-sonnet-4\", \"messages\": msgs},", ")", "print(r.json()[\"usage\"][\"cost\"])"],
+  ["const res = await fetch(\"https://api.comd.fun/icm/v1/chat/completions\", {", "  method: \"POST\",", "  headers: { Authorization: `Bearer ${process.env.CICM_KEY}` },", "  body: JSON.stringify({", "    model: \"anthropic/claude-sonnet-4\",", "    messages,", "  }),", "});"],
+  ["# Any client or agent framework", "base_url: https://api.comd.fun/icm/v1", "api_key:  cicm_live_...", "model:    anthropic/claude-sonnet-4", "", "# Switching models is this one line."],
+];
+
+function Quickstart({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--cyan)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="From key to code" d={300} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--cyan)"><W text="in a minute" d={950} /></HL><Dot d={1100} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>Copy-paste quickstarts, now on the cICM page.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={13500}>
+        <Head eyebrow="Quickstarts" c="var(--cyan)"><W text="Copy." d={200} /> <W text="Paste." d={380} /> <span className="pv-c"><W text="Ship." d={560} /></span></Head>
+        <div className="q-win a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="q-tabs">
+            <i className="q-hl" />
+            {Q_TABS.map((t, i) => <span key={t} className="q-tab" style={v({ "--n": i })}>{t}</span>)}
+            <span className="q-copy"><Swap a="Copy" b={<><Tick /> Copied</>} d={7300} /></span>
+          </div>
+          <div className="q-body">
+            {Q_CODE.map((lines, i) => (
+              <pre key={i} className={i === 3 ? "q-pane q-last pv-mono" : "q-pane pv-mono"} style={v({ "--in": ms(800 + i * 1700), "--out": ms(800 + (i + 1) * 1700 - 250) })}>
+                {lines.map((l, j) => <span key={j} className="pv-tl">{l || " "}</span>)}
+              </pre>
+            ))}
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "936px", "--d": "1200ms" })}>The model you picked in the playground is already filled in.</p>
+      </Scene>
+
+      <Scene t0={13000} t1={18500}>
+        <Head eyebrow="Agents" c="var(--violet)"><W text="Any framework." d={200} /> <span className="pv-c"><W text="One base URL." d={420} /></span></Head>
+        <div className="m2-code q-conf a-rise" style={v({ "--d": "400ms", "--dy": "40px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>agent.yaml</span></div>
+          <pre className="pv-mono">
+            <span className="pv-tl"><s>base_url:</s> <q>https://api.comd.fun/icm/v1</q></span>
+            <span className="pv-tl"><s>api_key:</s>  <q>cicm_live_…</q></span>
+            <span className="pv-tl m2-line"><s>model:</s>    <span className="m2-slot"><span className="m2-roll"><q>anthropic/claude-sonnet-4</q><q>openai/gpt-5</q><q>google/gemini-2.5-pro</q></span></span></span>
+          </pre>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "760px", "--d": "2600ms" })}>One key per agent, each with its own spending ceiling.</p>
+      </Scene>
+
+      <Scene t0={18000} t1={22000} last>
+        <Outro logo={logo} a="From key to code" b="in a minute." />
       </Scene>
     </>
   );
