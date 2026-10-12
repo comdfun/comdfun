@@ -34,9 +34,9 @@ export function CoinList() {
         {coins === null && <p className="muted">Reading the chain…</p>}
         {err && <p className="err-text small">{err}</p>}
         {coins && rows.length === 0 && <div className="empty"><span className="px">No company coins yet.</span>Incorporate the first one.</div>}
-        <div className="grid g2 rv-kids" style={{ marginTop: 30, rowGap: 34 }}>
+        <div className="grid g2" style={{ marginTop: 30, rowGap: 34 }}>
           {rows.map((c, i) => (
-            <Link key={c.address} href={`/incorporations/${c.address}`} className={`folder door rv c-${["lime", "cyan", "pink", "gold", "orange", "violet"][i % 6]}`} data-tab={`$${c.symbol}`} style={{ minHeight: 0 }}>
+            <Link key={c.address} href={`/incorporations/${c.address}`} className={`folder door c-${["lime", "cyan", "pink", "gold", "orange", "violet"][i % 6]}`} data-tab={`$${c.symbol}`} style={{ minHeight: 0 }}>
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <span className="row" style={{ gap: 10 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}

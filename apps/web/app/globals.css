@@ -2300,3 +2300,26 @@ html.no-motion .rv { opacity: 1 !important; }
 .coin-social a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--rule-2); border-radius: var(--r-pill); font-size: 13px; color: var(--parch); text-decoration: none; }
 .coin-social a:hover { border-color: var(--lime); }
 .coin-card-logo { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; border: 1px solid var(--rule); background: #111; }
+
+/* ─── a coin's chart ─── */
+.cchart { border: 1px solid var(--rule); border-radius: var(--r); background: #06050a; overflow: hidden; }
+.cchart-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--rule); background: var(--ink-1); }
+.cchart-now { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.cchart-now b { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--parch); font-variant-numeric: tabular-nums; }
+.cchart-now span { font-size: 12px; color: var(--dim); }
+.cchart-now em { font-style: normal; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-pill); }
+.cchart-now em.up { color: var(--lime); background: rgba(140,255,58,.1); }
+.cchart-now em.down { color: var(--crimson); background: rgba(255,59,92,.1); }
+.cchart-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.cchart-tools .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--rule); border-radius: var(--r-sm); background: #06050a; }
+.cchart-tools .seg button { padding: 5px 9px; border: 0; border-radius: 4px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+.cchart-tools .seg button:hover { color: var(--parch); }
+.cchart-tools .seg button[aria-pressed="true"] { background: var(--ink-3); color: var(--parch); }
+.cchart-plot { position: relative; height: 360px; }
+.cchart-canvas { position: absolute; inset: 0; }
+.cchart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; font-size: 14px; color: var(--muted); pointer-events: none; }
+.cchart-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--dim); }
+.cchart-foot b { color: var(--parch); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cchart-tv { margin-left: auto; color: var(--dim); font-size: 11px; text-decoration: none; }
+.cchart-tv:hover { color: var(--muted); }
+@media (max-width: 620px) { .cchart-plot { height: 280px; } .cchart-tv { margin-left: 0; } }

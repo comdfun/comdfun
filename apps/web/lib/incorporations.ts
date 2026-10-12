@@ -106,3 +106,48 @@ export async function coinInfo(client: PublicClient, coin: Address) {
 
 /** Synthetic curve for mock mode: price in COMD per coin as a function of the fraction sold. */
 export const mockPrice = (s: number) => 0.00002 * Math.pow(1 + 9 * s, 2);
+
+/** One trade as a chart reads it: when, at what price (COMD per coin), and how much COMD moved. */
+export type Tick = { t: number; price: number; comd: number; isBuy: boolean };
+
+const blockTimes = new Map<bigint, number>();
+
+/**
+ * Trades with their times. A log carries a block number, not a time, so each distinct block is read once and
+ * remembered for the session. The most recent `limit` trades are enough for any chart a person looks at.
+ */
+export async function tradeTicks(client: PublicClient, trades: TradeRow[], limit = 2000): Promise<Tick[]> {
+  const recent = trades.slice(-limit);
+  const want = [...new Set(recent.map((r) => r.block))].filter((b) => !blockTimes.has(b));
+  for (let i = 0; i < want.length; i += 8) {
+    await Promise.all(want.slice(i, i + 8).map(async (b) => {
+      const blk = await client.getBlock({ blockNumber: b });
+      blockTimes.set(b, Number(blk.timestamp));
+    }));
+  }
+  return recent
+    .filter((r) => r.coinAmount > 0n)
+    .map((r) => {
+      const coin = Number(r.coinAmount) / 1e18;
+      const comd = Number(r.comdAmount) / 1e18;
+      return { t: blockTimes.get(r.block) ?? 0, price: comd / coin, comd, isBuy: r.isBuy };
+    })
+    .filter((k) => k.t > 0 && Number.isFinite(k.price) && k.price > 0);
+}
+
+/** A plausible few days of trades for a mock coin, from a fixed seed so the chart does not change on reload. */
+export function mockTicks(seedFrom: string, sold = 0.4): Tick[] {
+  let x = [...seedFrom].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483647, 7);
+  const rnd = () => ((x = (x * 48271) % 2147483647) / 2147483647);
+  const now = Math.floor(Date.now() / 1000);
+  const n = 260;
+  const out: Tick[] = [];
+  let s = 0.01;
+  for (let i = 0; i < n; i++) {
+    const isBuy = rnd() < 0.62;
+    s = Math.min(sold, Math.max(0.005, s + (isBuy ? 1 : -1) * rnd() * (sold / 90)));
+    const price = mockPrice(s) * (0.985 + rnd() * 0.03);
+    out.push({ t: now - Math.round((n - i) * (3 * 86400 / n) * (0.6 + rnd() * 0.8)), price, comd: 200 + rnd() * 9000, isBuy });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}

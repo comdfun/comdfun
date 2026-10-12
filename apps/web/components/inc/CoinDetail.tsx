@@ -6,44 +6,14 @@ import { abiOf, contract } from "@/lib/contracts";
 import { useRead } from "@/lib/useChain";
 import { MOCK, PONS_URL, UNISWAP_URL } from "@/lib/config";
 import { MOCK_CHAIN } from "@/lib/mock-chain";
-import { coinInfo, loadTrades, mockCoins, mockPrice, parseMeta, type TradeRow } from "@/lib/incorporations";
+import { coinInfo, loadTrades, mockCoins, mockPrice, mockTicks, parseMeta, tradeTicks, type Tick, type TradeRow } from "@/lib/incorporations";
+import { CoinChart } from "./CoinChart";
 import { explorerUrl } from "@/lib/chains";
 import { fmtNum, short, units } from "@/lib/format";
 import { TxButton } from "../tx/TxButton";
 
 const E18 = 10n ** 18n;
 const SUPPLY = 1_000_000_000;
-
-function Chart({ points, marker, label }: { points: [number, number][]; marker?: number; label: string }) {
-  if (points.length < 2) return <div className="empty">No trades yet. The curve starts at its floor price.</div>;
-  const W = 160, H = 70;
-  const maxY = Math.max(...points.map((p) => p[1])) * 1.08 || 1;
-  const X = (x: number) => Math.round(4 + x * (W - 8));
-  const Y = (y: number) => Math.round(H - 6 - (y / maxY) * (H - 12));
-  // stepped path on the pixel grid
-  let d = `M${X(points[0][0])} ${Y(points[0][1])}`;
-  for (let i = 1; i < points.length; i++) d += ` H${X(points[i][0])} V${Y(points[i][1])}`;
-  const fill = `${d} V${H - 6} H${X(points[0][0])} Z`;
-  return (
-    <figure style={{ margin: 0 }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} shapeRendering="crispEdges" style={{ width: "100%", height: "auto", border: "2px solid var(--rule)", background: "#000", display: "block" }}>
-        {[0.25, 0.5, 0.75].map((g) => <rect key={g} x={4} y={Y(maxY * g)} width={W - 8} height={0.5} fill="#262626" />)}
-        <path d={fill} fill="#c9a227" opacity={0.12} />
-        <path d={d} stroke="#c9a227" strokeWidth={1} fill="none" />
-        {marker != null && (
-          <>
-            <rect x={X(marker) - 0.5} y={6} width={1} height={H - 12} fill="#4fa38a" />
-            <rect x={X(marker) - 1.5} y={Y(points.reduce((a, p) => (p[0] <= marker ? p[1] : a), points[0][1])) - 1.5} width={3} height={3} fill="#4fa38a" />
-          </>
-        )}
-        <rect x={4} y={H - 6} width={W - 8} height={1} fill="#3a3a3a" />
-      </svg>
-      <figcaption className="small muted" style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span>0% sold</span><span>{label}</span><span>100%</span>
-      </figcaption>
-    </figure>
-  );
-}
 
 export function CoinDetail({ address }: { address: Address }) {
   const inc = contract("Incorporations");
@@ -59,6 +29,7 @@ export function CoinDetail({ address }: { address: Address }) {
   const mock = !inc.address && MOCK ? mockCoins().find((c) => c.address.toLowerCase() === address.toLowerCase()) : undefined;
   const [info, setInfo] = useState<{ name: string; symbol: string; totalSupply?: bigint; image?: string; description?: string; website?: string; twitter?: string; creator?: string } | null>(mock ? { name: mock.name, symbol: mock.symbol, creator: mock.creator } : null);
   const [trades, setTrades] = useState<TradeRow[]>([]);
+  const [ticks, setTicks] = useState<Tick[] | null>(mock ? mockTicks(address, mock.supplySold ?? 0.4) : null);
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [viaPick, setVia] = useState<"eth" | "comd">("comd");
   const via = ethEnabled ? viaPick : "comd";
@@ -81,11 +52,18 @@ export function CoinDetail({ address }: { address: Address }) {
       } catch { /* older deployment without graduation */ }
     })();
     coinInfo(client, address).then((i) => setInfo((x) => ({ ...x, ...i }))).catch((e) => setErr((e as Error).message.split("\n")[0]));
-    loadTrades(client, address).then(setTrades).catch(() => {});
+    // trades, and the chart drawn from them; read again every 20 seconds so a new trade shows up on its own
+    let live = true;
+    const pull = () => loadTrades(client, address)
+      .then(async (t) => { if (!live) return; setTrades(t); const k = await tradeTicks(client, t); if (live) setTicks(k); })
+      .catch(() => { if (live) setTicks((x) => x ?? []); });
+    void pull();
+    const timer = setInterval(pull, 20_000);
     client.getContractEvents({ address: inc.address, abi: inc.abi as Abi, eventName: "CoinCreated", args: { coin: address }, fromBlock: 0n } as never).then((l) => {
       const a = (l as unknown as { args: { creator: string; metadataURI: string } }[])[0]?.args;
       if (a) setInfo((x) => ({ ...(x ?? { name: "", symbol: "" }), creator: a.creator, ...parseMeta(a.metadataURI) }));
     }).catch(() => {});
+    return () => { live = false; clearInterval(timer); };
   }, [inc.address, client, address]);
 
 
@@ -104,7 +82,7 @@ export function CoinDetail({ address }: { address: Address }) {
       pts.push([Math.max(0, sold) / SUPPLY, p]);
     }
     if (pts.length > 1) pts[0] = [0, pts[1][1]];
-    return { points: pts, marker: Math.max(0, sold) / SUPPLY, last: pts[pts.length - 1][1] };
+    return { points: pts, marker: Math.min(1, Math.max(0, sold) / SUPPLY), last: pts[pts.length - 1][1] };
   }, [mock, trades]);
 
   let amountIn = 0n;
@@ -175,7 +153,7 @@ export function CoinDetail({ address }: { address: Address }) {
           <div className="stat"><span className="v">{mock ? fmtNum(mock.trades) : fmtNum(trades.length)}</span><span className="k">Trades</span></div>
           <div className="stat"><span className="v">1B</span><span className="k">Supply</span></div>
         </div>
-        <Chart points={points} marker={marker} label={mock ? "bonding curve (mock)" : "price along the curve, by trade"} />
+        <CoinChart ticks={ticks} symbol={info?.symbol ?? "COIN"} />
         <dl className="kv">
           <dt>Coin</dt><dd><a className="mono ext break" href={explorerUrl("token", address)} target="_blank" rel="noreferrer">{address}</a></dd>
           <dt>Launcher</dt><dd>{info?.creator ? <a className="mono ext" href={explorerUrl("address", info.creator)} target="_blank" rel="noreferrer">{short(info.creator)}</a> : "—"}</dd>
