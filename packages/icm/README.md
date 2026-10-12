@@ -54,6 +54,21 @@ frame of a stream; that number, times `1 + marginBps/10000`, is what the custome
 A provider that answers **without** a cost is the case worth knowing about: the charge goes to `unknown` and waits.
 Billing a guess is worse than asking an operator.
 
+## What the caller sees of the cost
+
+Every answer states its price in `usage.cost`: the settled retail figure, never the provider's price to the house.
+On a non-streamed answer the body is rewritten after settlement. On a stream the frames are relayed as they arrive,
+except the final usage frame, whose `cost` is restated at retail and whose `cost_details` (the provider's own
+breakdown) is dropped. Headers carry `x-icm-charge`, and on a non-streamed answer `x-icm-cost` and `x-icm-balance`.
+
+## Public stats
+
+`ledger.stats()` (served at `GET /v1/stats`) is the desk's public face: settled calls, tokens in and out, paying
+accounts, keys, median latency of recent calls, calls per UTC day for fourteen days, the eight most used models
+with their share, and the token paid in and burned. Burned means everything paid in when `sink` is `burn`, and
+otherwise only deposits with a recorded burn transaction. It carries no revenue, upstream cost or margin; those
+stay on the house book.
+
 ## The house book
 
 `ledger.book()` is the operator's view, and it exists because selling credit for a token that is then destroyed
@@ -119,5 +134,5 @@ put the balance behind a single writer. Do not run two of these over one databas
 npm test -w @company/icm
 ```
 
-47 assertions, including a three-hundred-operation run of mixed holds, settles, releases and unknown outcomes that
+Seventy-two tests, including a three-hundred-operation run of mixed holds, settles, releases and unknown outcomes that
 checks the invariant after every single step.

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/x-header-1500x500.png" alt="Company.md: an NFT-identified swarm on Robinhood Chain" width="100%">
+  <img src="docs/media/banner.png" alt="Company.md: a swarm of 2,000 NFT agents and a desk that sells inference, both paid in $COMD" width="100%">
 </p>
 
 # Company.md
@@ -7,7 +7,11 @@
 **A swarm of NFT-identified agents that work together to perform AI tasks on chain, and an inference capital
 markets desk where anyone can buy those same models with $COMD.**
 
-*Two Thousand Counsels. One Swarm. One Inference Desk.*
+*A Swarm of 2,000 NFT agents and a Desk That Sells Inference to Humans, Agents and Counsel. Both paid in $COMD.*
+
+<p align="center">
+  <a href="https://comd.fun"><img src="docs/media/gate.png" alt="comd.fun: two desks, the Swarm and cICM" width="820"></a>
+</p>
 
 Company.md runs **two desks on Robinhood Chain**, both paid in **$COMD**.
 
@@ -64,7 +68,9 @@ of it in six steps at [comd.fun/what-is-this](https://comd.fun/what-is-this).
 - [Retaining the firm](#retaining-the-firm)
 - [$COMD and the flywheel](#comd-and-the-flywheel)
 - [cICM: buying inference](#cicm-buying-inference)
+- [The Inference Capital Markets protocol](#the-inference-capital-markets-protocol)
 - [The website](#the-website)
+- [Repository structure](#repository-structure)
 - [Architecture](#architecture)
 - [API](#api)
 - [Contracts](#contracts)
@@ -243,7 +249,11 @@ How the loop works:
 
 ## cICM: buying inference
 
-The Swarm sells finished work. **cICM** sells the raw models.
+The Swarm sells finished work. **cICM**, Company Inference Capital Markets, sells the raw models.
+
+<p align="center">
+  <img src="docs/media/icm.png" alt="comd.fun/icm: every frontier model, one key, paid in $COMD" width="820">
+</p>
 
 ```bash
 curl https://api.comd.fun/icm/v1/chat/completions \
@@ -252,30 +262,187 @@ curl https://api.comd.fun/icm/v1/chat/completions \
        "messages":[{"role":"user","content":"hello"}]}'
 ```
 
-One endpoint reaches Claude, GPT, Gemini, Llama, DeepSeek, Mistral, Qwen, Grok and the rest, in the standard
+One endpoint reaches Claude, GPT, Gemini, Llama, DeepSeek, Mistral, Qwen, Grok, Kimi and the rest, in the standard
 chat-completions shape, so anything built for that works with nothing changed but the base URL. No card, no
-monthly bill, and no account of your own with a model provider.
+monthly bill, and no account of your own with a model provider. **Humans, agents and Counsel all buy from the same
+desk**, and every $COMD spent on it is burned.
 
 | | |
 |---|---|
 | **Paying** | Send $COMD to the desk, or pay in ETH and the $COMD pool swaps it on the way in, in one transaction. Credit lands on the wallet that paid: no memo, no account number. |
 | **The rate** | A fixed number of $COMD to the dollar of credit, set by hand and published at `GET /icm`. |
-| **The price of a call** | What the model provider actually charged, plus a margin published on the page rather than discovered on the bill. |
 | **The sink** | **Burned.** Buying inference takes $COMD out of supply for good. |
-| **Keys** | One signature mints a key (not a transaction, no gas). The secret is shown once; only a hash is stored. A key can carry a spend ceiling. |
+| **Keys** | One signature mints a key (not a transaction, no gas). The secret is shown once; only a hash is stored. A key can carry a spend ceiling and a model list. |
 | **Settlement** | Integer micro-dollars. A call holds an estimate when it opens and settles on the provider's own usage figure when it closes; an interrupted call releases its hold. |
-| **What a call cost** | Stated on the answer itself in `usage.cost`, streamed or not: the price you were charged, never the provider's price to the desk. |
+| **What a call cost** | Stated on the answer itself in `usage.cost`, streamed or not: the price you were charged. |
 | **In the open** | `GET /icm/v1/stats` is public: calls served, tokens, the most used models, and every $COMD paid in and burned. The page shows it live. |
-| **Try it** | The page has a playground (paste a key, pick a model, watch it stream with its cost) and copy-paste quickstarts for cURL, Python, TypeScript and agent frameworks. |
+| **Try it** | A playground on the page (paste a key, pick a model, watch it stream with its cost) and copy-paste quickstarts for cURL, Python, TypeScript and agent frameworks. |
 
-The accounting lives in [`packages/icm/`](packages/icm/README.md) with **no token, chain, brand or provider
-compiled in**, so the same desk can be stood up on another token entirely. The one file where Company.md and that
-package meet is `apps/api/src/icm.ts`, which supplies the token, the chain reader and the deposit watcher.
+| | |
+|---|---|
+| <img src="docs/media/icm-live.png" alt="The desk, live" width="420"><br/>**The desk, in the open**: calls, tokens, $COMD burned, median response, calls per day and the most used models, straight from the ledger | <img src="docs/media/icm-try.png" alt="Playground and quickstarts" width="420"><br/>**Try it, then ship it**: a streaming playground that shows each call's cost, and the same request for cURL, Python, TypeScript and agents |
+| <img src="docs/media/icm-models.png" alt="The catalogue" width="420"><br/>**The catalogue**: every model the router carries, live, with its context window | <img src="docs/media/cicm-burn.gif" alt="Pay, burn, use" width="420"><br/>**Pay, burn, use**: $COMD in, burned on arrival, credit out |
+
+<p align="center">
+  <img src="docs/media/cicm-playground.gif" alt="The playground: paste a key, press run, see what the call cost" width="820">
+</p>
 
 Buying from another chain: bridge ETH to Robinhood Chain with [Relay](https://relay.link/bridge/robinhood) or
 [Across](https://across.to/?to=robinhood) in seconds, or the
 [canonical bridge](https://portal.arbitrum.io/bridge?destinationChain=robinhood-chain&sourceChain=ethereum) from
 Ethereum. Full documentation: [comd.fun/docs/icm](https://comd.fun/docs/icm).
+
+## The Inference Capital Markets protocol
+
+cICM is built as a protocol with one implementation, not as a feature of this site. The accounting lives in
+[`packages/icm/`](packages/icm/README.md) with **no token, chain, brand or provider compiled in**: it imports
+nothing but `node:crypto`. Company.md is one deployment of it; the one file where the two meet is
+[`apps/api/src/icm.ts`](apps/api/src/icm.ts), which supplies the token, the chain reader and the deposit watcher.
+Standing the same desk up on another token is a config object and a funding adapter, not a fork.
+
+### The parts
+
+```mermaid
+flowchart LR
+    B["Buyer<br/>human · agent · Counsel"] -->|"$COMD transfer<br/>or ETH via Swapper"| D["Desk address<br/>(sink: burn)"]
+    D -.->|"Transfer logs, confirmed"| W["Deposit watcher<br/>apps/api/src/icm.ts"]
+    W -->|"deposit(ref = tx:log)"| L[("Ledger<br/>integer micro-USD")]
+    B -->|"signature"| K["Key issuance<br/>hash stored, secret shown once"]
+    K --> L
+    C["Client<br/>Bearer cicm_live_…"] -->|"/v1/chat/completions"| P["Proxy"]
+    P -->|"hold"| L
+    P -->|"forward"| U["Upstream router<br/>(OpenRouter)"]
+    U -->|"usage.cost"| P
+    P -->|"settle / release / unknown"| L
+    L -->|"GET /v1/stats"| S["Public stats"]
+    L -->|"admin only"| H["House book"]
+```
+
+| Module | Responsibility |
+|---|---|
+| `money.ts` | Integer micro-dollar arithmetic, token unit parsing and formatting, rounding that never favours the house silently |
+| `config.ts` | One validated config: key prefix, token (symbol, address, decimals, chain, rate, sink), margin, hold bounds, model allow and deny lists |
+| `pricing.ts` | Upstream cost to retail, credit for tokens, and the hold estimate for a call |
+| `ledger.ts` | Accounts, keys, deposits, holds and charges; the public stats; the house book; the invariant check |
+| `proxy.ts` | The chat-completions proxy: validate, hold, forward, settle; streams relayed frame by frame with the cost restated |
+| `upstream.ts` | The provider adapter (OpenRouter), reading usage and cost from answers and from the last frame of a stream |
+| `funding.ts` | Turning confirmed payments into credit exactly once, and the deposit instructions the page shows |
+| `http.ts` | A framework-free surface: `handle({ method, path, bearer, body, query })` returns status, headers and JSON or a stream |
+| `store.ts` | The synchronous storage port and an in-memory store; the host persists write-through to Postgres |
+
+### Credit: from token to balance
+
+1. **Pay.** The buyer sends $COMD to the desk's own address, or sends ETH to the Swapper, which buys $COMD and
+   delivers it to the desk in the same transaction. The desk address is never the shared `0x…dEaD`: buybacks and
+   other burns land there, and a watcher cannot tell those from a payment. The API refuses that address.
+2. **Confirm.** The watcher reads `Transfer` logs into the desk address once they are `ICM_CONFIRMATIONS` blocks
+   deep. Each payment's `ref` is the transaction hash plus log index, and a second deposit with the same `ref` is
+   refused, so a reorg or a replayed block credits once.
+3. **Attribute.** Credit goes to the wallet that paid. When the transfer comes from a trusted forwarder (the
+   Swapper, plus `ICM_FORWARDERS`), the credit goes to the transaction's signer instead of the contract that moved
+   the tokens.
+4. **Price.** Credit = tokens ÷ `tokensPerUsd`, at the rate recorded on the deposit so the rate can change later
+   without rewriting history. Payments under the minimum are not credited. The rate is set by hand on purpose: a
+   live price feed on a thin pool is a way to sell a dollar of inference for a cent during a wick.
+5. **Burn.** With `sink: "burn"` every token taken in is destroyed. The desk holds nothing it could misplace, and
+   the house book states the dollar liability that leaves behind.
+
+### Keys
+
+A wallet proves itself with a signed message (a nonce, not a transaction). It can then issue any number of keys of
+the form `cicm_live_<48 hex>`. Only a SHA-256 hash is stored and the secret is shown once. Each key can carry a
+**spend ceiling** and a **model allow-list** (the ledger also supports an expiry), and can be revoked on its own. A key that reaches its
+ceiling stops with `402 spend_limit_reached`; the account and every other key carry on. One key per agent is the
+intended shape.
+
+### A call: hold, forward, settle
+
+```
+  authenticate ─► validate ─► hold (upper bound) ─► forward ─► settle on usage.cost ─► answer
+                                  │                                 │
+                                  │ refused here costs nothing      └─ the rest of the hold goes back
+                                  └─ a hold never resolved is swept back after 15 minutes
+```
+
+- **Hold.** Before anything is sent upstream, an estimate is reserved from the balance: prompt tokens and
+  `max_tokens` at the model's published per-token price, clamped between a minimum and a maximum hold. A call that
+  cannot be paid for is refused with `402 insufficient_balance` and the balance and the amount needed.
+- **Settle.** The provider reports what the call cost. The charge settles at that figure plus the operator's
+  margin, rounded up to the micro-dollar, and the difference from the hold is released. The answer carries the
+  settled price in `usage.cost`. On a stream, the final usage frame is rewritten to that same price before it
+  leaves; every other frame is relayed byte for byte.
+- **Release.** A call that never ran gives the whole hold back. A stream the caller walks away from still resolves.
+- **Unknown.** If the provider answered without a cost, or a stream ended without its usage frame, the charge goes
+  to `unknown` and waits for an operator. It is never resolved automatically in either direction: giving the money
+  back risks paying for work that was done, keeping it risks billing for an answer nobody got.
+
+Every response says which charge it was (`x-icm-charge`), and a non-streamed one also carries `x-icm-cost` and
+`x-icm-balance`.
+
+### The invariant
+
+For every account, after every operation:
+
+```
+balance + held == deposited − spent
+```
+
+`ledger.check()` asserts it across the whole book and returns the accounts that break it; it should always return
+`[]`. The test suite runs it after every step, including a three-hundred-operation run of mixed holds, settles,
+releases and unknown outcomes. The store is synchronous so that a balance change is one JavaScript tick and two
+calls can never both read the same balance and both decide it is enough. One process owns the ledger.
+
+### What is public, and what is not
+
+| Public | Admin only |
+|---|---|
+| `GET /icm`: the rate, the deposit address, the token, the sink, the minimum | `GET /icm/admin/book`: sold, granted, revenue, upstream cost, outstanding liability, cover needed, unresolved |
+| `GET /icm/v1/models`: the catalogue | `GET /icm/admin/charges`, `/accounts`: every charge and account |
+| `GET /icm/v1/stats`: calls, tokens, payers, keys, median latency, calls per day, top models, $COMD paid in and burned | `POST /icm/admin/sweep`, `/grant`, `/suspend`, `/charges/:id/resolve` |
+
+The public stats carry no dollar figure of the house's. The admin surface answers `404` without the admin token,
+so its existence is not advertised.
+
+### The API
+
+| Method and path | Auth | What it does |
+|---|---|---|
+| `GET /icm` | none | Rate card and deposit instructions |
+| `POST /icm/nonce` | none | A message for a wallet to sign |
+| `POST /icm/account` | signature | The account: balance, held, deposits, keys, recent charges |
+| `POST /icm/keys` | signature | Issue a key (label, ceiling, models); the secret is returned once |
+| `POST /icm/keys/:id/revoke` | signature | Delete a key; its charges stay on the book |
+| `POST /icm/v1/chat/completions` | key | Chat completions, streamed or not |
+| `GET /icm/v1/models` | none | The catalogue |
+| `GET /icm/v1/key` | key | This key: label, ceiling, spent, models |
+| `GET /icm/v1/usage` | key | This account's recent charges and what they cost |
+| `GET /icm/v1/rate` | none | The rate card |
+| `GET /icm/v1/stats` | none | The desk's public activity |
+
+Errors come back as `{ error: { message, type, code, detail? } }`: `401 missing_api_key` and `invalid_api_key`,
+`402 insufficient_balance` and `spend_limit_reached`, `403 key_disabled`, `key_expired`, `account_suspended` and
+`model_not_allowed`, `404 unknown_model`, `413 payload_too_large`, `429 rate_limited`, `502 outcome_unknown`,
+`503 upstream_unavailable` and `not_configured`.
+
+### Configuration
+
+| Variable | Meaning |
+|---|---|
+| `OPENROUTER_API_KEY` | The upstream key. Without it the desk sells credit and issues keys but does not route calls |
+| `ICM_DEPOSIT_ADDRESS` | Where payers send $COMD. Must be an address nothing else pays into |
+| `ICM_COMD_PER_USD` | Whole $COMD per dollar of credit |
+| `ICM_MARGIN_BPS` | The operator's margin on the provider's cost, in basis points |
+| `ICM_MIN_DEPOSIT_USD`, `ICM_MAX_HOLD_USD` | The smallest credited payment and the largest hold one call may take |
+| `ICM_CONFIRMATIONS` | Blocks a payment must be buried under before it is credited |
+| `ICM_FORWARDERS` | Contracts trusted to pay on a buyer's behalf, comma-separated; the Swapper is always included |
+| `ICM_BURN_ON_DEPOSIT` | `1` when what lands at the desk is burned, which makes the sink `burn` |
+| `ICM_ALLOW_MODELS`, `ICM_DENY_MODELS` | Optional model lists, with `*` wildcards |
+| `ICM_ENVIRONMENT` | `live` or `test`, which also names every key (`cicm_live_…` or `cicm_test_…`) |
+
+### Deliberately not here
+
+No retries (a library that retries a call that spends money spends it twice). No price feed. No default provider
+key, RPC or base URL. No automatic resolution of an unknown charge.
 
 ## The website
 
@@ -284,6 +451,7 @@ site's fixture mode, so the numbers in them are sample data.
 
 | | |
 |---|---|
+| <img src="docs/media/gate.png" alt="Front page" width="420"><br/>**Front page**: the two desks as an index, the Swarm and cICM | <img src="docs/media/icm.png" alt="cICM" width="420"><br/>**cICM**: buy credit in $COMD or ETH, the endpoint, live stats, playground, catalogue and account |
 | <img src="docs/media/home.png" alt="Home" width="420"><br/>**Home**: the courthouse, live docket ticker, firm stats, the flywheel at a glance | <img src="docs/media/retain.png" alt="Retain" width="420"><br/>**Retain**: approve once, choose, describe, check for free, pay |
 | <img src="docs/media/docket.png" alt="Docket" width="420"><br/>**The Docket**: matters with counts, search, stages and counsel avatars | <img src="docs/media/matter.png" alt="Matter" width="420"><br/>**A matter**: plan, attempts, runtime, verdicts, cross-examination, delivery and on-chain record |
 | <img src="docs/media/ruling.png" alt="Ruling" width="420"><br/>**A ruling**: question, panel, agreement, computed answer, signed attestation | <img src="docs/media/counsel.png" alt="Counsel" width="420"><br/>**Counsel**: identity card, ERC-8004 agent, stats and work history |
@@ -298,6 +466,42 @@ tablet widths; the first visit opens with an intro whose office doors swing open
 <p align="center">
   <img src="docs/media/hero.gif" alt="The courthouse" width="520">
 </p>
+
+## Repository structure
+
+Two desks, one repository. The Swarm and cICM share the token, the API and the website; cICM's accounting is a
+package of its own so it can run on any token.
+
+```
+comdfun/
+├── apps/
+│   ├── api/                  Chambers: the control plane (HTTP + WebSocket)
+│   │   └── src/
+│   │       ├── routes.ts         every route, including /icm/*
+│   │       ├── icm.ts            cICM host: deposit watcher, forwarders, wallet sign-in, refusals
+│   │       ├── chain.ts          viem reader (logs, receipts, tx signer)
+│   │       ├── engine.ts …       the Swarm: planner, dispatcher, settlement, scheduler, keeper, oracle
+│   │       └── store.ts          Postgres write-through store (Swarm and icm_* collections)
+│   ├── web/                  comd.fun (Next.js 15)
+│   │   ├── app/                  pages: front page, docket, retain, $COMD, flywheel, cICM, docs, film
+│   │   ├── components/icm/       cICM: page, buy panel ($COMD and ETH), live stats, playground, catalogue, dashboard
+│   │   ├── components/fx/        the announcement films, rendered frame by frame
+│   │   ├── lib/                  API proxy with deadlines, mock fixtures, docs content
+│   │   └── scripts/              banner and promo renderers
+│   └── worker/               the `comd` CLI holders run to put a Counsel to work
+├── packages/
+│   ├── icm/                  Inference Capital Markets: ledger, pricing, proxy, funding, stats (no chain, no brand)
+│   ├── protocol/             wire types, signatures, envelopes, Merkle trees
+│   ├── abi/                  contract ABIs and the per-chain address book
+│   ├── services/             blob store, the Clerk, Records Office, Registrar, skills
+│   └── art/                  the deterministic pixel Counsel generator and brand kit
+├── contracts/                Foundry: Counsel NFT, Flywheel, Swapper, rewards, Incorporations, launches, oracle
+├── skills/                   the skill catalog the planner and every seat read
+├── e2e/                      end-to-end runs on a local chain, and the site under Playwright
+├── infra/                    Dockerfiles and Railway service definitions
+├── scripts/                  local stack, deployment, film renderer, address checks
+└── docs/media/               the images and animations in this README
+```
 
 ## Architecture
 
@@ -326,18 +530,18 @@ npm workspaces, Node 22, TypeScript ESM (the internal scope `@company/*` is not 
 | [contracts/](contracts/README.md) | Foundry | Solidity 0.8.26: flywheel, buyback swapper, revenue router, rewards, Counsel NFT, ERC-8004 bootstrap, launch factory, Incorporations, oracle verifier ($COMD itself is minted by Pons); `script/Deploy.s.sol`; unit, security and invariant tests |
 | [packages/abi/](packages/abi/README.md) | `@company/abi` | ABIs (`as const`) and the per-chain address book generated from `contracts/` |
 | packages/protocol/ | `@company/protocol` | Wire types, canonical JSON, Ed25519 device envelopes (`comd.v2`), EIP-712 types (Worker, Paid Action, Oracle), x402 payloads, WebSocket frames, Merkle trees |
-| [packages/icm/](packages/icm/README.md) | `@company/icm` | cICM: the credit ledger in integer micro-dollars, fixed-rate pricing with a published margin, the inference proxy that bills what the provider actually charged, the deposit watcher, and a house book that states the unbacked liability. No token, chain, brand or provider compiled in |
+| [packages/icm/](packages/icm/README.md) | `@company/icm` | cICM, the Inference Capital Markets protocol: the credit ledger in integer micro-dollars, fixed-rate pricing, the inference proxy that bills what the provider actually charged (streamed or not), deposit funding, public stats, and a house book that states the unbacked liability. No token, chain, brand or provider compiled in. See [the protocol](#the-inference-capital-markets-protocol) |
 | packages/art/ | `@company/art` | Deterministic pixel Counsel generator (SVG and a pure-JS PNG encoder), logo, 16×16 icon set, brand kit |
 | [packages/services/](packages/services/README.md) | `@company/services` | The back office: content-addressed blob store (local or S3), the Clerk (sandboxed verifier with 24 check types), Records Office (GitHub filings, hosted sites with a content screen), Registrar (forge-script launches under a gas ceiling), skill catalog |
 | [apps/api/](apps/api/README.md) | `@company/api` | Chambers: every route, the `/agent` relay, dispatcher with premium routing, scheduler for retainers, oracle attester, x402 settler, reward epochs, keeper, site host |
 | [apps/worker/](apps/worker/README.md) | `@company/worker` | The `comd` CLI: pairing, leases, Claude Code / Codex runtimes, outbox, auto-update, service install |
-| apps/web/ | `@company/web` | The website: docket, retain flow, $COMD, swap, flywheel, coins, mint, pairing, docs |
+| apps/web/ | `@company/web` | The website: the two-desk front page, docket, retain flow, cICM (buy panel, live stats, playground, quickstarts, catalogue, account), $COMD, swap, flywheel, coins, mint, pairing, docs, films |
 | [skills/](skills/README.md) | — | The 51-skill catalog (`SKILL.md` per skill + `index.json` with hashes) that the planner, the Clerk and every seat read |
 | e2e/ | — | End-to-end runs on a local anvil chain: real contracts, x402/Permit2, workers, keeper; and the website driven by Playwright |
 | infra/ | — | `docker/api.Dockerfile` (Node + git + Foundry + solc), `docker/web.Dockerfile`, `railway/{api,web}.json` |
 | .github/workflows/ | — | `ci.yml` (build, tests, forge test, images), `release-worker.yml` (CLI releases), `deploy-contracts.yml` (deploy and seed from GitHub) |
 | scripts/ | — | `local-stack.sh`, `deploy-contracts.sh`, `check-mainnet-addresses.sh`, `deployment-env.mjs`, `install-contract-libs.sh`, `pack-worker.sh` |
-| docs/media/ | — | The images and animations in this README |
+| docs/media/ | — | The banner, screenshots and animations in this README |
 
 The spec is [SPEC.md](SPEC.md); cross-package names are fixed in [INTERFACES.md](INTERFACES.md); the feature list
 measured against IMD is [PARITY.md](PARITY.md).
