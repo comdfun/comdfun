@@ -7,7 +7,8 @@ import { useRead } from "@/lib/useChain";
 import { MOCK, PONS_URL, UNISWAP_URL } from "@/lib/config";
 import { MOCK_CHAIN } from "@/lib/mock-chain";
 import { coinInfo, loadTrades, mockCoins, mockPrice, mockTicks, parseMeta, tradeTicks, type Tick, type TradeRow } from "@/lib/incorporations";
-import { CoinChart } from "./CoinChart";
+import { CoinChart, fmtPrice } from "./CoinChart";
+import { isHiddenCoin } from "@/lib/hidden-coins";
 import { explorerUrl } from "@/lib/chains";
 import { fmtNum, short, units } from "@/lib/format";
 import { TxButton } from "../tx/TxButton";
@@ -30,6 +31,9 @@ export function CoinDetail({ address }: { address: Address }) {
   const [info, setInfo] = useState<{ name: string; symbol: string; totalSupply?: bigint; image?: string; description?: string; website?: string; twitter?: string; creator?: string } | null>(mock ? { name: mock.name, symbol: mock.symbol, creator: mock.creator } : null);
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [ticks, setTicks] = useState<Tick[] | null>(mock ? mockTicks(address, mock.supplySold ?? 0.4) : null);
+  // the curve's price right now and when the coin was made, so the chart has something true to show before any trade
+  const [spot, setSpot] = useState<number | null>(null);
+  const [since, setSince] = useState<number | null>(null);
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [viaPick, setVia] = useState<"eth" | "comd">("comd");
   const via = ethEnabled ? viaPick : "comd";
@@ -56,12 +60,16 @@ export function CoinDetail({ address }: { address: Address }) {
     let live = true;
     const pull = () => loadTrades(client, address)
       .then(async (t) => { if (!live) return; setTrades(t); const k = await tradeTicks(client, t); if (live) setTicks(k); })
+      .then(() => client.readContract({ address: inc.address!, abi: inc.abi as Abi, functionName: "spotPrice", args: [address] }) as Promise<bigint>)
+      .then((p) => { if (live && p) setSpot(Number(p) / 1e18); })
       .catch(() => { if (live) setTicks((x) => x ?? []); });
     void pull();
     const timer = setInterval(pull, 20_000);
     client.getContractEvents({ address: inc.address, abi: inc.abi as Abi, eventName: "CoinCreated", args: { coin: address }, fromBlock: 0n } as never).then((l) => {
-      const a = (l as unknown as { args: { creator: string; metadataURI: string } }[])[0]?.args;
-      if (a) setInfo((x) => ({ ...(x ?? { name: "", symbol: "" }), creator: a.creator, ...parseMeta(a.metadataURI) }));
+      const first = (l as unknown as { args: { creator: string; metadataURI: string; name: string; symbol: string }; blockNumber: bigint }[])[0];
+      const a = first?.args;
+      if (a) setInfo((x) => ({ ...(x ?? { name: a.name, symbol: a.symbol }), name: x?.name || a.name, symbol: x?.symbol || a.symbol, creator: a.creator, ...parseMeta(a.metadataURI) }));
+      if (first?.blockNumber != null) client.getBlock({ blockNumber: first.blockNumber }).then((b) => live && setSince(Number(b.timestamp))).catch(() => {});
     }).catch(() => {});
     return () => { live = false; clearInterval(timer); };
   }, [inc.address, client, address]);
@@ -127,6 +135,10 @@ export function CoinDetail({ address }: { address: Address }) {
   };
   const approveToken = side === "buy" ? (via === "comd" ? token.address : undefined) : address;
 
+  if (isHiddenCoin({ address, symbol: info?.symbol, name: info?.name })) {
+    return <div className="empty"><span className="px">No such coin.</span>It is not listed on this site.</div>;
+  }
+
   return (
     <div className="two-col">
       <div className="stack">
@@ -148,12 +160,12 @@ export function CoinDetail({ address }: { address: Address }) {
           </div>
         )}
         <div className="stats">
-          <div className="stat"><span className="v">{last ? last.toExponential(2) : "—"}</span><span className="k">Price · COMD per coin</span></div>
+          <div className="stat"><span className="v">{last ? fmtPrice(last) : spot ? fmtPrice(spot) : "—"}</span><span className="k">Price · COMD per coin</span></div>
           <div className="stat"><span className="v">{marker != null ? `${(marker * 100).toFixed(1)}%` : "—"}</span><span className="k">Curve sold</span></div>
           <div className="stat"><span className="v">{mock ? fmtNum(mock.trades) : fmtNum(trades.length)}</span><span className="k">Trades</span></div>
           <div className="stat"><span className="v">1B</span><span className="k">Supply</span></div>
         </div>
-        <CoinChart ticks={ticks} symbol={info?.symbol ?? "COIN"} />
+        <CoinChart ticks={ticks} symbol={info?.symbol ?? "COIN"} spot={mock ? mockPrice(mock.supplySold ?? 0) : spot} since={since} />
         <dl className="kv">
           <dt>Coin</dt><dd><a className="mono ext break" href={explorerUrl("token", address)} target="_blank" rel="noreferrer">{address}</a></dd>
           <dt>Launcher</dt><dd>{info?.creator ? <a className="mono ext" href={explorerUrl("address", info.creator)} target="_blank" rel="noreferrer">{short(info.creator)}</a> : "—"}</dd>

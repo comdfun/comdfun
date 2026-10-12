@@ -4,6 +4,7 @@ import type { Abi, Address, PublicClient } from "viem";
 import { erc20Abi } from "viem";
 import { contract } from "./contracts";
 import { MOCK_CHAIN } from "./mock-chain";
+import { isHiddenCoin } from "./hidden-coins";
 
 export interface Coin {
   address: Address;
@@ -76,7 +77,7 @@ export function metaURI(m: { name: string; symbol: string; image?: string; descr
 }
 
 export function mockCoins(): Coin[] {
-  return MOCK_CHAIN.incorporations.map((c) => ({ ...c, address: c.address as Address, mock: true }));
+  return MOCK_CHAIN.incorporations.map((c) => ({ ...c, address: c.address as Address, mock: true })).filter((c) => !isHiddenCoin(c));
 }
 
 export async function loadCoins(client: PublicClient): Promise<Coin[]> {
@@ -85,6 +86,7 @@ export async function loadCoins(client: PublicClient): Promise<Coin[]> {
   const logs = await client.getContractEvents({ address: inc.address, abi: inc.abi as Abi, eventName: "CoinCreated", fromBlock, toBlock: "latest" });
   return (logs as unknown as { args: { coin: Address; creator: string; name: string; symbol: string; metadataURI: string }; blockNumber: bigint }[])
     .map((l) => ({ address: l.args.coin, name: l.args.name, symbol: l.args.symbol, creator: l.args.creator, metadataURI: l.args.metadataURI, createdBlock: l.blockNumber, ...parseMeta(l.args.metadataURI) }))
+    .filter((c) => !isHiddenCoin(c))
     .reverse();
 }
 

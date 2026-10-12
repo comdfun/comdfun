@@ -48,11 +48,12 @@ export function fmtPrice(n: number): string {
   return `${n < 0 ? "-" : ""}0.0${sub}${digits}`;
 }
 
-export function CoinChart({ ticks, symbol, loading }: { ticks: Tick[] | null; symbol: string; loading?: boolean }) {
+export function CoinChart({ ticks, symbol, loading, spot, since }: { ticks: Tick[] | null; symbol: string; loading?: boolean; spot?: number | null; since?: number | null }) {
   const box = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const price = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const vol = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const flat = useRef<ISeriesApi<"Line"> | null>(null);
   const [mode, setMode] = useState<"price" | "mcap">("price");
   const span = ticks && ticks.length > 1 ? ticks[ticks.length - 1].t - ticks[0].t : 0;
   // the smallest frame that keeps the chart to about 120 candles
@@ -85,10 +86,19 @@ export function CoinChart({ ticks, symbol, loading }: { ticks: Tick[] | null; sy
       });
       vol.current = c.addHistogramSeries({ priceScaleId: "vol", priceFormat: { type: "custom", formatter: fmtPrice, minMove: 0.01 }, lastValueVisible: false, priceLineVisible: false });
       c.priceScale("vol").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+      // before the first trade: the curve's own price, flat, from the moment the coin was made
+      flat.current = c.addLineSeries({ color: "#ffc83d", lineWidth: 2, lineStyle: 0, priceFormat: { type: "custom", formatter: fmtPrice, minMove: 1e-12 }, title: "starting price",
+        // a flat line has no range of its own: give it room above and below so the axis reads as prices, not one value
+        autoscaleInfoProvider: (base: () => { priceRange: { minValue: number; maxValue: number } } | null) => {
+          const r = base();
+          if (!r) return null;
+          const v = r.priceRange.maxValue;
+          return { priceRange: { minValue: v * 0.5, maxValue: v * 1.5 } };
+        } });
       chart.current = c;
       setReady((r) => r + 1);
     })();
-    return () => { dead = true; chart.current?.remove(); chart.current = null; price.current = null; vol.current = null; };
+    return () => { dead = true; chart.current?.remove(); chart.current = null; price.current = null; vol.current = null; flat.current = null; };
   }, []);
 
   // feed it
@@ -96,10 +106,24 @@ export function CoinChart({ ticks, symbol, loading }: { ticks: Tick[] | null; sy
     if (!price.current || !vol.current) return;
     price.current.setData(data.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
     vol.current.setData(data.map((d) => ({ time: d.time, value: d.vol, color: d.up ? "rgba(140,255,58,.35)" : "rgba(255,59,92,.35)" })));
+    const none = !ticks || ticks.length === 0;
+    if (flat.current) {
+      if (none && spot) {
+        const now = Math.floor(Date.now() / 1000);
+        const from = Math.min(since ?? now - 3600, now - 60);
+        // a point per candle from launch to now, so the line spans the time the coin has existed
+        const pts: { time: UTCTimestamp; value: number }[] = [];
+        const step = Math.max(f, Math.ceil((now - from) / 200 / f) * f);
+        for (let t = Math.floor(from / step) * step; t <= now; t += step) pts.push({ time: t as UTCTimestamp, value: spot * k });
+        if (pts.length < 2) pts.push({ time: (pts[0].time + step) as UTCTimestamp, value: spot * k });
+        flat.current.setData(pts);
+      } else flat.current.setData([]);
+    }
     chart.current?.timeScale().fitContent();
-  }, [data, ready]);
+  }, [data, ready, spot, since, f, k, ticks]);
 
-  const first = data[0]?.open, lastC = data[data.length - 1]?.close;
+  const first = data[0]?.open;
+  const lastC = data.length ? data[data.length - 1].close : spot ? spot * k : undefined;
   const change = first && lastC ? ((lastC - first) / first) * 100 : null;
   const hi = data.length ? Math.max(...data.map((d) => d.high)) : null;
   const lo = data.length ? Math.min(...data.map((d) => d.low)) : null;
@@ -128,7 +152,7 @@ export function CoinChart({ ticks, symbol, loading }: { ticks: Tick[] | null; sy
       <div className="cchart-plot">
         <div ref={box} className="cchart-canvas" />
         {(!ticks || ticks.length === 0) && (
-          <div className="cchart-empty">{loading || !ticks ? "Reading trades from the chain…" : "No trades yet. The first buy draws the first candle."}</div>
+          <div className={spot ? "cchart-empty cchart-note" : "cchart-empty"}>{loading || !ticks ? "Reading trades from the chain…" : spot ? "No trades yet: this is the starting price. The first buy draws the first candle." : "No trades yet. The first buy draws the first candle."}</div>
         )}
       </div>
       <div className="cchart-foot">
