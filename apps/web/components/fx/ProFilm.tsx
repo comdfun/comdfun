@@ -117,6 +117,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmplay" && <Playground logo={logo} />}
         {kind === "icmquick" && <Quickstart logo={logo} />}
         {kind === "icmgithub" && <GitHub logo={logo} />}
+        {kind === "inccoins" && <Coins logo={logo} />}
       </div>
     </div>
   );
@@ -1209,6 +1210,99 @@ function GitHub({ logo }: { logo: string }) {
 
       <Scene t0={19000} t1={24000} last>
         <Outro logo={logo} a="Read the code." b="Fork the protocol." url="github.com/comdfun" />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ Incorporations */
+
+// a made-up coin's first day: [open, close] as a share of the chart height, rising with a few red candles
+const N_CANDLES: [number, number][] = [
+  [10, 14], [14, 13], [13, 18], [18, 22], [22, 20], [20, 27], [27, 33], [33, 31], [31, 38], [38, 44], [44, 41], [41, 49],
+  [49, 55], [55, 52], [52, 60], [60, 66], [66, 63], [63, 71], [71, 78], [78, 75], [75, 83], [83, 88],
+];
+
+function Coins({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--lime)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Launch a company coin," d={300} /></span>
+            <span className="pv-line"><HL d={1700} c="var(--lime)"><W text="backed by $COMD" d={1100} /></HL><Dot d={1260} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2400ms" })}>Incorporations, on comd.fun. Launch it, trade it, watch it graduate.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12000}>
+        <Head eyebrow="1 · Launch" c="var(--lime)"><W text="Name it. Logo it." d={200} /> <span className="pv-c"><W text="Launch it." d={500} /></span></Head>
+        <div className="n-form a-from" style={v({ "--d": "300ms", "--fx": "-50px" })}>
+          <b className="n-form-h">Incorporate a coin</b>
+          <div className="n-f"><span>Name</span><div className="pv-mono"><Type text="Habeas Corpus" d={900} per={45} /></div></div>
+          <div className="n-f"><span>Symbol</span><div className="pv-mono"><Type text="HABEAS" d={1600} per={55} /></div></div>
+          <div className="n-f"><span>Logo</span><div className="n-logo"><i className="a-pop" style={v({ "--d": "2100ms" })}>H</i><em>habeas.png</em></div></div>
+          <div className="n-row">
+            <div className="n-f"><span>Website</span><div className="pv-mono"><Type text="habeas.xyz" d={2600} per={45} /></div></div>
+            <div className="n-f"><span>X</span><div className="pv-mono"><Type text="@habeas" d={3100} per={50} /></div></div>
+          </div>
+          <div className="n-go pv-press" style={v({ "--d": "3800ms" })}>Incorporate</div>
+        </div>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path className="a-draw" pathLength={1} d="M 1010 600 L 1130 600" style={v({ "--d": "4200ms", "--lc": "var(--lime)" })} />
+        </svg>
+        <div className="n-coin a-pop" style={v({ "--d": "4500ms" })}>
+          <div className="n-coin-top"><i>H</i><div><b>$HABEAS</b><span>Habeas Corpus</span></div></div>
+          <dl>
+            <dt>Supply</dt><dd>1,000,000,000</dd>
+            <dt>Priced in</dt><dd>$COMD, on a curve</dd>
+            <dt>Cost to launch</dt><dd>gas only</dd>
+          </dl>
+        </div>
+      </Scene>
+
+      <Scene t0={11500} t1={19500}>
+        <Head eyebrow="2 · Trade" c="var(--cyan)"><W text="Every buy" d={200} /> <span className="pv-c"><W text="is a $COMD buy." d={380} /></span></Head>
+        <div className="n-chart a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="n-chart-h"><b>$HABEAS</b><span className="pv-mono">0.0₄1840 COMD</span><em>+212%</em></div>
+          <div className="n-candles">
+            {N_CANDLES.map(([o, c], i) => {
+              const up = c >= o;
+              // bodies drawn taller than the raw move so each candle reads at film size, with a thin wick through it
+              const lo = Math.min(o, c) * 0.82 + 4, h = Math.max(3, Math.abs(c - o) * 1.9);
+              return <i key={i} className={up ? "up" : "down"} style={v({ left: `${2 + i * (96 / N_CANDLES.length)}%`, bottom: `${lo}%`, height: `${h}%`, "--d": ms(700 + i * 120) })} />;
+            })}
+          </div>
+        </div>
+        <div className="n-fees">
+          {[["1%", "to Counsel rewards", "var(--cyan)"], ["0.5%", "of the $COMD side burned", "var(--orange)"], ["0.5%", "to the launcher", "var(--lime)"]].map(([p, t, c], i) => (
+            <div key={t} className="n-fee a-from" style={v({ "--d": ms(3400 + i * 220), "--fx": "50px", "--cc": c })}><b>{p}</b><span>{t}</span></div>
+          ))}
+          <p className="a-rise" style={v({ "--d": "4300ms" })}>on every trade</p>
+        </div>
+      </Scene>
+
+      <Scene t0={19000} t1={27000}>
+        <Head eyebrow="3 · Graduation" c="var(--gold)"><W text="At 400k $COMD," d={200} /> <span className="pv-c"><W text="it graduates." d={560} /></span></Head>
+        <div className="n-grad a-rise" style={v({ "--d": "300ms", "--dy": "30px" })}>
+          <div className="n-grad-h"><span>$COMD in the reserve</span><b className="pv-mono"><Swap a="0" b="400,000" d={2950} /></b></div>
+          <div className="n-bar"><i style={v({ "--d": "600ms" })} /></div>
+          <div className="n-grad-f"><span>on the curve</span><span>graduates</span></div>
+        </div>
+        <div className="n-pool a-pop" style={v({ "--d": "3300ms" })}>
+          <div className="n-pool-h"><i>H</i><i className="n-c">$</i><div><b>HABEAS / $COMD</b><span>Uniswap v4 pool, opened in the same transaction</span></div></div>
+          <ul>
+            {["All its $COMD backing goes in as liquidity, locked forever", "The rest of the unsold supply is burned", "Pool fees go to Counsel rewards"].map((t, i) => (
+              <li key={t} className="a-rise" style={v({ "--d": ms(4000 + i * 220), "--dy": "12px" })}><Tick /> {t}</li>
+            ))}
+          </ul>
+        </div>
+      </Scene>
+
+      <Scene t0={26500} t1={31000} last>
+        <Outro logo={logo} a="Launch a coin." b="Back it with $COMD." url="comd.fun" />
       </Scene>
     </>
   );
