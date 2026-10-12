@@ -103,7 +103,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
       <div className="pv-stage" style={v({ "--len": ms(PRO_LENGTH[kind]), "--t0": "0ms" })}>
         <div className="pv-bg" aria-hidden="true"><i /><i /><i /></div>
         <div className="pv-grid" aria-hidden="true" />
-        <div className="pv-brand" aria-hidden="true"><Svg svg={logo} className="pv-brand-mark" /><span>Company<b>.md</b></span><em>cICM</em></div>
+        <div className="pv-brand" aria-hidden="true"><Svg svg={logo} className="pv-brand-mark" /><span>Company<b>.md</b></span>{kind.startsWith("icm") && <em>cICM</em>}</div>
         <div className="pv-progress" aria-hidden="true"><i /></div>
         {kind === "icmx" && <Intro logo={logo} />}
         {kind === "icmeth" && <Eth logo={logo} />}
@@ -112,6 +112,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmsettle" && <Settle logo={logo} />}
         {kind === "icmmodels" && <Models logo={logo} />}
         {kind === "icmeco" && <Eco logo={logo} />}
+        {kind === "burn118" && <SupplyBurn logo={logo} />}
       </div>
     </div>
   );
@@ -853,14 +854,62 @@ function Tick() {
   );
 }
 
-function Outro({ logo, a, b }: { logo: string; a: string; b: string }) {
+function Outro({ logo, a, b, url = "comd.fun/icm" }: { logo: string; a: string; b: string; url?: string }) {
   return (
     <div className="pv-center pv-outro">
       <div className="pv-ring" aria-hidden="true" />
       <div className="a-pop" style={v({ "--d": "250ms" })}><Svg svg={logo} className="pv-mark" /></div>
       <div className="pv-word a-rise" style={v({ "--d": "500ms" })}>Company<b>.md</b></div>
       <p className="pv-tag a-rise" style={v({ "--d": "850ms" })}>{a} <span className="pv-grad">{b}</span></p>
-      <div className="pv-url a-pop" style={v({ "--d": "1250ms" })}>comd.fun/icm</div>
+      <div className="pv-url a-pop" style={v({ "--d": "1250ms" })}>{url}</div>
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ A supply burn */
+
+// The supply as 1,000 squares of 0.1% each: what was burned before, then this burn lighting up after it.
+const SB_BEFORE = 113; // 11.3%
+const SB_NOW = 5;      // 0.5%
+
+function SupplyBurn({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--orange)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="0.5% of supply" d={300} /></span>
+            <span className="pv-line"><W text="just" d={800} /> <HL d={1500} c="var(--orange)"><W text="burned" d={950} /></HL><Dot d={1100} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>Gone for good, on chain.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Head eyebrow="Total burned" c="var(--orange)">
+          <span className="pv-c"><Swap a="11.3%" b="11.8%" d={3000} /></span> <W text="of supply, gone." d={300} />
+        </Head>
+        <div className="sb-wrap a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="sb-grid" aria-hidden="true">
+            {Array.from({ length: 1000 }, (_, i) =>
+              i < SB_BEFORE ? <i key={i} className="old" style={v({ "--d": ms(700 + i * 10) })} />
+              : i < SB_BEFORE + SB_NOW ? <i key={i} className="new" style={v({ "--d": ms(2600 + (i - SB_BEFORE) * 150) })} />
+              : <i key={i} />,
+            )}
+          </div>
+        </div>
+        <div className="sb-legend a-rise" style={v({ "--d": "3700ms" })}>
+          <span><i className="old" />burned before <b>11.3%</b></span>
+          <span><i className="new" />this burn <b>0.5%</b></span>
+          <span><i />still circulating <b>88.2%</b></span>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "930px", "--d": "4300ms" })}>Each square is 0.1% of supply. Nothing mints more.</p>
+      </Scene>
+
+      <Scene t0={12000} t1={16000} last>
+        <Outro logo={logo} a="11.8% of supply" b="burned for good." url="comd.fun" />
+      </Scene>
+    </>
   );
 }
