@@ -12,6 +12,8 @@ import { CopyButton } from "@/components/CopyButton";
 import { BuyCredit } from "./BuyCredit";
 import { Catalogue } from "./Catalogue";
 import { Dash, SAMPLE } from "./Dash";
+import { Live } from "./Live";
+import { Try } from "./Try";
 
 type Rate = {
   enabled: boolean;
@@ -211,6 +213,9 @@ export function Icm() {
         <div className="icm-fact icm-fact-hot"><b>Burned on the way in</b><span>Every $COMD that buys credit is destroyed. Buying inference takes supply off the market for good, so demand for models is demand for the token.</span></div>
       </section>
 
+      {/* ------------------------------------------------------------------ the desk, live */}
+      <Live />
+
       {/* ------------------------------------------------------------------ catalogue */}
       <section className="icm-cat">
         <div className="icm-cat-say">
@@ -219,6 +224,9 @@ export function Icm() {
         </div>
         <Catalogue />
       </section>
+
+      {/* ------------------------------------------------------- playground and quickstart */}
+      <Try endpoint={endpoint} />
 
       {/* ------------------------------------------------------------------- funding */}
       <section className="icm-fund">

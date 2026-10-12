@@ -16,7 +16,7 @@
  * Nothing in this file knows what a token is, what chain it is on, or who the provider is.
  */
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
-import type { Account, ApiKey, Charge, Deposit, DepositSource, HouseBook } from "./types.ts";
+import type { Account, ApiKey, Charge, Deposit, DepositSource, HouseBook, PublicStats } from "./types.ts";
 import type { CollectionName, Store } from "./store.ts";
 import type { IcmConfig } from "./config.ts";
 import { E, IcmError } from "./errors.ts";
@@ -457,6 +457,64 @@ export class Ledger {
   }
 
   /**
+   * The public face of the book: how much the desk is used and how much of the token it has taken out of
+   * circulation. Built from settled charges and paid deposits only, so a hold that may still be released never
+   * counts as a call, and a grant never counts as tokens paid in.
+   *
+   * Burned means: everything paid in when the payment address is itself the burn (`sink: "burn"`), and otherwise
+   * only the deposits the operator has recorded a burn transaction for. It never assumes a burn that did not happen.
+   */
+  stats(now = Date.now()): PublicStats {
+    const charges = this.store.all<Charge>(CHARGES).filter((c) => c.state === "settled");
+    const deposits = this.store.all<Deposit>(DEPOSITS).filter((d) => d.source !== "grant");
+    const sinkBurns = this.config.token.sink === "burn";
+
+    let tokensIn = 0, tokensOut = 0;
+    const perModel = new Map<string, number>();
+    const DAY = 86_400_000;
+    const today = Math.floor(now / DAY);
+    const perDay = new Array<number>(14).fill(0);
+    for (const c of charges) {
+      tokensIn += c.tokensIn;
+      tokensOut += c.tokensOut;
+      perModel.set(c.model, (perModel.get(c.model) ?? 0) + 1);
+      const day = today - Math.floor(Date.parse(c.createdAt) / DAY);
+      if (day >= 0 && day < 14) perDay[13 - day]++;
+    }
+    const latencies = charges.slice(-500).map((c) => c.latencyMs).filter((n) => n > 0).sort((a, b) => a - b);
+    const medianLatencyMs = latencies.length ? latencies[Math.floor((latencies.length - 1) / 2)] : null;
+
+    let paid = 0n, burnedUnits = 0n;
+    const payers = new Set<string>();
+    for (const d of deposits) {
+      const units = big(d.tokenUnits);
+      paid += units;
+      if (sinkBurns || d.burnTx) burnedUnits += units;
+      payers.add(d.accountId);
+    }
+
+    const total = charges.length;
+    const models = [...perModel.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 8)
+      .map(([model, calls]) => ({ model, calls, share: total ? Math.round((calls / total) * 1000) / 1000 : 0 }));
+    const { symbol, decimals, sink } = this.config.token;
+
+    return {
+      at: new Date(now).toISOString(),
+      calls: total,
+      tokensIn,
+      tokensOut,
+      payers: payers.size,
+      keys: this.store.count(KEYS),
+      medianLatencyMs,
+      models,
+      days: perDay.map((calls, i) => ({ date: new Date((today - 13 + i) * DAY).toISOString().slice(0, 10), calls })),
+      token: { symbol, decimals, sink, paidUnits: str(paid), paid: whole(formatUnits(paid, decimals)), burnedUnits: str(burnedUnits), burned: whole(formatUnits(burnedUnits, decimals)) },
+    };
+  }
+
+  /**
    * Assert the book adds up, for every account: `balance + held == deposited − spent`. Returns the accounts that
    * do not. Call it in tests after every operation and on a schedule in production; an empty array is the only
    * acceptable answer, and anything else means a hold leaked.
@@ -474,6 +532,9 @@ export class Ledger {
 }
 
 /** sha256 of a key secret, hex. The only form a secret is ever stored in. */
+/** A token amount without the trailing zeros formatUnits keeps: "100000.500000" → "100000.5", "3.000" → "3". */
+const whole = (s: string) => (s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s);
+
 export function hashSecret(secret: string): string {
   return createHash("sha256").update(secret, "utf8").digest("hex");
 }

@@ -33,4 +33,4 @@ export {
   type Upstream, type UpstreamModel, type UpstreamUsage, type OpenRouterOptions,
   type CompletionRequest, type CompletionResponse, type StreamedCompletion,
 } from "./upstream.ts";
-export type { Account, ApiKey, Charge, Deposit, DepositSource, ChargeState, HouseBook } from "./types.ts";
+export type { Account, ApiKey, Charge, Deposit, DepositSource, ChargeState, HouseBook, PublicStats } from "./types.ts";

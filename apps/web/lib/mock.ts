@@ -828,6 +828,19 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       deposit: { address: "0x9d4c1e7a3b55f08216ce4d7b0a9f3e21c88b4a60", symbol: "COMD", chainId: CH, decimals: 18, tokensPerUsd: "100000", minimumTokens: "100000", paymentIsBurn: false, burns: true, sink: "burn", note: "Send COMD to this address and it is destroyed: credit is bought by taking the token out of supply for good. The credit lands on the wallet that sent it, so send from the wallet you want credited." },
       compatible: "Standard chat completions. Point any client at the endpoint with your cICM key as the bearer, and name the model you want in the request.",
     });
+    if (p === "/icm/v1/stats") {
+      // shaped exactly like the live one (packages/icm Ledger.stats), from a fixed seed so it does not jump
+      const DAY = 86_400_000, today = Math.floor(Date.now() / DAY);
+      const per = [212, 248, 231, 305, 342, 296, 388, 451, 430, 512, 566, 541, 634, 702];
+      return ok({
+        object: "stats", at: new Date().toISOString(),
+        calls: 18_406, tokensIn: 41_288_310, tokensOut: 9_870_442, payers: 214, keys: 391, medianLatencyMs: 1840,
+        models: [["anthropic/claude-opus-4.1", 4211], ["openai/gpt-5", 3530], ["google/gemini-2.5-pro", 2904], ["anthropic/claude-sonnet-4", 2610], ["deepseek/deepseek-r1", 1702], ["x-ai/grok-4", 1188], ["moonshotai/kimi-k2", 1015], ["meta-llama/llama-4-maverick", 640]]
+          .map(([model, calls]) => ({ model, calls, share: Math.round(((calls as number) / 18_406) * 1000) / 1000 })),
+        days: per.map((calls, i) => ({ date: new Date((today - 13 + i) * DAY).toISOString().slice(0, 10), calls })),
+        token: { symbol: "COMD", decimals: 18, sink: "burn", paidUnits: "412650000000000000000000000", paid: "412650000", burnedUnits: "412650000000000000000000000", burned: "412650000" },
+      });
+    }
     // The catalogue the page prices from. Shaped exactly like the live one (retail per million, dollars) so the
     // table is exercised in mock mode rather than only discovered to be wrong in production.
     if (p === "/icm/v1/models") return ok({

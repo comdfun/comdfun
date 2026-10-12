@@ -568,7 +568,7 @@ export function buildRouter(app: App): Router {
   };
   // The OpenAI-compatible surface. `limit` is generous because a conversation is the request body.
   const icmOpts: RouteOpts = { cors: "public", bucket: "read", limit: 4 * 1024 * 1024 };
-  for (const p of ["/icm/v1/chat/completions", "/icm/v1/models", "/icm/v1/key", "/icm/v1/usage", "/icm/v1/rate"]) {
+  for (const p of ["/icm/v1/chat/completions", "/icm/v1/models", "/icm/v1/key", "/icm/v1/usage", "/icm/v1/rate", "/icm/v1/stats"]) {
     r.get(p, (q) => icmPass(q, p.slice(4)), icmOpts);
     r.post(p, (q) => icmPass(q, p.slice(4)), icmOpts);
   }

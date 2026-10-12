@@ -339,7 +339,13 @@ A key can carry a **spend ceiling**: the most it may ever spend, whatever the ac
 
 ## What you can see
 
-Your account shows the balance, what is held by calls running now, what has been spent all time and what has been bought all time, plus every charge with its model and cost. The house's own book is published too: what is owed to everyone, what backs it, and whether that backing is short.
+Your account shows the balance, what is held by calls running now, what has been spent all time and what has been bought all time, plus every charge with its model and cost. Every answer states what it cost in \`usage.cost\`, streamed or not: the price you were charged.
+
+The desk's own activity is public at \`GET /icm/v1/stats\` and live on the page: calls served, tokens processed, the most used models, median response time, and every $COMD paid in and burned. It carries no dollar figure of the house's.
+
+## Trying it
+
+The cICM page has a **playground**: paste a key, pick any model, and watch the answer stream in with its first-token time, tokens and cost. The key stays in that browser tab and goes only to the endpoint. Under it, **quickstarts** give the same request for cURL, Python, TypeScript and agent frameworks, with the model you picked filled in.
 
 ## Elsewhere
 

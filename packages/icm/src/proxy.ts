@@ -22,6 +22,7 @@ import type { ApiKey, Account, Charge } from "./types.ts";
 import type { Ledger } from "./ledger.ts";
 import type { IcmConfig } from "./config.ts";
 import type { Upstream, UpstreamModel } from "./upstream.ts";
+import { costToMicroUsd } from "./upstream.ts";
 import { modelAllowed } from "./config.ts";
 import { E, IcmError, asIcmError } from "./errors.ts";
 import { formatUsd } from "./money.ts";
@@ -150,7 +151,7 @@ export class Proxy {
       headers: this.costHeaders(settled, account),
       // the provider's own body, with its cost replaced by ours: a caller reading `usage.cost` must see what
       // they were charged, not what we paid.
-      json: { ...answer, usage: { ...(answer.usage as object ?? {}), cost: Number(formatUsd(BigInt(settled.retailMicroUsd))) } },
+      json: { ...answer, usage: { ...withoutCostDetails(answer.usage), cost: Number(formatUsd(BigInt(settled.retailMicroUsd))) } },
     };
   }
 
@@ -158,7 +159,9 @@ export class Proxy {
     const { stream, usage } = await this.upstream.stream({ body: { ...o.body, stream: true }, signal: o.signal });
 
     // The headers go out before the first token, so they cannot carry the cost. The caller reads it from the
-    // final usage frame, which the provider sends and we pass through untouched.
+    // final usage frame. That frame is the one thing not relayed as the provider sent it: its `cost` is the
+    // provider's price to us, and a caller must see what they are charged, exactly as the non-streamed answer
+    // says. Every other frame passes through unchanged.
     void usage.then((u) => {
       try {
         if (u.costMicroUsd === null) {
@@ -188,7 +191,7 @@ export class Proxy {
         "x-icm-charge": o.charge.id,
         "x-icm-held": formatUsd(BigInt(o.charge.heldMicroUsd)),
       },
-      stream,
+      stream: stream.pipeThrough(chargedCost(this.ledger.config)),
     };
   }
 
@@ -241,6 +244,54 @@ export class Proxy {
       "x-icm-balance": formatUsd(BigInt(account.balanceMicroUsd)),
     };
   }
+}
+
+/** The provider's usage block without its cost breakdown, which states the provider's own price. */
+function withoutCostDetails(usage: unknown): Record<string, unknown> {
+  const u = usage && typeof usage === "object" && !Array.isArray(usage) ? { ...(usage as Record<string, unknown>) } : {};
+  delete u.cost_details;
+  return u;
+}
+
+/**
+ * Rewrite the cost in a stream's usage frame to the retail price the caller is billed. Frames are cut on the
+ * blank line that ends each one, so a token frame is held back only until its own end, which providers send in
+ * the same chunk. A frame that does not parse, or has no usage, goes out byte for byte.
+ */
+function chargedCost(cfg: Pick<IcmConfig, "marginBps">): TransformStream<Uint8Array, Uint8Array> {
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  let tail = "";
+  const fix = (frame: string): string => {
+    if (!frame.includes("usage")) return frame;
+    return frame.split("\n").map((line) => {
+      if (!line.startsWith("data:")) return line;
+      const data = line.slice(5).trim();
+      if (!data || data === "[DONE]") return line;
+      try {
+        const parsed = JSON.parse(data) as Record<string, unknown>;
+        if (!parsed.usage || typeof parsed.usage !== "object") return line;
+        const usage = withoutCostDetails(parsed.usage);
+        const upstream = costToMicroUsd(usage.cost);
+        if (upstream === null) delete usage.cost; else usage.cost = Number(formatUsd(retailOf(cfg, upstream)));
+        return `data: ${JSON.stringify({ ...parsed, usage })}`;
+      } catch {
+        return line;
+      }
+    }).join("\n");
+  };
+  return new TransformStream({
+    transform(chunk, controller) {
+      tail += dec.decode(chunk, { stream: true });
+      const frames = tail.split("\n\n");
+      tail = frames.pop() ?? "";
+      if (frames.length) controller.enqueue(enc.encode(frames.map((f) => `${fix(f)}\n\n`).join("")));
+    },
+    flush(controller) {
+      tail += dec.decode();
+      if (tail) controller.enqueue(enc.encode(fix(tail)));
+    },
+  });
 }
 
 export { IcmError };

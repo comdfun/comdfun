@@ -2003,6 +2003,75 @@ html.no-motion .rv { opacity: 1 !important; }
   .icm-wire-foot, .icm-terms dd { font-size: 13.5px; }
 }
 
+/* ─── cICM: the desk, live ─── */
+.icm-live { display: grid; gap: 18px; }
+.live { border-color: color-mix(in srgb, var(--lime) 18%, var(--rule)); }
+.live-dot { background: var(--lime); box-shadow: 0 0 0 0 rgba(140,255,58,.6); animation: livePulse 1.8s ease-out infinite; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(140,255,58,.55); } 70% { box-shadow: 0 0 0 9px rgba(140,255,58,0); } 100% { box-shadow: 0 0 0 0 rgba(140,255,58,0); } }
+.live-at { margin-left: auto; font-size: 11.5px; color: var(--lime); font-variant-numeric: tabular-nums; }
+.live-burn { background: color-mix(in srgb, var(--orange) 9%, var(--ink-1)); }
+.live-burn b { color: var(--orange); }
+.live-panels { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.live-panels > .dash-panel + .dash-panel { border-left: 1px solid var(--rule); }
+.live-chart i { background: linear-gradient(180deg, var(--cyan), color-mix(in srgb, var(--cyan) 35%, transparent)); }
+.live-axis { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--dim); }
+.live-models li { grid-template-columns: minmax(0, 1.9fr) minmax(60px, 1.6fr) 44px; }
+.live-models .dash-track i { background: linear-gradient(90deg, var(--gold), var(--orange)); }
+.live-foot { display: flex; flex-wrap: wrap; gap: 8px 26px; padding: 12px 18px; border-top: 1px solid var(--rule); background: #07060b; font-size: 12.5px; color: var(--muted); }
+.live-foot b { color: var(--parch); font-weight: 600; font-variant-numeric: tabular-nums; }
+.live-foot-burn { margin-left: auto; color: color-mix(in srgb, var(--orange) 70%, var(--muted)); }
+.live-foot-burn b { color: var(--orange); }
+
+/* ─── cICM: playground and quickstart ─── */
+.icm-try { display: grid; gap: 18px; }
+.try-play { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); border: 1px solid var(--rule); border-radius: var(--r); background: var(--ink-1); overflow: hidden; }
+.try-form { display: grid; gap: 14px; align-content: start; padding: 18px; border-right: 1px solid var(--rule); }
+.try-field { display: grid; gap: 6px; min-width: 0; }
+.try-field > span { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #cdc6b5; }
+.try-field em { font-style: normal; font-size: 11.5px; color: var(--dim); }
+.try-field input, .try-field select, .try-field textarea { width: 100%; min-width: 0; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--rule-2); border-radius: var(--r-sm);
+  background: #06050a; color: var(--parch); font: inherit; font-size: 13.5px; }
+.try-field input, .try-field select { font-family: var(--font-mono); font-size: 12.5px; }
+.try-field textarea { resize: vertical; line-height: 1.5; min-height: 92px; }
+.try-field input:focus, .try-field select:focus, .try-field textarea:focus { outline: none; border-color: color-mix(in srgb, var(--gold) 60%, var(--rule-2)); }
+.try-form .btn { justify-self: start; min-width: 120px; }
+.try-out { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; background: #06050a; }
+.try-out-head { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--rule); }
+.try-out-head code { font-family: var(--font-mono); font-size: 12px; color: #cdc6b5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.try-state { margin-left: auto; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--lime); }
+.try-text { padding: 16px 18px; min-height: 170px; font-size: 15px; line-height: 1.65; color: var(--parch); overflow-wrap: anywhere; }
+.try-text p { margin: 0; white-space: pre-wrap; }
+.try-err { color: var(--crimson); }
+.try-caret { display: inline-block; width: 8px; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: var(--gold); animation: tryBlink 1s steps(1) infinite; }
+@keyframes tryBlink { 50% { opacity: 0; } }
+.try-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
+.try-meta span { display: grid; gap: 3px; padding: 11px 14px; background: #07060b; font-size: 11px; color: var(--dim); }
+.try-meta b { font-size: 15px; font-weight: 600; color: var(--parch); font-variant-numeric: tabular-nums; }
+.try-cost { background: color-mix(in srgb, var(--gold) 7%, #07060b) !important; }
+.try-cost b { color: var(--gold); }
+.try-code { border: 1px solid var(--rule); border-radius: var(--r); background: #06050a; overflow: hidden; }
+.try-tabs { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--rule); background: var(--ink-1); }
+.try-tabs button[role="tab"] { padding: 7px 13px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.try-tabs button[role="tab"]:hover { color: var(--parch); }
+.try-tabs button.on { background: color-mix(in srgb, var(--gold) 14%, var(--ink-2)); color: var(--gold); }
+.try-tabs-gap { flex: 1; }
+.try-pre { border-top: 0; font-size: 13px; color: #cdc6b5; }
+
+@media (max-width: 900px) {
+  .live-panels, .try-play { grid-template-columns: minmax(0, 1fr); }
+  .live-panels > .dash-panel + .dash-panel { border-left: 0; }
+  .try-form { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .live-foot-burn { margin-left: 0; }
+}
+@media (max-width: 620px) {
+  .icm-live .dash-tiles, .try-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .try-tabs { overflow-x: auto; }
+}
+@media (max-width: 1000px) {
+  .live-models li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+  .live-models .dash-track { grid-column: 1 / -1; grid-row: 2; }
+}
+
 /* ─── the front door ───────────────────────────────────────────────────────── */
 /* An index, not a pair of cards: a number, a name, a rule across the page, and a look at what is behind it.
    No chrome — the header, ticker, footer and status bar are suppressed on this route (components/Chrome.tsx).

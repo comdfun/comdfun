@@ -264,7 +264,8 @@ test("a stream is relayed byte for byte and billed from its final usage frame", 
   const text = await drain(res.stream!);
   assert.match(text, /"content":"he"/);
   assert.match(text, /\[DONE\]/);
-  assert.match(text, /"cost":0\.004/, "the provider's own frames are passed through untouched");
+  assert.match(text, /"cost":0\.0046/, "the usage frame states what the caller is charged");
+  assert.doesNotMatch(text, /"cost":0\.004[,}]/, "never the provider's price to us");
 
   await new Promise((r) => setImmediate(r)); // the settle happens on the usage promise
   const charge = ledger.chargeById(res.headers["x-icm-charge"]);
@@ -328,4 +329,32 @@ test("a model the provider has never heard of still gets a hold, from the fallba
   assert.ok(BigInt(charge.heldMicroUsd) > 0n);
   assert.equal(charge.state, "settled");
   assert.equal(held(ledger, account.id), 0n);
+});
+
+test("a usage frame split across chunks is still repriced, and the provider's cost breakdown never leaves", async () => {
+  const { upstream, chat } = setup();
+  upstream.nextStream = async () => {
+    const enc = new TextEncoder();
+    const parts = [
+      `data: {"id":"g","choices":[{"delta":{"content":"hi"}}]}\n\ndata: {"id":"g","usa`,
+      `ge":{"prompt_tokens":3,"completion_tokens":1,"cost":0.01,"cost_details":{"upstream_inference_cost":0.01}}}\n\n`,
+      `data: [DONE]\n\n`,
+    ];
+    let settle!: (u: { costMicroUsd: bigint | null; tokensIn: number; tokensOut: number; reasoningTokens: number; cachedTokens: number; id: string | null }) => void;
+    const usage = new Promise<Parameters<typeof settle>[0]>((r) => { settle = r; });
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        const p = parts.shift();
+        if (p === undefined) { settle({ costMicroUsd: parseUsd("0.01"), tokensIn: 3, tokensOut: 1, reasoningTokens: 0, cachedTokens: 0, id: "g" }); c.close(); return; }
+        c.enqueue(enc.encode(p));
+      },
+    });
+    return { stream, usage };
+  };
+  const res = await chat({ ...body, stream: true });
+  const text = await drain(res.stream!);
+  assert.match(text, /"content":"hi"/);
+  assert.match(text, /"cost":0\.0115/);
+  assert.doesNotMatch(text, /cost_details|upstream_inference_cost/);
+  assert.match(text, /\[DONE\]\n\n$/);
 });

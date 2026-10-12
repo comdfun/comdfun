@@ -222,3 +222,17 @@ test("a misconfigured desk switches itself off instead of taking the control pla
     if (icm.body.enabled === false && icm.body.reason) assert.match(icm.body.reason, /not set|misconfigured|switched off/i);
   }
 });
+
+test("the desk's activity is public, and carries no money of the house's", async (t) => {
+  const { h } = await up({ ICM_DEPOSIT_ADDRESS: DESK, ICM_BURN_ON_DEPOSIT: "1" });
+  t.after(() => h.close());
+  const res = await get(h, "/icm/v1/stats");
+  assert.equal(res.status, 200);
+  assert.equal(res.body.object, "stats");
+  assert.equal(res.body.calls, 0);
+  assert.equal(res.body.days.length, 14);
+  assert.equal(res.body.token.symbol, "COMD");
+  assert.equal(res.body.token.sink, "burn");
+  assert.equal(res.body.token.burned, "0");
+  assert.doesNotMatch(JSON.stringify(res.body), /margin|upstream|revenue|retail/i);
+});

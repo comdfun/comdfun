@@ -317,3 +317,53 @@ test("a long run of mixed activity leaves the book exactly balanced", () => {
   assert.ok(BigInt(book.grossMarginMicroUsd) > 0n, "the margin earned something");
   assert.equal(formatUsd(BigInt(book.revenueMicroUsd) - BigInt(book.upstreamCostMicroUsd)), formatUsd(BigInt(book.grossMarginMicroUsd)));
 });
+
+// ------------------------------------------------------------------------------------------------ public stats
+
+test("public stats count settled calls and paid tokens, and say nothing about money", () => {
+  const { ledger, account, key, tick } = funded("100");
+  const a = ledger.accountById(account.id);
+  const c1 = ledger.hold({ key, account: a, model: "anthropic/claude-opus-4.1", amountMicroUsd: parseUsd("1") });
+  ledger.settle({ chargeId: c1.id, upstreamMicroUsd: parseUsd("0.2"), usage: { tokensIn: 100, tokensOut: 50 }, latencyMs: 900 });
+  const c2 = ledger.hold({ key, account: ledger.accountById(account.id), model: "openai/gpt-5", amountMicroUsd: parseUsd("1") });
+  ledger.settle({ chargeId: c2.id, upstreamMicroUsd: parseUsd("0.1"), usage: { tokensIn: 10, tokensOut: 5 }, latencyMs: 300 });
+  const c3 = ledger.hold({ key, account: ledger.accountById(account.id), model: "anthropic/claude-opus-4.1", amountMicroUsd: parseUsd("1") });
+  ledger.settle({ chargeId: c3.id, upstreamMicroUsd: parseUsd("0.1"), usage: { tokensIn: 1, tokensOut: 1 }, latencyMs: 500 });
+  // a hold still open and a released one are not calls
+  ledger.hold({ key, account: ledger.accountById(account.id), model: "openai/gpt-5", amountMicroUsd: parseUsd("1") });
+  const gone = ledger.hold({ key, account: ledger.accountById(account.id), model: "openai/gpt-5", amountMicroUsd: parseUsd("1") });
+  ledger.release(gone.id, "never ran");
+  // a grant is not a payment
+  const other = ledger.account("0xAbC0000000000000000000000000000000000002");
+  ledger.deposit({ accountId: other.id, source: "grant", ref: "grant-1", creditedMicroUsd: parseUsd("5") });
+  tick(1000);
+
+  const s = ledger.stats(Date.parse("2026-10-11T12:00:01.000Z"));
+  assert.equal(s.calls, 3);
+  assert.equal(s.tokensIn, 111);
+  assert.equal(s.tokensOut, 56);
+  assert.equal(s.payers, 1);
+  assert.equal(s.medianLatencyMs, 500);
+  assert.deepEqual(s.models.map((m) => [m.model, m.calls]), [["anthropic/claude-opus-4.1", 2], ["openai/gpt-5", 1]]);
+  assert.equal(s.models[0].share, 0.667);
+  assert.equal(s.days.length, 14);
+  assert.equal(s.days[13].date, "2026-10-11");
+  assert.equal(s.days[13].calls, 3);
+  assert.equal(s.token.paid, "100000");
+  assert.equal(s.token.burned, "100000", "the sink is the burn, so everything paid in is gone");
+  const text = JSON.stringify(s);
+  for (const secret of ["retail", "upstream", "margin", "MicroUsd", "revenue"]) assert.ok(!text.includes(secret), `stats leak ${secret}`);
+});
+
+test("with a treasury sink only deposits with a recorded burn count as burned", () => {
+  const s = setup({ token: { ...TOKEN, sink: "treasury" } });
+  const a = s.ledger.account("0xAbC0000000000000000000000000000000000001");
+  const d1 = s.ledger.deposit({ accountId: a.id, source: "chain", ref: "0xa", tokenUnits: parseUnits("1000", 18) });
+  s.ledger.deposit({ accountId: a.id, source: "chain", ref: "0xb", tokenUnits: parseUnits("3000", 18) });
+  assert.equal(s.ledger.stats().token.burned, "0");
+  s.ledger.setBurnTx(d1.id, "0xburn");
+  const st = s.ledger.stats();
+  assert.equal(st.token.paid, "4000");
+  assert.equal(st.token.burned, "1000");
+  assert.equal(st.medianLatencyMs, null);
+});

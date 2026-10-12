@@ -264,6 +264,9 @@ monthly bill, and no account of your own with a model provider.
 | **The sink** | **Burned.** Buying inference takes $COMD out of supply for good. |
 | **Keys** | One signature mints a key (not a transaction, no gas). The secret is shown once; only a hash is stored. A key can carry a spend ceiling. |
 | **Settlement** | Integer micro-dollars. A call holds an estimate when it opens and settles on the provider's own usage figure when it closes; an interrupted call releases its hold. |
+| **What a call cost** | Stated on the answer itself in `usage.cost`, streamed or not: the price you were charged, never the provider's price to the desk. |
+| **In the open** | `GET /icm/v1/stats` is public: calls served, tokens, the most used models, and every $COMD paid in and burned. The page shows it live. |
+| **Try it** | The page has a playground (paste a key, pick a model, watch it stream with its cost) and copy-paste quickstarts for cURL, Python, TypeScript and agent frameworks. |
 
 The accounting lives in [`packages/icm/`](packages/icm/README.md) with **no token, chain, brand or provider
 compiled in**, so the same desk can be stood up on another token entirely. The one file where Company.md and that
@@ -354,7 +357,7 @@ measured against IMD is [PARITY.md](PARITY.md).
 | Paying | `GET /requests/capabilities`, `POST /requests/check`, `/requests/import`, `/requests/quote`, `/requests/:id/submit` (402 → `PAYMENT-SIGNATURE`), `GET /requests/:id` |
 | Pairing | `POST /pair/start`, `GET /pair/:code`, `POST /pair/complete`, `/agents/register-intent`, `POST /agents/bind` |
 | Pool | `GET /flywheel`, `/flywheel/sweep-candidates` |
-| cICM | `GET /icm` (rate card, deposit address, sink), `POST /icm/nonce`, `/icm/account`, `/icm/keys`, `/icm/keys/:id/revoke`; the inference surface itself at `POST /icm/v1/chat/completions` and `GET /icm/v1/models` with a cICM key as the bearer |
+| cICM | `GET /icm` (rate card, deposit address, sink), `POST /icm/nonce`, `/icm/account`, `/icm/keys`, `/icm/keys/:id/revoke`; the inference surface itself at `POST /icm/v1/chat/completions` and `GET /icm/v1/models` with a cICM key as the bearer; `GET /icm/v1/stats` (public: calls, tokens, top models, $COMD paid in and burned, no house money) |
 
 ```sh
 curl https://api.comd.fun/health

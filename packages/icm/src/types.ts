@@ -139,3 +139,23 @@ export interface HouseBook {
   /** Charges that ended in an unknown state and still need a human. Each one is money that may or may not be owed. */
   unresolvedMicroUsd: string;
 }
+
+/** What the desk has done, for anyone to see. Activity and the token side only: no dollar revenue, no upstream
+ *  cost and no margin, because those are the house's own business and stay on the admin book. */
+export interface PublicStats {
+  at: string;
+  calls: number;
+  tokensIn: number;
+  tokensOut: number;
+  /** Accounts that have paid in at least once. Grants alone do not count. */
+  payers: number;
+  keys: number;
+  /** Middle latency of the last settled calls, in milliseconds. Null before there are any. */
+  medianLatencyMs: number | null;
+  /** Settled calls per model, most used first, at most eight. */
+  models: { model: string; calls: number; share: number }[];
+  /** Settled calls per UTC day, oldest first, for the last fourteen days including today. */
+  days: { date: string; calls: number }[];
+  /** The token taken in for credit, and how much of it is gone for good. */
+  token: { symbol: string; decimals: number; sink: string; paidUnits: string; paid: string; burnedUnits: string; burned: string };
+}

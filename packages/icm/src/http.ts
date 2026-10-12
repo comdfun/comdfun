@@ -113,6 +113,10 @@ export function createSurface(o: SurfaceOptions) {
       return ok({ object: "rate", ...rateCard(ledger.config), environment: ledger.config.environment });
     }
 
+    if (req.method === "GET" && (path === "/v1/stats" || path === "/stats")) {
+      return ok({ object: "stats", ...ledger.stats() }, { "cache-control": "public, max-age=30" });
+    }
+
     // -------------------------------------------------------------------------------- the key's own
     if (req.method === "POST" && path === "/v1/chat/completions") {
       const res = await proxy.chat({ secret: req.bearer, body: req.body, signal: req.signal });
