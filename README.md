@@ -563,6 +563,7 @@ measured against IMD is [PARITY.md](PARITY.md).
 | Pairing | `POST /pair/start`, `GET /pair/:code`, `POST /pair/complete`, `/agents/register-intent`, `POST /agents/bind` |
 | Pool | `GET /flywheel`, `/flywheel/sweep-candidates` |
 | cICM | `GET /icm` (rate card, deposit address, sink), `POST /icm/nonce`, `/icm/account`, `/icm/keys`, `/icm/keys/:id/revoke`; the inference surface itself at `POST /icm/v1/chat/completions` and `GET /icm/v1/models` with a cICM key as the bearer; `GET /icm/v1/stats` (public: calls, tokens, top models, $COMD paid in and burned, no house money) |
+| Coin logos | `POST /media/logo` with the image bytes as the body (PNG, JPEG, WebP or GIF, 512 kB, recognised by content, 30 an hour per address); returns the `/blobs/<sha256>` URL the coin's metadata points at |
 
 ```sh
 curl https://api.comd.fun/health

@@ -2278,3 +2278,25 @@ html.no-motion .rv { opacity: 1 !important; }
 /* the signed-out account: the sample, then the invitation under it */
 .icm-preview { display: grid; gap: 16px; }
 .icm-preview .icm-gate { max-width: none; }
+
+/* ─── Incorporations: the logo picker and the coin's links ─── */
+.field > label.coin-logo { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed var(--rule-2); border-radius: var(--r); background: #06050a; cursor: pointer; color: var(--parch); font-size: 14px; transition: border-color .15s, background .15s; }
+.coin-logo:hover, .coin-logo.over { border-color: color-mix(in srgb, var(--lime) 60%, var(--rule-2)); background: color-mix(in srgb, var(--lime) 5%, #06050a); }
+.coin-logo:focus-within { outline: 2px solid color-mix(in srgb, var(--lime) 60%, transparent); outline-offset: 2px; }
+.coin-logo.has { border-style: solid; }
+.coin-logo img, .coin-logo-plus { flex: none; width: 56px; height: 56px; border-radius: 10px; }
+.coin-logo img { object-fit: contain; background: #111; border: 1px solid var(--rule); }
+.coin-logo-plus { display: grid; place-items: center; border: 1px solid var(--rule-2); font-size: 26px; color: var(--lime); background: var(--ink-2); }
+.coin-logo-say { display: grid; gap: 3px; min-width: 0; }
+.coin-logo-say b { font-weight: 600; font-size: 14px; color: var(--parch); }
+.coin-logo-say > span { font-size: 12px; line-height: 1.45; color: var(--muted); }
+.linkish { padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.linkish:hover { color: var(--parch); }
+.coin-links { display: grid; gap: 12px; }
+.coin-links input { min-width: 0; width: 100%; box-sizing: border-box; }
+.coin-links label .muted { font-weight: 400; font-size: 11.5px; }
+.coin-links input[aria-invalid="true"] { border-color: var(--crimson); }
+.coin-social { display: flex; flex-wrap: wrap; gap: 8px; }
+.coin-social a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--rule-2); border-radius: var(--r-pill); font-size: 13px; color: var(--parch); text-decoration: none; }
+.coin-social a:hover { border-color: var(--lime); }
+.coin-card-logo { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; border: 1px solid var(--rule); background: #111; }

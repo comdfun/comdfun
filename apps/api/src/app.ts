@@ -87,7 +87,7 @@ export class App {
   readonly fees: FeeTracker;
   readonly kv: KvLike;
   keeper!: Keeper;
-  readonly limits: { reads: RateLimiter; paid: RateLimiter; quotes: RateLimiter };
+  readonly limits: { reads: RateLimiter; paid: RateLimiter; quotes: RateLimiter; uploads: RateLimiter };
   deployBreaker = { open: false, reason: null as string | null, failures: 0, openedAt: null as string | null };
 
   router!: Router;
@@ -114,7 +114,7 @@ export class App {
       get: (k) => this.store.c<any>("kv").get(k)?.value,
       set: (k, v) => { this.store.c<any>("kv").save({ id: k, createdAt: iso(this.now()), value: v }); },
     };
-    this.limits = { reads: new RateLimiter(d.cfg.readsPerMinute, 60_000, d.now), paid: new RateLimiter(d.cfg.requestsPerMinute, 60_000, d.now), quotes: new RateLimiter(d.cfg.quotesPerMinute, 60_000, d.now) };
+    this.limits = { reads: new RateLimiter(d.cfg.readsPerMinute, 60_000, d.now), paid: new RateLimiter(d.cfg.requestsPerMinute, 60_000, d.now), quotes: new RateLimiter(d.cfg.quotesPerMinute, 60_000, d.now), uploads: new RateLimiter(30, 3_600_000, d.now) };
     this.engine = new Engine(this);
     this.oracle = new Oracle(this);
     this.launches = new Launches(this);

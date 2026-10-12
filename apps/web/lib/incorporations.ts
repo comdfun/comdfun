@@ -33,16 +33,45 @@ export interface TradeRow {
 
 export const fromBlock = BigInt(process.env.NEXT_PUBLIC_INCORPORATIONS_FROM_BLOCK || "0");
 
-export function parseMeta(uri: string): { image?: string; description?: string } {
+export type CoinMeta = { image?: string; description?: string; website?: string; twitter?: string };
+
+/** The coin's metadata, as written at incorporation. Only https links survive, so nothing else can be rendered. */
+export function parseMeta(uri: string): CoinMeta {
+  let raw: Record<string, unknown> = {};
   try {
-    if (uri.startsWith("data:application/json;base64,")) return JSON.parse(atob(uri.split(",")[1]));
-    if (uri.startsWith("data:application/json,")) return JSON.parse(decodeURIComponent(uri.split(",")[1]));
-  } catch {}
-  return {};
+    if (uri.startsWith("data:application/json;base64,")) raw = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(uri.split(",")[1]), (c) => c.charCodeAt(0))));
+    else if (uri.startsWith("data:application/json,")) raw = JSON.parse(decodeURIComponent(uri.slice("data:application/json,".length)));
+  } catch { return {}; }
+  const https = (v: unknown) => (typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : undefined);
+  return {
+    image: https(raw.image),
+    description: typeof raw.description === "string" ? raw.description.slice(0, 400) : undefined,
+    website: https(raw.website),
+    // "twitter" is the key launchpads already use; "x" is read as well
+    twitter: https(raw.twitter) ?? https(raw.x),
+  };
 }
 
-export function metaURI(m: { name: string; symbol: string; image?: string; description?: string }) {
-  const json = JSON.stringify({ name: m.name, symbol: m.symbol, image: m.image || undefined, description: m.description || undefined });
+/** An X account from whatever was typed: "@name", "name", "x.com/name" or "https://twitter.com/name". */
+export function xHandle(input: string): string | null {
+  const m = input.trim().replace(/^https?:\/\//, "").replace(/^(www\.)?(x|twitter)\.com\//i, "").replace(/^@/, "").split(/[/?#]/)[0];
+  return /^[A-Za-z0-9_]{1,15}$/.test(m) ? m : null;
+}
+
+/** A website from whatever was typed; "example.com" becomes "https://example.com". Null if it is not one. */
+export function website(input: string): string | null {
+  const t = input.trim();
+  if (!t) return null;
+  try {
+    const u = new URL(/^https?:\/\//i.test(t) ? t : `https://${t}`);
+    if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) return null;
+    u.protocol = "https:";
+    return u.toString().replace(/\/$/, "");
+  } catch { return null; }
+}
+
+export function metaURI(m: { name: string; symbol: string; image?: string; description?: string; website?: string; twitter?: string }) {
+  const json = JSON.stringify({ name: m.name, symbol: m.symbol, image: m.image || undefined, description: m.description || undefined, website: m.website || undefined, twitter: m.twitter || undefined });
   return `data:application/json;base64,${btoa(String.fromCharCode(...new TextEncoder().encode(json)))}`;
 }
 

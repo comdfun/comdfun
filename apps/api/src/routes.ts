@@ -644,6 +644,23 @@ export function buildRouter(app: App): Router {
 
   r.get("/trial", (q) => json(200, app.trial.status(q.query.get("address"))), { cors: "public", bucket: "read" });
   r.post("/trial/nonce", (q) => json(200, app.trial.nonce(q.json().address)), { cors: "public", bucket: "read" });
+  // ------------------------------------------------------------------------------------------ logos
+  // A company coin's logo, uploaded rather than linked. The coin's metadata is written on chain, so it carries a
+  // URL, never the image: this stores the bytes content-addressed and hands back the URL. Only raster images are
+  // taken (PNG, JPEG, WebP, GIF), recognised by their bytes rather than by what the client says they are, so an
+  // SVG with a script in it, or an HTML page wearing an image's name, cannot be served from this origin.
+  r.post("/media/logo", async (q) => {
+    const w = app.limits.uploads.hit(q.ip);
+    if (w) throw E.rate("too_many_uploads", w);
+    const body = q.body ?? Buffer.alloc(0);
+    if (!body.length) throw E.invalidRequest("send the image bytes as the request body");
+    if (body.length > LOGO_LIMIT) throw E.tooLarge(LOGO_LIMIT);
+    const mediaType = sniffImage(body);
+    if (!mediaType) throw E.invalidRequest("a logo must be a PNG, JPEG, WebP or GIF");
+    const put = await app.blobs.put(body, { mediaType });
+    return json(201, { url: `${app.cfg.publicApiUrl.replace(/\/$/, "")}/blobs/${put.hash}`, hash: put.hash, bytes: body.length, mediaType });
+  }, { cors: "public", bucket: "none", limit: LOGO_LIMIT });
+
   r.post("/trial/claim", async (q) => json(201, await app.trial.claim(q.json(), q.ip)), { cors: "public", bucket: "read", limit: 8 * 1024 });
 
   // ------------------------------------------------------------------------------------------ leaderboard
@@ -1269,4 +1286,16 @@ function reads(app: App, ns: string, name: string) {
 
 function sha(s: string) {
   return createHash("sha256").update(s).digest("hex");
+}
+
+/** The largest logo taken. The site resizes to 512 px before uploading, so a real one is a few tens of kB. */
+export const LOGO_LIMIT = 512 * 1024;
+
+/** The image type from its first bytes, or null. Only formats a browser renders as an image and nothing else. */
+export function sniffImage(b: Buffer): string | null {
+  if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 && b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a) return "image/png";
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length >= 6 && b.subarray(0, 6).toString("latin1").match(/^GIF8[79]a$/)) return "image/gif";
+  if (b.length >= 12 && b.subarray(0, 4).toString("latin1") === "RIFF" && b.subarray(8, 12).toString("latin1") === "WEBP") return "image/webp";
+  return null;
 }

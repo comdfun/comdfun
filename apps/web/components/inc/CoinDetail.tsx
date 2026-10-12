@@ -57,7 +57,7 @@ export function CoinDetail({ address }: { address: Address }) {
   const client = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const mock = !inc.address && MOCK ? mockCoins().find((c) => c.address.toLowerCase() === address.toLowerCase()) : undefined;
-  const [info, setInfo] = useState<{ name: string; symbol: string; totalSupply?: bigint; image?: string; description?: string; creator?: string } | null>(mock ? { name: mock.name, symbol: mock.symbol, creator: mock.creator } : null);
+  const [info, setInfo] = useState<{ name: string; symbol: string; totalSupply?: bigint; image?: string; description?: string; website?: string; twitter?: string; creator?: string } | null>(mock ? { name: mock.name, symbol: mock.symbol, creator: mock.creator } : null);
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [viaPick, setVia] = useState<"eth" | "comd">("comd");
@@ -163,6 +163,12 @@ export function CoinDetail({ address }: { address: Address }) {
           </div>
         </div>
         {info?.description && <p>{info.description}</p>}
+        {(info?.website || info?.twitter) && (
+          <div className="coin-social">
+            {info.website && <a href={info.website} target="_blank" rel="noopener noreferrer nofollow">{info.website.replace(/^https:\/\/(www\.)?/, "")} ↗</a>}
+            {info.twitter && <a href={info.twitter} target="_blank" rel="noopener noreferrer nofollow">@{info.twitter.replace(/^https:\/\/(www\.)?(x|twitter)\.com\//, "").split(/[/?#]/)[0]} on X ↗</a>}
+          </div>
+        )}
         <div className="stats">
           <div className="stat"><span className="v">{last ? last.toExponential(2) : "—"}</span><span className="k">Price · COMD per coin</span></div>
           <div className="stat"><span className="v">{marker != null ? `${(marker * 100).toFixed(1)}%` : "—"}</span><span className="k">Curve sold</span></div>
