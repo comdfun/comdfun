@@ -1312,10 +1312,10 @@ function Coins({ logo }: { logo: string }) {
 /* ═══════════════════════════════════════════════════════════════════════════════════ Contributors wanted */
 
 const K_AREAS = [
-  ["Contracts", "Solidity · Foundry", "The flywheel, the Counsel NFT, Incorporations and the launch factory.", "var(--gold)"],
-  ["cICM", "TypeScript", "The inference capital markets protocol: ledger, proxy, settlement.", "var(--cyan)"],
-  ["The site", "Next.js · React", "comd.fun: the docket, the desks, charts and the films.", "var(--lime)"],
-  ["Agents & skills", "the comd CLI", "The worker Counsel run on, and the skill catalog they read.", "var(--pink)"],
+  ["Threads", "explainers", "The swarm, cICM, the burn. Make it make sense in a scroll.", "var(--gold)"],
+  ["Videos", "clips · walkthroughs", "Show comd.fun in action: buy inference, launch a coin.", "var(--cyan)"],
+  ["Memes & art", "2,000 Counsel", "A whole cast of pixel lawyers to work with.", "var(--lime)"],
+  ["Spaces", "streams · calls", "Bring your audience, we bring the team.", "var(--pink)"],
 ] as const;
 
 function Contrib({ logo }: { logo: string }) {
@@ -1328,12 +1328,12 @@ function Contrib({ logo }: { logo: string }) {
             <span className="pv-line"><W text="Contributors" d={300} /></span>
             <span className="pv-line"><HL d={1300} c="var(--violet)"><W text="wanted" d={750} /></HL><Dot d={900} /></span>
           </h1>
-          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>Company.md is open source. Help build it.</p>
+          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>Creators and KOLs: help tell the Company.md story.</p>
         </div>
       </Scene>
 
       <Scene t0={4500} t1={12500}>
-        <Head eyebrow="Where to help" c="var(--violet)"><W text="Four ways" d={200} /> <span className="pv-c"><W text="in." d={400} /></span></Head>
+        <Head eyebrow="What to make" c="var(--violet)"><W text="Your format," d={200} /> <span className="pv-c"><W text="our story." d={480} /></span></Head>
         <div className="k-grid">
           {K_AREAS.map(([t, stack, s2, c], i) => (
             <div key={t} className="k-card a-from" style={v({ "--d": ms(500 + i * 220), "--fy": "40px", "--cc": c })}>
@@ -1347,30 +1347,29 @@ function Contrib({ logo }: { logo: string }) {
       </Scene>
 
       <Scene t0={12000} t1={19000}>
-        <Head eyebrow="How" c="var(--cyan)"><W text="Fork. Build." d={200} /> <span className="pv-c"><W text="Open a pull request." d={480} /></span></Head>
-        <div className="k-term a-from" style={v({ "--d": "300ms", "--fx": "-50px" })}>
-          <div className="pv-term-bar"><i /><i /><i /><span>terminal</span></div>
-          <pre className="pv-mono">
-            <span className="pv-tl"><s>$</s> <Type text="git clone github.com/comdfun/comdfun" d={700} per={32} /></span>
-            <span className="pv-tl"><s>$</s> <Type text="npm install && npm test" d={2100} per={40} /></span>
-            <span className="pv-tl k-ok a-rise" style={v({ "--d": "3300ms", "--dy": "8px" })}><Tick /> tests pass</span>
-          </pre>
+        <Head eyebrow="How" c="var(--cyan)"><W text="Make it." d={200} /> <W text="Tag us." d={380} /> <span className="pv-c"><W text="Get seen." d={560} /></span></Head>
+        <div className="k-post a-from" style={v({ "--d": "300ms", "--fx": "-50px" })}>
+          <div className="k-post-h"><i /><div><b>You</b><span>@yourhandle</span></div></div>
+          <p><W text="Company.md: a swarm of 2,000 NFT agents and an inference desk that burns $COMD." d={800} step={110} /></p>
+          <p className="k-tag a-rise" style={v({ "--d": "3100ms", "--dy": "8px" })}>@comdfun</p>
+          <div className="k-post-f a-rise" style={v({ "--d": "3400ms", "--dy": "8px" })}><span>♡ 2.4k</span><span>↻ 611</span><span>views 184k</span><em>example</em></div>
         </div>
         <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
           <path className="a-draw" pathLength={1} d="M 1150 560 L 1250 560" style={v({ "--d": "3700ms", "--lc": "var(--cyan)" })} />
         </svg>
         <div className="k-pr a-pop" style={v({ "--d": "4000ms" })}>
-          <div className="k-pr-h"><i /><b>Your pull request</b></div>
+          <div className="k-pr-h"><i /><b>What we do</b></div>
           <ul>
-            {["Reviewed in public", "Tests run on every change", "Merged into comd.fun"].map((t, i) => (
+            {["Read every tag", "Reshare the best work", "Back you with the team"].map((t, i) => (
               <li key={t} className="a-rise" style={v({ "--d": ms(4400 + i * 220), "--dy": "10px" })}><Tick /> {t}</li>
             ))}
           </ul>
         </div>
+        <p className="pv-cap a-rise" style={v({ top: "900px", "--d": "5000ms" })}>DM @comdfun on X or write to team@comd.fun.</p>
       </Scene>
 
       <Scene t0={18500} t1={24000} last>
-        <Outro logo={logo} a="Contributors wanted." b="Build it with us." url="github.com/comdfun" />
+        <Outro logo={logo} a="Contributors wanted." b="Tell the story with us." url="x.com/comdfun" />
       </Scene>
     </>
   );

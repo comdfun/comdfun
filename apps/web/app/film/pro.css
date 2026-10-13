@@ -757,3 +757,12 @@
 .k-pr-h b { font-size: 30px; font-weight: 600; color: var(--parch); }
 .k-pr ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 21px; color: #cdc6b5; }
 .k-pr .pv-tick { color: var(--cyan); margin-right: 6px; }
+.k-post { position: absolute; left: 250px; top: 360px; width: 880px; padding: 30px 34px; border-radius: 18px; border: 1px solid var(--rule-2); background: #0b0a10; box-shadow: 0 50px 100px -50px #000; }
+.k-post-h { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+.k-post-h i { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--violet), var(--cyan)); }
+.k-post-h b { display: block; font-size: 24px; color: var(--parch); }
+.k-post-h span { font-size: 18px; color: var(--dim); }
+.k-post p { margin: 0; font-size: 28px; line-height: 1.45; color: var(--parch); }
+.k-tag { margin-top: 8px !important; color: var(--cyan) !important; font-weight: 600; }
+.k-post-f { display: flex; align-items: center; gap: 28px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 18px; color: var(--muted); }
+.k-post-f em { margin-left: auto; font-style: normal; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); border-radius: 999px; padding: 4px 10px; }
