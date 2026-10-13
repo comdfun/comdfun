@@ -118,6 +118,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmquick" && <Quickstart logo={logo} />}
         {kind === "icmgithub" && <GitHub logo={logo} />}
         {kind === "inccoins" && <Coins logo={logo} />}
+        {kind === "contrib" && <Contrib logo={logo} />}
       </div>
     </div>
   );
@@ -1303,6 +1304,73 @@ function Coins({ logo }: { logo: string }) {
 
       <Scene t0={26500} t1={31000} last>
         <Outro logo={logo} a="Launch a coin." b="Back it with $COMD." url="comd.fun" />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ Contributors wanted */
+
+const K_AREAS = [
+  ["Contracts", "Solidity · Foundry", "The flywheel, the Counsel NFT, Incorporations and the launch factory.", "var(--gold)"],
+  ["cICM", "TypeScript", "The inference capital markets protocol: ledger, proxy, settlement.", "var(--cyan)"],
+  ["The site", "Next.js · React", "comd.fun: the docket, the desks, charts and the films.", "var(--lime)"],
+  ["Agents & skills", "the comd CLI", "The worker Counsel run on, and the skill catalog they read.", "var(--pink)"],
+] as const;
+
+function Contrib({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <div className="pv-glow" style={v({ "--gc": "var(--violet)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Contributors" d={300} /></span>
+            <span className="pv-line"><HL d={1300} c="var(--violet)"><W text="wanted" d={750} /></HL><Dot d={900} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>Company.md is open source. Help build it.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Head eyebrow="Where to help" c="var(--violet)"><W text="Four ways" d={200} /> <span className="pv-c"><W text="in." d={400} /></span></Head>
+        <div className="k-grid">
+          {K_AREAS.map(([t, stack, s2, c], i) => (
+            <div key={t} className="k-card a-from" style={v({ "--d": ms(500 + i * 220), "--fy": "40px", "--cc": c })}>
+              <span className="k-n pv-mono">0{i + 1}</span>
+              <b>{t}</b>
+              <em className="pv-mono">{stack}</em>
+              <span>{s2}</span>
+            </div>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={12000} t1={19000}>
+        <Head eyebrow="How" c="var(--cyan)"><W text="Fork. Build." d={200} /> <span className="pv-c"><W text="Open a pull request." d={480} /></span></Head>
+        <div className="k-term a-from" style={v({ "--d": "300ms", "--fx": "-50px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>terminal</span></div>
+          <pre className="pv-mono">
+            <span className="pv-tl"><s>$</s> <Type text="git clone github.com/comdfun/comdfun" d={700} per={32} /></span>
+            <span className="pv-tl"><s>$</s> <Type text="npm install && npm test" d={2100} per={40} /></span>
+            <span className="pv-tl k-ok a-rise" style={v({ "--d": "3300ms", "--dy": "8px" })}><Tick /> tests pass</span>
+          </pre>
+        </div>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path className="a-draw" pathLength={1} d="M 1150 560 L 1250 560" style={v({ "--d": "3700ms", "--lc": "var(--cyan)" })} />
+        </svg>
+        <div className="k-pr a-pop" style={v({ "--d": "4000ms" })}>
+          <div className="k-pr-h"><i /><b>Your pull request</b></div>
+          <ul>
+            {["Reviewed in public", "Tests run on every change", "Merged into comd.fun"].map((t, i) => (
+              <li key={t} className="a-rise" style={v({ "--d": ms(4400 + i * 220), "--dy": "10px" })}><Tick /> {t}</li>
+            ))}
+          </ul>
+        </div>
+      </Scene>
+
+      <Scene t0={18500} t1={24000} last>
+        <Outro logo={logo} a="Contributors wanted." b="Build it with us." url="github.com/comdfun" />
       </Scene>
     </>
   );

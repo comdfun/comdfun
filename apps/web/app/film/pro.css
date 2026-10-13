@@ -738,3 +738,22 @@
 .n-pool-h span { font-size: 18px; color: var(--muted); }
 .n-pool ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 21px; color: #cdc6b5; }
 .n-pool .pv-tick { color: var(--gold); margin-right: 6px; }
+
+/* ── contributors wanted ── */
+.k-grid { position: absolute; left: 230px; right: 230px; top: 370px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+.k-card { display: grid; align-content: start; gap: 12px; min-height: 330px; padding: 30px 28px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cc) 40%, var(--rule-2));
+  background: linear-gradient(170deg, #110f18, #07060b); box-shadow: 0 40px 90px -40px #000, 0 0 60px -32px var(--cc); }
+.k-n { font-size: 17px; color: var(--dim); }
+.k-card b { font-size: 38px; font-weight: 600; letter-spacing: -.03em; color: var(--cc); line-height: 1.1; }
+.k-card em { font-style: normal; font-size: 17px; color: var(--parch); padding: 5px 12px; justify-self: start; border-radius: 999px; border: 1px solid var(--rule-2); background: #0b0a10; }
+.k-card > span:last-child { margin-top: 8px; font-size: 21px; line-height: 1.5; color: var(--muted); }
+.k-term { position: absolute; left: 250px; top: 380px; width: 880px; border-radius: 18px; overflow: hidden; border: 1px solid var(--rule-2); background: #06050a; box-shadow: 0 50px 100px -50px #000; }
+.k-term pre { margin: 0; padding: 30px 36px 34px; font-size: 27px; line-height: 1.8; color: #d8d0ba; }
+.k-term s { text-decoration: none; color: var(--violet); }
+.k-ok { color: var(--lime); }
+.k-pr { position: absolute; left: 1270px; top: 400px; width: 420px; padding: 28px 30px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cyan) 45%, var(--rule-2)); background: linear-gradient(170deg, #0a1517, #07060b); box-shadow: 0 40px 90px -40px #000, 0 0 70px -30px var(--cyan); }
+.k-pr-h { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.k-pr-h i { width: 16px; height: 16px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 14px var(--lime); }
+.k-pr-h b { font-size: 30px; font-weight: 600; color: var(--parch); }
+.k-pr ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 21px; color: #cdc6b5; }
+.k-pr .pv-tick { color: var(--cyan); margin-right: 6px; }
