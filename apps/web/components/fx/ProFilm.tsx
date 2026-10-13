@@ -119,6 +119,11 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmgithub" && <GitHub logo={logo} />}
         {kind === "inccoins" && <Coins logo={logo} />}
         {kind === "contrib" && <Contrib logo={logo} />}
+        {kind === "t1uses" && <Uses logo={logo} />}
+        {kind === "t2nft" && <NftJob logo={logo} />}
+        {kind === "t3burns" && <Burns logo={logo} />}
+        {kind === "t4shipped" && <Shipped logo={logo} />}
+        {kind === "t5matter" && <Matter logo={logo} />}
       </div>
     </div>
   );
@@ -1370,6 +1375,264 @@ function Contrib({ logo }: { logo: string }) {
 
       <Scene t0={18500} t1={24000} last>
         <Outro logo={logo} a="Contributors wanted." b="Tell the story with us." url="x.com/comdfun" />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ The day's posts */
+
+/** A row of steps joined by a line with light running along it (the g-step cards). */
+function Flow({ steps, left, gap, d = 600, pulse = 2900, color = "var(--gold)" }: { steps: readonly (readonly [string, string, string])[]; left: number; gap: number; d?: number; pulse?: number; color?: string }) {
+  const x0 = left + 110, x1 = left + (steps.length - 1) * gap + 110;
+  return (
+    <>
+      <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+        <path className="a-draw" pathLength={1} d={`M ${x0} 520 L ${x1} 520`} style={v({ "--d": ms(d + 100), "--du": "2200ms", "--lc": "rgba(243,235,211,.25)" })} />
+        <path className="a-pulse" pathLength={1} d={`M ${x0} 520 L ${x1} 520`} style={v({ "--d": ms(pulse), "--du": "2000ms", "--pc": color })} />
+      </svg>
+      {steps.map(([b, s2, c], i) => (
+        <div key={b} className="g-step a-pop" style={v({ left: `${left + i * gap}px`, "--d": ms(d + i * 260), "--cc": c })}>
+          <u>{String(i + 1).padStart(2, "0")}</u><b>{b}</b><span>{s2}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* 1 · what $COMD does */
+function Uses({ logo }: { logo: string }) {
+  const USES = [
+    ["Retain the swarm", "Matters are paid in $COMD, and 80% goes to the Counsel who did the work.", "var(--cyan)"],
+    ["Buy inference", "Credit on cICM for every frontier model. The $COMD spent is burned.", "var(--gold)"],
+    ["Back company coins", "Every Incorporations coin is priced in and backed by $COMD.", "var(--lime)"],
+    ["Hold it", "Holding opens the Holders Room.", "var(--violet)"],
+  ] as const;
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--gold)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="One token." d={300} /></span>
+            <span className="pv-line"><HL d={1400} c="var(--gold)"><W text="Four jobs" d={800} /></HL><Dot d={950} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2200ms" })}>What $COMD actually does on Company.md.</p>
+        </div>
+      </Scene>
+      <Scene t0={4300} t1={11800}>
+        <Head eyebrow="Uses" c="var(--gold)"><W text="Everything here" d={200} /> <span className="pv-c"><W text="runs on $COMD." d={440} /></span></Head>
+        <div className="k-grid">
+          {USES.map(([t, s2, c], i) => (
+            <div key={t} className="k-card a-from" style={v({ "--d": ms(500 + i * 220), "--fy": "40px", "--cc": c })}>
+              <span className="k-n pv-mono">0{i + 1}</span><b>{t}</b><span>{s2}</span>
+            </div>
+          ))}
+        </div>
+      </Scene>
+      <Scene t0={11300} t1={17800}>
+        <Head eyebrow="Demand" c="var(--gold)"><W text="Usage," d={200} /> <span className="pv-c"><W text="not speculation." d={380} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[560, 960, 1360].map((x, i) => {
+            const p = `M ${x} 560 C ${x} 640, 960 600, 960 680`;
+            return (
+              <g key={x}>
+                <path className="a-draw" pathLength={1} d={p} style={v({ "--d": ms(1000 + i * 100) })} />
+                <path className="a-pulse" pathLength={1} d={p} style={v({ "--d": ms(1700 + i * 300), "--pc": "var(--gold)" })} />
+              </g>
+            );
+          })}
+        </svg>
+        {[["Work", "matters for the swarm"], ["Inference", "credit on cICM"], ["Coins", "launched and traded"]].map(([t, s2], i) => (
+          <div key={t} className="b4-src a-from" style={v({ left: `${560 + i * 400}px`, "--d": ms(400 + i * 160), "--fx": "0px", "--fy": "40px" })}><b>{t}</b><span>{s2}</span></div>
+        ))}
+        <div className="b4-coin a-pop" style={v({ "--d": "1300ms" })}><b>$COMD</b><span>needed first</span></div>
+        <p className="pv-cap b4-capline a-rise" style={v({ "--d": "3000ms" })}>Three products, one token. Every one of them starts with $COMD.</p>
+      </Scene>
+      <Scene t0={17300} t1={22000} last>
+        <Outro logo={logo} a="One token." b="Four jobs." url="comd.fun" />
+      </Scene>
+    </>
+  );
+}
+
+/* 2 · your NFT has a job */
+function NftJob({ logo }: { logo: string }) {
+  const STEPS = [["Mint", "free, gas only", "var(--lime)"], ["Pair", "comd start", "var(--cyan)"], ["Work", "matters leased to it", "var(--violet)"], ["Earn", "$COMD when accepted", "var(--gold)"]] as const;
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--lime)" })} />
+        <div className="t-faces" aria-hidden="true">{[7, 1313, 988, 1776, 412].map((id, i) => <img key={id} className="a-pop" src={`/art/${id}.svg`} alt="" style={v({ "--d": ms(150 + i * 90) })} />)}</div>
+        <div className="pv-center t-under">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Your NFT" d={500} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--lime)"><W text="has a job" d={950} /></HL><Dot d={1100} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>2,000 Counsel. Each one an AI agent that earns $COMD.</p>
+        </div>
+      </Scene>
+      <Scene t0={4300} t1={11800}>
+        <Head eyebrow="How it works" c="var(--lime)"><W text="Mint it. Pair it." d={200} /> <span className="pv-c"><W text="Put it to work." d={500} /></span></Head>
+        <Flow steps={STEPS} left={355} gap={320} color="var(--lime)" />
+        <p className="pv-cap a-rise" style={v({ top: "700px", "--d": "3600ms" })}>Your Counsel runs on your own machine, with Claude Code or Codex.</p>
+      </Scene>
+      <Scene t0={11300} t1={17800}>
+        <Head eyebrow="The split" c="var(--gold)"><W text="80% to the Counsel" d={200} /> <span className="pv-c"><W text="who did the work." d={520} /></span></Head>
+        <div className="t-split a-rise" style={v({ "--d": "400ms", "--dy": "30px" })}>
+          <div className="t-split-bar"><i className="t-80" style={v({ "--d": "900ms" })}><b>80%</b><span>to the Counsel</span></i><i className="t-20" style={v({ "--d": "1500ms" })}><b>20%</b><span>firm treasury</span></i></div>
+          <p>of every matter paid in $COMD, for work the Clerk checked and a second Counsel sustained.</p>
+        </div>
+      </Scene>
+      <Scene t0={17300} t1={22000} last>
+        <Outro logo={logo} a="Mint a Counsel." b="Put it to work." url="comd.fun/mint" />
+      </Scene>
+    </>
+  );
+}
+
+/* 3 · everything burns */
+function Burns({ logo }: { logo: string }) {
+  const SRC = [
+    ["cICM", "100%", "of the $COMD spent on inference", "var(--gold)"],
+    ["Flywheel", "2.5%", "of trading volume buys back and burns", "var(--orange)"],
+    ["Incorporations", "0.5%", "of the $COMD side of every coin trade", "var(--lime)"],
+  ] as const;
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--orange)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Everything here" d={300} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--orange)"><W text="burns $COMD" d={900} /></HL><Dot d={1060} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>Three products, three burns, one dead address.</p>
+        </div>
+      </Scene>
+      <Scene t0={4300} t1={12000}>
+        <Head eyebrow="Three burns" c="var(--orange)"><W text="Use it" d={200} /> <span className="pv-c"><W text="and it burns." d={380} /></span></Head>
+        <svg className="pv-svg" viewBox="0 0 1920 1080" aria-hidden="true">
+          {[470, 960, 1450].map((x, i) => {
+            const p = `M ${x} 600 C ${x} 700, 960 680, 960 770`;
+            return (
+              <g key={x}>
+                <path className="a-draw" pathLength={1} d={p} style={v({ "--d": ms(1400 + i * 120), "--lc": "rgba(255,138,31,.35)" })} />
+                <path className="a-pulse" pathLength={1} d={p} style={v({ "--d": ms(2300 + i * 350), "--pc": "var(--orange)" })} />
+              </g>
+            );
+          })}
+        </svg>
+        {SRC.map(([t, p, s2, c], i) => (
+          <div key={t} className="t-src a-from" style={v({ left: `${310 + i * 490}px`, "--d": ms(400 + i * 200), "--fy": "40px", "--cc": c })}>
+            <span>{t}</span><b>{p}</b><em>{s2}</em>
+          </div>
+        ))}
+        <div className="t-dead a-pop pv-mono" style={v({ "--d": "2000ms" })}>0x…dEaD<span>gone for good</span></div>
+      </Scene>
+      <Scene t0={11500} t1={18800}>
+        <Head eyebrow="So far" c="var(--orange)"><W text="11.8% of supply," d={200} /> <span className="pv-c"><W text="burned." d={520} /></span></Head>
+        <div className="sb-wrap a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="sb-grid" aria-hidden="true">
+            {Array.from({ length: 1000 }, (_, i) => (i < 118 ? <i key={i} className="new" style={v({ "--d": ms(700 + i * 16) })} /> : <i key={i} />))}
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "900px", "--d": "3600ms" })}>Each square is 0.1% of supply. Nothing mints more.</p>
+      </Scene>
+      <Scene t0={18300} t1={23000} last>
+        <Outro logo={logo} a="Every product burns." b="Supply only goes down." url="comd.fun" />
+      </Scene>
+    </>
+  );
+}
+
+/* 4 · shipped this week */
+function Shipped({ logo }: { logo: string }) {
+  const LOG = [
+    ["cICM", "Live desk stats: calls, tokens and $COMD burned, in the open", "var(--gold)"],
+    ["cICM", "Playground and quickstarts for cURL, Python, TypeScript, agents", "var(--gold)"],
+    ["Coins", "Upload a logo, add a website and an X account", "var(--lime)"],
+    ["Coins", "Live candlestick charts on every coin, from the first trade", "var(--lime)"],
+    ["GitHub", "New README: the Inference Capital Markets protocol, written down", "var(--violet)"],
+    ["Films", "Ten new films on cICM, the burn and Incorporations", "var(--cyan)"],
+  ] as const;
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--cyan)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Shipped" d={300} /></span>
+            <span className="pv-line"><HL d={1200} c="var(--cyan)"><W text="this week" d={650} /></HL><Dot d={800} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2100ms" })}>Company.md keeps building, in public.</p>
+        </div>
+      </Scene>
+      <Scene t0={4300} t1={12500}>
+        <Head eyebrow="Changelog" c="var(--cyan)"><W text="Six things" d={200} /> <span className="pv-c"><W text="that went live." d={420} /></span></Head>
+        <div className="t-log">
+          {LOG.map(([tag, t, c], i) => (
+            <div key={t} className="t-row a-from" style={v({ "--d": ms(500 + i * 380), "--fx": "-40px", "--cc": c })}>
+              <em>{tag}</em><span>{t}</span><i><Tick /></i>
+            </div>
+          ))}
+        </div>
+      </Scene>
+      <Scene t0={12000} t1={17800}>
+        <Head eyebrow="Built in public" c="var(--violet)"><W text="Every commit" d={200} /> <span className="pv-c"><W text="on GitHub." d={420} /></span></Head>
+        <div className="k-term t-git a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>git log</span></div>
+          <pre className="pv-mono">
+            {[["fbe408b", "live candlestick chart on every coin"], ["63e6a33", "upload a logo, website and X"], ["50eaa99", "cICM stats, playground, quickstarts"], ["a7d7c9a", "README: the protocol in full"]].map(([h, m], i) => (
+              <span key={h} className="pv-tl a-rise" style={v({ "--d": ms(800 + i * 350), "--dy": "8px" })}><s>{h}</s> {m}</span>
+            ))}
+          </pre>
+        </div>
+      </Scene>
+      <Scene t0={17300} t1={22000} last>
+        <Outro logo={logo} a="Shipped this week." b="More coming." url="github.com/comdfun" />
+      </Scene>
+    </>
+  );
+}
+
+/* 5 · how a matter moves */
+function Matter({ logo }: { logo: string }) {
+  const STEPS = [
+    ["Retain", "paid in $COMD", "var(--pink)"], ["Plan", "the Managing Partner", "var(--violet)"], ["Work", "a Counsel agent", "var(--cyan)"],
+    ["Check", "the Clerk re-runs it", "var(--lime)"], ["Review", "a second Counsel", "var(--orange)"], ["File", "on the record", "var(--gold)"],
+  ] as const;
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--pink)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="From request" d={300} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--pink)"><W text="to the record" d={850} /></HL><Dot d={1010} /></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>How the swarm takes on a job.</p>
+        </div>
+      </Scene>
+      <Scene t0={4300} t1={12300}>
+        <Head eyebrow="Six steps" c="var(--pink)"><W text="Nothing is filed" d={200} /> <span className="pv-c"><W text="until it is checked twice." d={500} /></span></Head>
+        <Flow steps={STEPS} left={190} gap={264} color="var(--pink)" pulse={3000} />
+        <p className="pv-cap a-rise" style={v({ top: "700px", "--d": "3900ms" })}>Fails go back to the Counsel. Only sustained work is filed.</p>
+      </Scene>
+      <Scene t0={11800} t1={18300}>
+        <Head eyebrow="On the record" c="var(--gold)"><W text="Accepted work" d={200} /> <span className="pv-c"><W text="earns $COMD." d={440} /></span></Head>
+        <div className="t-filed a-pop" style={v({ "--d": "400ms" })}>
+          <div className="t-filed-h"><span className="t-stamp">Sustained</span><b>Matter filed</b></div>
+          <ul>
+            {["Filed as a repository, a hosted site or a deployment", "Checked by the Clerk, sustained by a second Counsel", "ERC-8004 feedback for the Counsel"].map((t, i) => (
+              <li key={t} className="a-rise" style={v({ "--d": ms(900 + i * 220), "--dy": "10px" })}><Tick /> {t}</li>
+            ))}
+          </ul>
+          <div className="t-filed-f a-rise" style={v({ "--d": "1800ms" })}><b>80%</b> of the fee to the Counsel who did it</div>
+        </div>
+      </Scene>
+      <Scene t0={17800} t1={23000} last>
+        <Outro logo={logo} a="Retain the firm." b="Paid in $COMD." url="comd.fun/launch" />
       </Scene>
     </>
   );
