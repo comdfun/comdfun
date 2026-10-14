@@ -802,3 +802,25 @@
 .t-filed .pv-tick { color: var(--gold); margin-right: 8px; }
 .t-filed-f { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 24px; color: var(--muted); }
 .t-filed-f b { font-size: 36px; color: var(--lime); margin-right: 8px; }
+
+/* ── upcoming technical upgrades ── */
+.u-grid { position: absolute; left: 250px; right: 250px; top: 320px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+.u-card { grid-column: span 2; display: grid; align-content: start; gap: 10px; padding: 24px 26px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cc) 40%, var(--rule-2));
+  background: linear-gradient(170deg, #110f18, #07060b); box-shadow: 0 40px 90px -40px #000, 0 0 60px -34px var(--cc); }
+.u-card:nth-child(4) { grid-column: 2 / span 2; }
+.u-top { display: flex; justify-content: space-between; align-items: center; }
+.u-top span { font-size: 16px; color: var(--dim); }
+.u-top em { font-style: normal; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; color: var(--cc); border: 1px solid color-mix(in srgb, var(--cc) 45%, transparent); }
+.u-card b { font-size: 34px; font-weight: 600; letter-spacing: -.025em; color: var(--cc); }
+.u-card > span { font-size: 20px; line-height: 1.45; color: var(--muted); }
+.u-burn { position: absolute; left: 330px; right: 330px; top: 340px; padding: 32px 36px; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--orange) 40%, var(--rule-2)); background: #0b0a10; box-shadow: 0 50px 110px -50px #000; }
+.u-burn-h { display: flex; align-items: baseline; gap: 20px; margin-bottom: 22px; }
+.u-burn-h span { font-size: 24px; color: #cdc6b5; }
+.u-burn-h b { font-size: 64px; font-weight: 600; letter-spacing: -.04em; color: var(--orange); }
+.u-burn-h em { margin-left: auto; font-style: normal; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); border-radius: 999px; padding: 5px 12px; }
+.u-stack { display: flex; height: 34px; border-radius: 999px; overflow: hidden; background: #17141f; }
+.u-stack i { display: block; height: 100%; transform-origin: left; animation: pv-grow 900ms var(--ease) calc(var(--t0) + var(--d)) both; }
+.u-legend { display: flex; gap: 34px; margin-top: 22px; font-size: 21px; color: #cdc6b5; }
+.u-legend span { display: inline-flex; align-items: center; gap: 10px; }
+.u-legend i { width: 14px; height: 14px; border-radius: 4px; }
+.u-by { margin: -8px 0 12px; font-size: 18px; color: var(--dim); }

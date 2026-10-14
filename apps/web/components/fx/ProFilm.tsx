@@ -124,6 +124,7 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "t3burns" && <Burns logo={logo} />}
         {kind === "t4shipped" && <Shipped logo={logo} />}
         {kind === "t5matter" && <Matter logo={logo} />}
+        {kind === "upgrades" && <Upgrades logo={logo} />}
       </div>
     </div>
   );
@@ -1633,6 +1634,69 @@ function Matter({ logo }: { logo: string }) {
       </Scene>
       <Scene t0={17800} t1={23000} last>
         <Outro logo={logo} a="Retain the firm." b="Paid in $COMD." url="comd.fun/launch" />
+      </Scene>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════ Upcoming technical upgrades */
+
+const UP = [
+  ["Burn tracker", "One live page for every burn, from every product, and the share of supply gone.", "var(--orange)"],
+  ["Coin discovery", "Trending, newest and closest to graduation, with a chart on every card.", "var(--lime)"],
+  ["Counsel earnings", "Charts for every NFT: what it earned, every payout, and its uptime.", "var(--cyan)"],
+  ["Agent-ready keys", "Auto top-up and spend alerts for every cICM key.", "var(--gold)"],
+  ["Pay with ETH", "One click from ETH, on coins and on cICM, once the $COMD pool is live.", "var(--violet)"],
+] as const;
+
+function Upgrades({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={4800}>
+        <div className="pv-glow" style={v({ "--gc": "var(--cyan)" })} />
+        <div className="pv-center">
+          <h1 className="pv-h pv-lg pv-stack">
+            <span className="pv-line"><W text="Upcoming" d={300} /></span>
+            <span className="pv-line"><HL d={1500} c="var(--cyan)"><W text="technical upgrades" d={800} /></HL></span>
+          </h1>
+          <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>Five things coming to comd.fun.</p>
+        </div>
+      </Scene>
+
+      <Scene t0={4300} t1={13500}>
+        <Head eyebrow="On the bench" c="var(--cyan)"><W text="What we are" d={200} /> <span className="pv-c"><W text="building next." d={440} /></span></Head>
+        <div className="u-grid">
+          {UP.map(([t, s2, c], i) => (
+            <div key={t} className="u-card a-from" style={v({ "--d": ms(500 + i * 260), "--fy": "40px", "--cc": c })}>
+              <div className="u-top"><span className="pv-mono">0{i + 1}</span><em>soon</em></div>
+              <b>{t}</b>
+              <span>{s2}</span>
+            </div>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={13000} t1={20500}>
+        <Head eyebrow="First up" c="var(--orange)"><W text="Every burn," d={200} /> <span className="pv-c"><W text="one number." d={420} /></span></Head>
+        <div className="u-burn a-rise" style={v({ "--d": "300ms", "--dy": "40px" })}>
+          <div className="u-burn-h"><span>Supply burned</span><b>11.8%</b><em>preview</em></div>
+          <div className="u-by">of the burn, by source</div>
+          <div className="u-stack">
+            <i style={v({ width: "46%", "--d": "900ms", background: "var(--orange)" })} />
+            <i style={v({ width: "34%", "--d": "1500ms", background: "var(--gold)" })} />
+            <i style={v({ width: "20%", "--d": "2100ms", background: "var(--lime)" })} />
+          </div>
+          <div className="u-legend">
+            {[["Flywheel buyback", "var(--orange)"], ["cICM inference", "var(--gold)"], ["Incorporations", "var(--lime)"]].map(([t, c], i) => (
+              <span key={t} className="a-rise" style={v({ "--d": ms(2600 + i * 180), "--dy": "10px" })}><i style={v({ background: c })} />{t}</span>
+            ))}
+          </div>
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "720px", "--d": "3600ms" })}>Live from the chain, updated as it happens.</p>
+      </Scene>
+
+      <Scene t0={20000} t1={25000} last>
+        <Outro logo={logo} a="Upcoming technical upgrades." b="Built in public." url="github.com/comdfun" />
       </Scene>
     </>
   );
