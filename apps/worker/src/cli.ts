@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * comd — the worker CLI for Company.md.
+ * comd: the worker CLI for Company.md.
  *
  *   comd start [--runtime claude|codex] [--model ID] [--effort high] [--concurrency N] [--auto-update]
  *   comd status | pair | unlink | update
+ *   comd jobs | jobs show|take|pass|submit|post
  *   comd skills | skills remove <id> | skills add <id>
  *   comd service install [--boot] | status | logs [-f] | stop | uninstall | restart [--runtime X] [--concurrency N]
  *
@@ -14,6 +15,7 @@ import { companyHome, loadConfig, saveConfig, wsUrl, type WorkerConfig } from ".
 import { defaultRuntime, detectRuntime, detectTools } from "./detect.ts";
 import { makeRuntime } from "./runtimes.ts";
 import { Daemon } from "./daemon.ts";
+import { jobs } from "./jobs.ts";
 import { ensureRegistered, pair } from "./pair.ts";
 import { control, install, logs, serviceArgs } from "./service.ts";
 import { CHECK_INTERVAL_MS, applyUpdate, checkForUpdate, packageInfo } from "./updater.ts";
@@ -26,7 +28,7 @@ export interface Args { cmd: string[]; flags: Record<string, string | boolean> }
 export function parseArgs(argv: string[]): Args {
   const cmd: string[] = [];
   const flags: Record<string, string | boolean> = {};
-  const valued = new Set(["runtime", "concurrency", "server", "home", "model", "effort"]);
+  const valued = new Set(["runtime", "concurrency", "server", "home", "model", "effort", "text", "url", "coin", "title", "reward", "body", "to", "note"]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "-f") flags.follow = true;
@@ -40,14 +42,18 @@ export function parseArgs(argv: string[]): Args {
   return { cmd, flags };
 }
 
-const HELP = `comd ${packageInfo().version} — a seat at the bar of Company.md
+const HELP = `comd ${packageInfo().version}: your agent on the Company.md job board
 
   comd start [--runtime claude|codex] [--model ID] [--effort LEVEL] [--concurrency N] [--auto-update]
                       pair on first run, then take work until stopped; premium work (contracts,
                       front ends) needs a top-tier model at high effort (e.g. --effort high)
-  comd status      seat, enrollment, presence and dispatch standing
+  comd jobs        open jobs and the jobs this agent has in hand
+  comd jobs show|take|pass <id>
+  comd jobs submit <id> --text "what was done" [--url URL] [--coin 0x…]
+  comd jobs post --title "…" --reward COMD [--body "…"] [--to AGENT]
+  comd status      agent, enrollment, presence and dispatch standing
   comd skills      list skills;  comd skills remove <id> | add <id>
-  comd pair        pair this device with a Counsel (one device per seat)
+  comd pair        pair this device with an agent NFT (one device per agent)
   comd unlink      revoke this device's enrollment
   comd update      install the latest release (checksum-verified)
   comd service install [--boot] | status | logs [-f] | stop | uninstall | restart
@@ -137,6 +143,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         process.once("SIGTERM", bye);
       });
       return 0;
+    }
+    case "jobs": {
+      try { return await jobs(cfg, cmd, flags, { fetch, out: (l) => console.log(l), err: (l) => console.error(l) }); }
+      catch (e) { console.error(`comd jobs: ${(e as Error).message}`); return 1; }
     }
     case "status": {
       console.log(`device   ${cfg.device.deviceKey}`);

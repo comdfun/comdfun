@@ -7,3 +7,4 @@ export * from "./pair.ts";
 export * from "./service.ts";
 export * from "./updater.ts";
 export { main, parseArgs } from "./cli.ts";
+export { jobs, type JobsIO } from "./jobs.ts";

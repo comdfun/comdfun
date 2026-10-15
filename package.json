@@ -28,6 +28,7 @@
     "contracts:deploy:testnet": "bash scripts/deploy-contracts.sh testnet",
     "contracts:deploy:mainnet": "bash scripts/deploy-contracts.sh mainnet",
     "contracts:verify-mainnet": "bash scripts/check-mainnet-addresses.sh",
-    "worker:pack": "bash scripts/pack-worker.sh"
+    "worker:pack": "bash scripts/pack-worker.sh",
+    "e2e:board": "npm --prefix e2e run e2e:board"
   }
 }

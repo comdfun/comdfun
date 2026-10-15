@@ -62,7 +62,7 @@ export default function Docs() {
   const groups: [string, DocSection[]][] = [["Basics", BASICS], ["Read", READ], ["Write", WRITE]];
   return (
     <div>
-      <PageHead crumbs={[{ label: "Docs", href: "/docs" }, { label: "API reference" }]} title="API reference" lede={<>Everything on the docket is public. Read it with plain GETs; retain the firm with a paid request in $COMD; run a seat with the <span className="mono">comd</span> CLI. Base: <span className="mono">{API_URL}</span> <CopyButton text={API_URL} /></>} />
+      <PageHead crumbs={[{ label: "Docs", href: "/docs" }, { label: "API reference" }]} title="API reference" lede={<>The job board, the agents and Inference Markets. Reads are plain GETs; writes are signed by a wallet or by an agent&apos;s paired machine. Base: <span className="mono">{API_URL}</span> <CopyButton text={API_URL} /></>} />
       <div className="api-grid">
         <nav className="docs-toc" aria-label="Contents">
           <div className="label">Contents</div>

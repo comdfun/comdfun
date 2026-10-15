@@ -1,4 +1,5 @@
 "use client";
+import { PONS_URL } from "@/lib/config";
 // Buying credit from the page, instead of being handed an address and told to go and do a transfer.
 //
 // Two ways in, and the second is the point of the thing:
@@ -239,7 +240,7 @@ export function BuyCredit({ deposit, onDone }: { deposit: BuyDeposit; onDone?: (
             Paying in ETH needs the ${symbol} pool, which opens when it graduates on the launchpad. Until then buy
             ${symbol} there and pay with the ${symbol} tab.
           </p>
-          <a className="btn sm" href="/swap">Where to buy ${symbol}</a>
+          <a className="btn sm" href={PONS_URL} target="_blank" rel="noreferrer">Where to buy ${symbol}</a>
         </div>
       ) : (
         <button type="button" className="btn primary buy-go" onClick={pay === "eth" ? swapEth : sendToken} disabled={!canBuy}>

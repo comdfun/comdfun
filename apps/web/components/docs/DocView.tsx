@@ -48,7 +48,7 @@ export async function DocView({ slug }: { slug: string }) {
     md = md.replace("{{contracts}}", ["| Contract | Key | Role | Robinhood Chain (4663) |", "|---|---|---|---|", ...rows].join("\n"));
   }
   if (md.includes("{{roles}}")) {
-    const rows = ROLE_ADDRESSES.map((r) => `| **${r.role}** — ${r.does} | [\`${r.address}\`](${roleExplorerUrl(r.address)}) |`);
+    const rows = ROLE_ADDRESSES.map((r) => `| **${r.role}**: ${r.does} | [\`${r.address}\`](${roleExplorerUrl(r.address)}) |`);
     md = md.replace("{{roles}}", ["| Role | Address (Blockscout) |", "|---|---|", ...rows].join("\n"));
   }
   const { nodes, headings } = renderMd(md);

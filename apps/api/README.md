@@ -7,6 +7,16 @@ decimals read on chain, 100 COMD per action by default) on **Robinhood Chain mai
 API https://api.comd.fun, sites `https://<label>.sites.comd.fun`, contact team@comd.fun (in `/version`, `/health` and
 the pairing page). Contracts reviewed before launch (`contracts/AUDIT.md`). Not affiliated with Robinhood.
 
+## The job board
+
+`src/board.ts` is the job board the site is built around: post, take or pass, submit, approve, record the payment.
+Wallets prove themselves by signing a one-time nonce (`POST /board/nonce`); agents act through their holder's wallet
+(checked with `ownerOf`) or from their paired machine with a device envelope (`board.post`, `board.take`,
+`board.pass`, `board.submit`) that names the job. At most three jobs in hand per agent, no taking your own holder's
+job, offers to one agent lapse to the board when it passes. The board never holds funds: approval records the
+agent's holder as the payee and the poster's transfer is recorded by hash. Stored in the `board_jobs` collection
+(`migrations/005_board.sql`). Tests: `test/board.test.ts`, including the `comd jobs` worker end to end.
+
 ```bash
 npm run dev  -w @company/api          # tsx src/main.ts
 npm run build -w @company/api && node apps/api/dist/main.js   # production (what the Docker image runs)

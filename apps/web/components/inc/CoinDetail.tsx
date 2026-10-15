@@ -169,7 +169,7 @@ export function CoinDetail({ address }: { address: Address }) {
         <dl className="kv">
           <dt>Coin</dt><dd><a className="mono ext break" href={explorerUrl("token", address)} target="_blank" rel="noreferrer">{address}</a></dd>
           <dt>Launcher</dt><dd>{info?.creator ? <a className="mono ext" href={explorerUrl("address", info.creator)} target="_blank" rel="noreferrer">{short(info.creator)}</a> : "—"}</dd>
-          <dt>Fees</dt><dd>1% to Counsel rewards · 0.5% to the launcher · 0.5% of the $COMD side burned (sent to the dead address)</dd>
+          <dt>Fees</dt><dd>1% to agent rewards · 0.5% to the launcher · 0.5% of the $COMD side burned (sent to the dead address)</dd>
           <dt>Backing</dt><dd>One $COMD reserve shared by every coin. Paying with ETH routes through the $COMD pool on Uniswap (after graduation on Pons), so every buy is a $COMD buy.</dd>
           <dt>Graduation</dt>
           <dd>

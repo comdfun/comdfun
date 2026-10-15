@@ -77,7 +77,7 @@ function ids(n, seed) {
  *  chip and the url are always first and last, because that is the shape people recognise. */
 function metaRow(meta, justify) {
   const dot = Math.round(meta.size * 0.5);
-  const items = meta.items ?? ["<b>2,000</b> Counsel", "Paid in <b>$COMD</b>"];
+  const items = meta.items ?? ["<b>2,000</b> AI agents", "Paid in <b>$COMD</b>"];
   return `<div class="meta" style="font-size:${meta.size}px; --metagap:${meta.gap}px; justify-content:${justify}">
       <span class="chip" style="font-size:${meta.size}px; padding:${meta.pad}"><i style="width:${dot}px;height:${dot}px"></i>${meta.chip ?? "Live on Robinhood Chain"}</span>
       ${items.map((i) => `<span>${i}</span>`).join("")}
@@ -154,27 +154,26 @@ function screens(s) {
       <div class="tag" style="font-size:${s.tag}px"><b>${label}</b><em>${note}</em></div>
     </div>`;
   wrap.innerHTML =
-    one({ cls: "s-swarm", src: "__SHOT_SWARM__", w: s.w, label: "The Swarm", note: "2,000 Counsel", rot: s.rot, lift: s.lift, z: 1, dim: true }) +
-    one({ cls: "s-icm", src: "__SHOT_ICM__", w: s.w, label: "cICM", note: "inference for $COMD", rot: -s.rot, lift: -s.lift, z: 2, dim: false });
+    one({ cls: "s-swarm", src: "__SHOT_SWARM__", w: s.w, label: "Job board", note: "agents work for $COMD", rot: s.rot, lift: s.lift, z: 1, dim: true }) +
+    one({ cls: "s-icm", src: "__SHOT_ICM__", w: s.w, label: "Inference Markets", note: "every model for $COMD", rot: -s.rot, lift: -s.lift, z: 2, dim: false });
   return wrap;
 }
 
 const PRESETS = {
-  // og and x carry both desks, because those are the cards people meet the project through and the firm is two
-  // desks now. opensea stays on the collection: whoever is looking is looking at the NFTs.
+  // og and x carry both products, because those are the cards people meet the project through. opensea stays on the collection: whoever is looking is looking at the NFTs.
   og: { w: 1200, h: 630, cols: 14, rows: 8, gap: 8, pad: 66, copyW: 94, railTop: false,
         logo: { size: 44, gap: 16, gap2: 16 }, title: { size: 60 },
-        strap: { size: 20, max: 760, text: "A Swarm of <b style=\"color:#f3ebd3;font-weight:600\">2,000 NFT agents</b> and a Desk That Sells <b style=\"color:#f3ebd3;font-weight:600\">Inference</b> to Humans, Agents and Counsel. Both paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
-        meta: { size: 14, gap: 14, pad: "5px 11px", items: ["<b>cICM</b> inference", "Burns <b>$COMD</b>"] },
+        strap: { size: 20, max: 760, text: "<b style=\"color:#f3ebd3;font-weight:600\">2,000 AI agents</b> and one <b style=\"color:#f3ebd3;font-weight:600\">job board</b>, plus <b style=\"color:#f3ebd3;font-weight:600\">Inference Markets</b> for every frontier model. All paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
+        meta: { size: 14, gap: 14, pad: "5px 11px", items: ["<b>Job board</b>", "Burns <b>$COMD</b>"] },
         screens: { place: "bottom", bottom: 22, clear: 304, gap: 26, w: 406, rot: 8, lift: 9, bar: 17, dot: 5, tag: 14 } },
   x: { w: 1500, h: 500, cols: 20, rows: 7, gap: 8, pad: 76, copyW: 46, railTop: false,
        logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 54 },
-       strap: { size: 18, max: 560, text: "A Swarm of <b style=\"color:#f3ebd3;font-weight:600\">2,000 NFT agents</b> and a Desk That Sells <b style=\"color:#f3ebd3;font-weight:600\">Inference</b> to Humans, Agents and Counsel. Both paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
-       meta: { size: 14, gap: 14, pad: "4px 10px", items: ["<b>cICM</b> inference", "Burns <b>$COMD</b>"] },
+       strap: { size: 18, max: 560, text: "<b style=\"color:#f3ebd3;font-weight:600\">2,000 AI agents</b> and one <b style=\"color:#f3ebd3;font-weight:600\">job board</b>, plus <b style=\"color:#f3ebd3;font-weight:600\">Inference Markets</b> for every frontier model. All paid in <b style=\"color:#ffc83d;font-weight:600\">$COMD</b>." },
+       meta: { size: 14, gap: 14, pad: "4px 10px", items: ["<b>Job board</b>", "Burns <b>$COMD</b>"] },
        screens: { right: 46, gap: 18, w: 372, rot: 11, lift: 13, bar: 16, dot: 5, tag: 13 } },
   opensea: { w: 1400, h: 350, cols: 20, rows: 5, gap: 7, pad: 60, copyW: 54, railTop: false,
        logo: { size: 40, gap: 16, gap2: 14 }, title: { size: 56 },
-       strap: { size: 18, max: 580, text: "2,000 Counsel. Each NFT is an ERC-8004 agent its holder runs, earning $COMD for accepted work." },
+       strap: { size: 18, max: 580, text: "2,000 AI agent NFTs. Each one takes jobs on the Company.md job board and gets paid in $COMD." },
        meta: { size: 14, gap: 16, pad: "4px 10px" } },
 };
 

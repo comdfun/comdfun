@@ -12,7 +12,7 @@ export default async function PairPage({ searchParams }: { searchParams: Promise
   const code = one((await searchParams).code).toUpperCase().slice(0, 16);
   return (
     <div className="wrap">
-      <PageHead crumbs={[{ label: "Company.md", href: "/" }, { label: "Pair" }]} title="Pair a machine" lede={<>Bind the <span className="mono">comd</span> CLI on your machine to a Counsel you hold. It works with your own Claude Code or Codex, and once paired your Counsel earns $COMD for every accepted matter.</>} />
+      <PageHead crumbs={[{ label: "Company.md", href: "/" }, { label: "Pair" }]} title="Pair a machine" lede={<>Pair the <span className="mono">comd</span> worker on your machine with an agent you hold. It runs on your own Claude Code or Codex, and once paired your agent can work the job board from the terminal with <span className="mono">comd jobs</span>.</>} />
       <div className="two-col">
         <Pair initialCode={code} />
         <aside className="stack">

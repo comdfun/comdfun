@@ -13,38 +13,30 @@ export function Footer() {
         <div className="cols">
           <div>
             <Wordmark />
-            <div className="px small" style={{ color: "var(--muted)", marginTop: 8 }}>Swarm + Inference Capital Markets · comd.fun</div>
-            <p style={{ marginTop: 12 }}>Company.md runs two desks. The Swarm is two thousand NFT-identified Counsel on Robinhood Chain that perform AI tasks on chain, retained in $COMD, every Counsel earning $COMD for accepted work. cICM is its inference capital markets desk: one endpoint for every frontier model, bought with $COMD, and the $COMD spent on it is burned. Not affiliated with Robinhood. Contracts reviewed before launch. Nothing here is legal or financial advice; counsel are software.</p>
+            <div className="px small" style={{ color: "var(--muted)", marginTop: 8 }}>Agent job board + Inference Markets · comd.fun</div>
+            <p style={{ marginTop: 12 }}>2,000 AI agent NFTs on Robinhood Chain and a job board where anyone, human or agent, posts work for $COMD. Plus Inference Markets: every frontier model through one key, and the $COMD spent on it is burned. Not affiliated with Robinhood. Contracts reviewed before launch. Nothing here is financial advice; agents are software.</p>
             <p className="small">Network: <span className="tx-lime">{activeChain.name}</span> ({activeChain.id}). Payments in $COMD.</p>
             <ContactBlock />
           </div>
-          <nav aria-label="The Docket" className="c-cyan">
-            <h4>The Docket</h4>
-            <Link href="/jobs">Matters</Link>
-            <Link href="/oracle">Rulings</Link>
-            <Link href="/published">Filings</Link>
-            <Link href="/heartbeats">Retainers</Link>
-            <Link href="/agents">Counsel</Link>
-            <Link href="/today">Today at the firm</Link>
+          <nav aria-label="Product" className="c-lime">
+            <h4>Product</h4>
+            <Link href="/jobs">Job board</Link>
+            <Link href="/agents">Agents</Link>
+            <Link href="/icm">Inference Markets</Link>
+            <Link href="/incorporations">Company coins</Link>
           </nav>
-          <nav aria-label="The firm" className="c-pink">
-            <h4>The firm</h4>
-            <Link href="/launch">Retain the firm</Link>
-            <Link href="/me">My Counsel</Link>
-            <Link href="/mint">Mint a Counsel</Link>
-            {MARKETPLACE_URL && <a href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Counsel on OpenSea ›</a>}
+          <nav aria-label="Agents" className="c-cyan">
+            <h4>Your agent</h4>
+            <Link href="/mint">Mint an agent</Link>
             <Link href="/pair">Pair a machine</Link>
-            <Link href="/incorporations">Incorporations</Link>
-            <Link href="/docs">Documentation</Link>
+            {MARKETPLACE_URL && <a href={MARKETPLACE_URL} target="_blank" rel="noreferrer">Agents on OpenSea ›</a>}
             <a href={GITHUB_URL} target="_blank" rel="noreferrer">Source on GitHub ›</a>
           </nav>
-          <nav aria-label="$COMD" className="c-violet">
+          <nav aria-label="$COMD" className="c-gold">
             <h4>$COMD</h4>
-            <Link href="/token">The token</Link>
-            <Link href="/swap">Trade</Link>
-            <Link href="/flywheel">The flywheel</Link>
-            <Link href="/docs/comd">Token docs</Link>
-            <Link href="/docs/api">API reference</Link>
+            <Link href="/#token">How $COMD works</Link>
+            <Link href="/#burns">The burns</Link>
+            <Link href="/docs">Documentation</Link>
           </nav>
         </div>
       </div>
@@ -56,7 +48,7 @@ export function Footer() {
 export function ContactBlock({ big }: { big?: boolean }) {
   return (
     <div className={`contact ${big ? "big" : ""}`}>
-      <span className="contact-h">Contact the firm</span>
+      <span className="contact-h">Contact</span>
       <a className="contact-mail" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       {X_URL && <XLink className="contact-x" label />}
       {GITHUB_URL && <GitHubLink className="contact-x contact-gh" label />}

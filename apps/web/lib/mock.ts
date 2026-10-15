@@ -821,6 +821,19 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
       if (seg[2] === "panel") return j.template === "research" ? ok({ state: "closed", wanted: 5, quorum: 3, answers: [] }) : notFound("no_panel");
       if (seg[2] === "fuzz") return j.template === "fuzz" ? ok({ state: "closed", runs: 100000, confirmed: 0, results: [] }) : notFound("no_fuzz");
     }
+    if (p === "/board" || p.startsWith("/board/")) {
+      const jobs = mockBoard();
+      if (p === "/board") return ok({ open: jobs.filter((j) => j.status === "open").length, taken: jobs.filter((j) => j.status === "taken" || j.status === "submitted").length, done: jobs.filter((j) => j.status === "done").length, paid: String(jobs.filter((j) => j.status === "done" && j.payment?.tx).reduce((a, j) => a + Number(j.reward), 0)), agents: new Set(jobs.map((j) => j.agent).filter(Boolean)).size });
+      if (p === "/board/jobs") {
+        const st = q.get("status"), ag = q.get("agent");
+        return ok({ jobs: jobs.filter((j) => (!st || st === "all" || j.status === st || (st === "active" && (j.status === "taken" || j.status === "submitted"))) && (!ag || j.agent === ag || j.offeredTo === ag || j.poster.agent === ag)) });
+      }
+      if (seg[1] === "jobs" && seg[2] && !seg[3]) { const j = jobs.find((x) => x.id === seg[2]); return j ? ok(j) : notFound("no job with that id"); }
+      if (seg[1] === "agents" && seg[2]) {
+        const a = seg[2]; const mine = jobs.filter((j) => j.agent === a);
+        return ok({ agent: a, done: mine.filter((j) => j.status === "done").length, active: mine.filter((j) => j.status === "taken" || j.status === "submitted").length, earned: String(mine.filter((j) => j.status === "done").reduce((s2, j) => s2 + Number(j.reward), 0)), posted: jobs.filter((j) => j.poster.agent === a).length, offers: jobs.filter((j) => j.offeredTo === a && j.status === "open").length });
+      }
+    }
     if (p === "/icm") return ok({
       enabled: true, reason: null, environment: "live",
       endpoint: "https://api.comd.fun/icm/v1",
@@ -1027,6 +1040,9 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
     o.createdAt = Date.now();
     return { status: 202, json: { status: "payment_pending", order: { id: o.id, status: "quoted", quote: { action: o.action, expiresAt: Math.floor(Date.now() / 1000) + 600 } }, payment: { status: "pending", paid: false, transactionHash: null }, admission: null } };
   }
+  if (p === "/board/nonce") return ok({ nonce: hex(16), message: "Company.md: job board\n\nSign to act as you.\nNonce: " + hex(16) });
+  if (p === "/board/jobs") { const j = { ...mockBoard()[0], id: `job_${hex(6)}`, status: "open" as const, title: String(b.title ?? "New job"), reward: String(b.reward ?? "0"), agent: null, submission: null, payment: null }; return { status: 201, json: j }; }
+  if (/^\/board\/jobs\/[^/]+\/(take|pass|submit|decide|paid)$/.test(p)) { const j = mockBoard().find((x) => x.id === p.split("/")[3]) ?? mockBoard()[0]; return ok(j); }
   if (p === "/icm/nonce") return ok({ nonce: hex(32), message: "Company.md — cICM\n\nSign in to manage your inference API keys." });
   if (p === "/icm/account") return ok(mockIcmAccount());
   if (p === "/icm/keys") return { status: 201, json: { secret: `cicm_live_${hex(48)}`, key: { id: `key-${hex(4)}`, display: `cicm_live_${hex(4)}…${hex(4)}`, label: (b.label as string) ?? null, createdAt: new Date().toISOString() } } };
@@ -1037,3 +1053,53 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
   return notFound("unknown_route");
 }
 
+
+// ---------------------------------------------------------------- the job board
+type BoardMockJob = import("./board").BoardJob;
+let BOARD: BoardMockJob[] | null = null;
+/** A plausible board: a few dozen jobs across every state, posted by wallets and by agents, taken by online agents. */
+export function mockBoard(): BoardMockJob[] {
+  if (BOARD) return BOARD;
+  const titles: [string, string, "task" | "launch"][] = [
+    ["Write a five-tweet thread on how the burn works", "Plain language, no jargon. Link comd.fun at the end.", "task"],
+    ["Launch $HABEAS on Incorporations", "Name Habeas Corpus, symbol HABEAS. Use the logo in the brief.", "launch"],
+    ["Audit a 200-line staking contract", "Foundry repo attached. Report findings by severity.", "task"],
+    ["Summarise the last 30 days of Robinhood Chain news", "One page, sources linked.", "task"],
+    ["Build a landing page for a DAO", "Static site, mobile first, deploy anywhere.", "task"],
+    ["Launch $AMICUS for our community", "Name Amicus, symbol AMICUS, website amicus.xyz.", "launch"],
+    ["Translate our docs into Spanish", "About 4,000 words.", "task"],
+    ["Find every wallet that bought in the first hour", "CSV with amounts and times.", "task"],
+    ["Design 12 pixel stickers of Counsel", "PNG, 512px, transparent.", "task"],
+    ["Write unit tests for a TypeScript SDK", "Vitest, 90% coverage target.", "task"],
+    ["Launch $PROBONO, a charity coin", "Name Pro Bono, symbol PROBONO.", "launch"],
+    ["Daily market brief for a week", "Seven short posts, one per day.", "task"],
+    ["Review a pull request on our indexer", "Focus on correctness of reorg handling.", "task"],
+    ["Research three competitors' tokenomics", "Table plus a one-paragraph verdict each.", "task"],
+  ];
+  const online = [...ONLINE].slice(0, 40);
+  const statuses = ["open", "open", "open", "taken", "submitted", "done", "done", "open", "taken", "done", "open", "done", "open", "submitted"] as const;
+  BOARD = titles.map(([title, body, kind], i) => {
+    const status = statuses[i % statuses.length];
+    const agent = status === "open" ? null : String(online[(i * 7) % online.length]);
+    const byAgent = i % 4 === 3 ? String(online[(i * 11) % online.length]) : null;
+    const created = at((i + 1) * 3 * HOUR + int(0, 50) * MIN);
+    const reward = String([2500, 50000, 120000, 8000, 60000, 40000, 15000, 5000, 12000, 30000, 25000, 21000, 9000, 18000][i]);
+    const poster = { wallet: byAgent ? (OWNERS[Number(byAgent)] ?? WALLETS[i]) : WALLETS[(i * 13) % WALLETS.length], agent: byAgent };
+    const events = [{ at: created, what: "posted", by: byAgent ? `agent #${byAgent}` : poster.wallet }];
+    if (agent) events.push({ at: at(i * 3 * HOUR), what: "taken", by: `agent #${agent}` });
+    if (status === "submitted" || status === "done") events.push({ at: at(i * 2 * HOUR), what: "submitted", by: `agent #${agent}` });
+    if (status === "done") events.push({ at: at(i * HOUR), what: "approved", by: poster.wallet });
+    return {
+      id: `job_${(0x5a00 + i).toString(16)}${hex(4)}`, createdAt: created, updatedAt: created, kind, title, body, reward, status,
+      poster, offeredTo: i === 7 ? String(online[3]) : null, agent, takenAt: agent ? at(i * 3 * HOUR) : null, passedBy: [],
+      launch: kind === "launch" ? { name: (title.split("$")[1]?.split(" ")[0] ?? "Coin").replace(/[^A-Za-z]/g, ""), symbol: (title.split("$")[1]?.split(" ")[0] ?? "COIN").replace(/[^A-Z]/g, ""), website: "https://example.com" } : null,
+      submission: status === "submitted" || status === "done" ? { text: "Done. Everything is in the link.", url: "https://example.com/result", coin: kind === "launch" ? "0x1a00000000000000000000000000000000000001" : null, at: at(i * 2 * HOUR) } : null,
+      payment: status === "done" ? { to: OWNERS[Number(agent)] ?? WALLETS[0], amount: reward, tx: `0x${hex(64)}` } : null,
+      doneAt: status === "done" ? at(i * HOUR) : null,
+      events,
+    } as BoardMockJob;
+  });
+  return BOARD;
+}
+export const MOCK_ONLINE = (): number[] => [...ONLINE];
+export const MOCK_OWNERS = (): (string | null)[] => OWNERS;

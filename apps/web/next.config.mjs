@@ -44,11 +44,20 @@ const nextConfig = {
   poweredByHeader: false,
   experimental: { externalDir: true },
   async redirects() {
+    // The site is the job board, the agents and Inference Markets now. Every page of the old site still lands
+    // somewhere sensible, so links in old posts and bookmarks keep working. Temporary (307), not cached forever.
+    const to = (destination, ...sources) => sources.map((source) => ({ source, destination, permanent: false }));
     return [
-      { source: "/trust", destination: "/flywheel", permanent: true },
-      { source: "/trust/:path*", destination: "/flywheel", permanent: true },
-      { source: "/stake", destination: "/flywheel", permanent: true },
-      { source: "/bond", destination: "/flywheel", permanent: true },
+      ...to("/jobs", "/launch", "/launch/:path*", "/launches", "/launches/:path*", "/oracle", "/oracle/:path*", "/published", "/published/:path*", "/heartbeats", "/heartbeats/:path*", "/today", "/try", "/docket"),
+      ...to("/agents", "/swarm", "/leaderboard", "/counsel", "/counsel/:path*"),
+      ...to("/agents?mine=1", "/me"),
+      ...to("/", "/room", "/what-is-this"),
+      ...to("/#token", "/token", "/swap"),
+      ...to("/#burns", "/flywheel", "/trust", "/trust/:path*", "/stake", "/bond"),
+      ...to("/docs/agent-nfts", "/docs/counsel-nfts"),
+      ...to("/docs/coin-launches", "/docs/launches"),
+      ...to("/docs/job-board", "/docs/retain"),
+      ...to("/docs/comd", "/docs/rewards"),
     ];
   },
   env: {
