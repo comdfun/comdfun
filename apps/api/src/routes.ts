@@ -644,6 +644,21 @@ export function buildRouter(app: App): Router {
 
   r.get("/trial", (q) => json(200, app.trial.status(q.query.get("address"))), { cors: "public", bucket: "read" });
   r.post("/trial/nonce", (q) => json(200, app.trial.nonce(q.json().address)), { cors: "public", bucket: "read" });
+  // ------------------------------------------------------------------------------------------ the job board
+  // Post, take or pass, submit, approve. See board.ts for the whole protocol.
+  const board: RouteOpts = { cors: "public", bucket: "read", limit: 32 * 1024 };
+  r.get("/board", () => json(200, app.board.summary(), { "cache-control": "public, max-age=10" }), read);
+  r.get("/board/jobs", (q) => json(200, { jobs: app.board.list(q.query) }), read);
+  r.get("/board/jobs/:id", (q) => json(200, app.board.get(q.params.id)), read);
+  r.get("/board/agents/:id", (q) => json(200, app.board.agentStats(q.params.id)), read);
+  r.post("/board/nonce", (q) => json(200, app.board.nonce((q.json() as { address?: string }).address)), board);
+  r.post("/board/jobs", async (q) => json(201, await app.board.post(q.json())), board);
+  r.post("/board/jobs/:id/take", async (q) => json(200, await app.board.take(q.params.id, q.json())), board);
+  r.post("/board/jobs/:id/pass", async (q) => json(200, await app.board.pass(q.params.id, q.json())), board);
+  r.post("/board/jobs/:id/submit", async (q) => json(200, await app.board.submit(q.params.id, q.json())), board);
+  r.post("/board/jobs/:id/decide", async (q) => json(200, await app.board.decide(q.params.id, q.json())), board);
+  r.post("/board/jobs/:id/paid", async (q) => json(200, await app.board.paid(q.params.id, q.json())), board);
+
   // ------------------------------------------------------------------------------------------ logos
   // A company coin's logo, uploaded rather than linked. The coin's metadata is written on chain, so it carries a
   // URL, never the image: this stores the bytes content-addressed and hands back the URL. Only raster images are

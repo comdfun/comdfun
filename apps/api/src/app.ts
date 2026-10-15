@@ -29,6 +29,7 @@ import type { Router } from "./http.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { Room } from "./room.ts";
 import { Icm } from "./icm.ts";
+import { Board } from "./board.ts";
 import { Leaderboard } from "./leaderboard.ts";
 import { Trial } from "./trial.ts";
 import { Keeper, ViemKeeperPort, type KeeperPort } from "./keeper.ts";
@@ -79,6 +80,7 @@ export class App {
   readonly fuzz: Fuzz;
   readonly room: Room;
   readonly icm: Icm;
+  readonly board: Board;
   readonly leaderboard: Leaderboard;
   readonly trial: Trial;
   readonly sites: Sites;
@@ -127,6 +129,7 @@ export class App {
     this.fuzz = new Fuzz(this);
     this.room = new Room(this);
     this.icm = new Icm({ app: this });
+    this.board = new Board({ app: this });
     this.leaderboard = new Leaderboard(this);
     this.trial = new Trial(this);
     this.sites = new Sites(this);
