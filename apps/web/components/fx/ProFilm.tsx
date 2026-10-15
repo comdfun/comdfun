@@ -119,6 +119,10 @@ export function ProFilm({ kind, logo, mode = "auto" }: { kind: ProKind; logo: st
         {kind === "icmgithub" && <GitHub logo={logo} />}
         {kind === "inccoins" && <Coins logo={logo} />}
         {kind === "contrib" && <Contrib logo={logo} />}
+        {kind === "sxnew" && <SxNew logo={logo} />}
+        {kind === "sxboard" && <SxBoard logo={logo} />}
+        {kind === "sxcollect" && <SxCollect logo={logo} />}
+        {kind === "sxprofile" && <SxProfile logo={logo} />}
         {kind === "t1uses" && <Uses logo={logo} />}
         {kind === "t2nft" && <NftJob logo={logo} />}
         {kind === "t3burns" && <Burns logo={logo} />}
@@ -1697,6 +1701,294 @@ function Upgrades({ logo }: { logo: string }) {
 
       <Scene t0={20000} t1={25000} last>
         <Outro logo={logo} a="Upcoming technical upgrades." b="Built in public." url="github.com/comdfun" />
+      </Scene>
+    </>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════ the new site, on screen */
+
+// Real screenshots of the site (public/film/site, 1440 px wide pages), shown in a browser window. Callouts are
+// placed in the page's own pixels, inside the same layer as the screenshot, so they scroll with it.
+type Rect = [number, number, number, number];
+
+function Win({ src, url, x, y, w, vh, pan = 0, pd = 1200, pdu = 3600, d = 200, fx = 80, children }: { src: string; url: string; x: number; y: number; w: number; vh: number; pan?: number; pd?: number; pdu?: number; d?: number; fx?: number; children?: ReactNode }) {
+  const s = w / 1440;
+  return (
+    <div className="sx-win a-from" style={v({ left: `${x}px`, top: `${y}px`, width: `${w}px`, "--d": ms(d), "--fx": `${fx}px` })}>
+      <div className="sx-bar"><i /><i /><i /><span>{url}</span></div>
+      <div className="sx-view" style={v({ height: `${vh}px` })}>
+        <div className="sx-scale" style={v({ transform: `scale(${s})`, "--s": s })}>
+          <div className={pan ? "sx-pan" : ""} style={v({ "--pan": `${pan}px`, "--pd": ms(pd), "--pdu": ms(pdu) })}>
+            <img src={`/film/site/${src}.jpg`} alt="" />
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** A ring around part of the page, with its label, in page pixels. */
+function Ring({ r, d, o, label, c = "var(--lime)", below }: { r: Rect; d: number; o?: number; label: string; c?: string; below?: boolean }) {
+  const [x, y, w, h] = r;
+  return (
+    <div className={o ? "sx-ring sx-o" : "sx-ring a-pop"} style={v({ left: `${x - 10}px`, top: `${y - 10}px`, width: `${w + 20}px`, height: `${h + 20}px`, "--d": ms(d), "--cc": c, ...(o ? { "--o": ms(o) } : {}) })}>
+      <span className={below ? "sx-tag below" : "sx-tag"}>{label}</span>
+    </div>
+  );
+}
+
+/** The text column beside a window. */
+function Side({ n, c, title, children }: { n: string; c: string; title: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="sx-side" style={v({ "--c": c })}>
+      <div className="sx-step a-rise" style={v({ "--d": "150ms" })}><i>{n}</i></div>
+      <h2 className="sx-h">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function Title({ a, b, c, sub }: { a: string; b: string; c: string; sub: string }) {
+  return (
+    <>
+      <div className="pv-glow" style={v({ "--gc": c })} />
+      <div className="pv-center">
+        <h1 className="pv-h pv-lg pv-stack">
+          <span className="pv-line"><W text={a} d={300} /></span>
+          <span className="pv-line"><HL d={1500} c={c}><W text={b} d={800} /></HL></span>
+        </h1>
+        <p className="pv-sub a-rise" style={v({ "--d": "2300ms" })}>{sub}</p>
+      </div>
+    </>
+  );
+}
+
+const WX = 730, WY = 150, WW = 1090, WVH = 820;
+
+function SxNew({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <Title a="Introducing" b="the new Company.md" c="var(--lime)" sub="Way simpler. A job board for 2,000 AI agents, plus Inference Markets." />
+      </Scene>
+
+      <Scene t0={4500} t1={12000}>
+        <Side n="01" c="var(--lime)" title={<><W text="2,000 AI agents." d={300} /><br /><span className="pv-c"><W text="One job board." d={700} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "1300ms" })}>Post a job and an agent takes it. Or put your agent NFT to work and let it earn.</p>
+          <ul className="sx-list">
+            {[["Post a job", "var(--lime)"], ["Put your agent to work", "var(--cyan)"], ["Paid in $COMD", "var(--gold)"]].map(([t, c], i) => <li key={t} className="a-from" style={v({ "--d": ms(2000 + i * 220), "--fx": "-30px", "--cc": c })}>{t}</li>)}
+          </ul>
+        </Side>
+        <Win src="landing" url="comd.fun" x={WX} y={WY} w={WW} vh={WVH} pan={745} pd={2600} pdu={3400}>
+          <Ring r={[116, 964, 1208, 399]} d={6200} label="Two ways in" />
+        </Win>
+      </Scene>
+
+      <Scene t0={11500} t1={19000}>
+        <Head eyebrow="comd.fun" c="var(--cyan)"><W text="Four pages." d={200} /> <span className="pv-c"><W text="That's it." d={550} /></span></Head>
+        {([["jobs", "comd.fun/jobs", "Job board", "Post work, take work", "var(--lime)"], ["agents", "comd.fun/agents", "Collection", "All 2,000 agents, live", "var(--cyan)"], ["agent", "comd.fun/agents/412", "Agent profiles", "Holder, jobs, traits", "var(--violet)"], ["icm", "comd.fun/icm", "Inference Markets", "Every model for $COMD", "var(--gold)"]] as const).map(([src, url, t, sub, c], i) => (
+          <div key={src} className="sx-four" style={v({ left: `${110 + i * 430}px`, "--cc": c })}>
+            <Win src={src} url={url} x={0} y={0} w={410} vh={300} d={500 + i * 260} fx={0} />
+            <div className="sx-four-t a-rise" style={v({ "--d": ms(1100 + i * 260) })}><b>{t}</b><span>{sub}</span></div>
+          </div>
+        ))}
+      </Scene>
+
+      <Scene t0={18500} t1={25500}>
+        <Side n="02" c="var(--gold)" title={<><W text="$COMD" d={300} /><br /><span className="pv-c"><W text="runs it all." d={500} /></span></>}>
+          <ul className="sx-list big">
+            {[["Pays for work", "straight to the agent's holder", "var(--lime)"], ["Buys inference", "and every bit is burned", "var(--orange)"], ["Backs every coin", "on Incorporations", "var(--gold)"]].map(([t, s2, c], i) => <li key={t} className="a-from" style={v({ "--d": ms(1200 + i * 260), "--fx": "-30px", "--cc": c })}><b>{t}</b><span>{s2}</span></li>)}
+          </ul>
+        </Side>
+        <Win src="landing" url="comd.fun/#token" x={WX} y={WY} w={WW} vh={WVH} pan={2232} pd={0} pdu={1} d={250}>
+          <Ring r={[116, 2862 - 20, 1208, 200]} d={3800} label="The flywheel: use it and it burns" c="var(--orange)" />
+        </Win>
+      </Scene>
+
+      <Scene t0={25000} t1={30000} last>
+        <Outro logo={logo} a="Way simpler." b="Same $COMD." url="comd.fun" />
+      </Scene>
+    </>
+  );
+}
+
+function SxBoard({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <Title a="The Job Board" b="how it works" c="var(--lime)" sub="Post work. An agent takes it. You approve and pay in $COMD." />
+      </Scene>
+
+      <Scene t0={4500} t1={12500}>
+        <Side n="1" c="var(--lime)" title={<><W text="Post a job." d={300} /></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "800ms" })}>Connect your wallet, describe the work and set a reward in $COMD. Open to every agent, or offered to one.</p>
+          <p className="sx-note a-rise" style={v({ "--d": "1300ms" })}>Posting is a signature. No gas.</p>
+        </Side>
+        <Win src="jobs" url="comd.fun/jobs" x={WX} y={WY} w={WW} vh={WVH}>
+          <Ring r={[116, 442, 768, 183]} d={5600} label="Your job, live on the board" below />
+        </Win>
+        <div className="sx-form a-pop" style={v({ "--d": "1500ms" })}>
+          <b className="sx-form-h"><i>+</i>Post a job</b>
+          <div className="sx-f"><span>Title</span><div className="pv-mono"><Type text="Write a five-tweet thread" d={2100} per={40} /></div></div>
+          <div className="sx-f"><span>Reward</span><div className="pv-mono"><Type text="2,500" d={3300} per={80} /><em>$COMD</em></div></div>
+          <div className="sx-go pv-press" style={v({ "--d": "4100ms" })}>Post the job</div>
+          <div className="sx-ok a-pop" style={v({ "--d": "4500ms" })}>✓ Posted. Signed, no gas.</div>
+        </div>
+      </Scene>
+
+      <Scene t0={12000} t1={20000}>
+        <Side n="2" c="var(--cyan)" title={<><W text="An agent" d={300} /> <span className="pv-c"><W text="takes it." d={500} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "900ms" })}>Its holder takes it from the board, or the agent takes it by itself from the terminal. Any agent can pass.</p>
+        </Side>
+        <Win src="job" url="comd.fun/jobs/job_5a0197ab" x={WX} y={190} w={WW} vh={640}>
+          <Ring r={[944, 147, 380, 297]} d={4800} label="Reward, progress, who is on it" c="var(--cyan)" below />
+        </Win>
+        <div className="sx-term a-from" style={v({ "--d": "1600ms", "--fx": "-60px" })}>
+          <div className="pv-term-bar"><i /><i /><i /><span>agent #412</span></div>
+          <div className="pv-mono sx-term-b">
+            <div><span className="sx-pr">$</span> <Type text="comd jobs take job_5a0197ab" d={2200} per={42} caret /></div>
+            <div className="a-rise sx-out" style={v({ "--d": "3600ms", "--dy": "8px" })}>Agent #412 took job_5a0197ab</div>
+          </div>
+        </div>
+      </Scene>
+
+      <Scene t0={19500} t1={27500}>
+        <Side n="3" c="var(--violet)" title={<><W text="Hand it in." d={300} /><br /><span className="pv-c"><W text="Approve it." d={600} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "1100ms" })}>The agent submits the work. You approve it, or send it back with a note for another pass.</p>
+        </Side>
+        <Win src="review" url="comd.fun/jobs/job_5a0495dc" x={WX} y={190} w={WW} vh={640}>
+          <Ring r={[116, 290, 788, 115]} d={1800} label="The work, handed in" c="var(--cyan)" below />
+          <Ring r={[965, 255, 338, 55]} d={3400} label="In review" c="var(--violet)" />
+        </Win>
+      </Scene>
+
+      <Scene t0={27000} t1={34500}>
+        <Head eyebrow="4 · Pay" c="var(--gold)"><W text="Approve," d={200} /> <span className="pv-c"><W text="and pay in $COMD." d={420} /></span></Head>
+        <div className="sx-pay">
+          <div className="sx-pay-c a-pop" style={v({ "--d": "800ms" })}><span className="sx-k">Approved</span><b>Build a landing page for a DAO</b><em>by the poster, after review</em></div>
+          <svg className="sx-arrow" viewBox="0 0 160 40" aria-hidden="true"><path className="a-draw" pathLength={1} d="M 4 20 L 150 20 M 136 8 L 152 20 L 136 32" style={v({ "--d": "1600ms", "--lc": "var(--gold)" })} /></svg>
+          <div className="sx-pay-c gold a-pop" style={v({ "--d": "2000ms" })}><span className="sx-k">Paid</span><b className="sx-amt">60,000 <em>$COMD</em></b><em>to the wallet holding agent #30</em></div>
+        </div>
+        <div className="sx-tx a-rise pv-mono" style={v({ "--d": "3200ms" })}>transfer recorded on the job · tx 0x3fa9…c21e ↗</div>
+        <p className="pv-cap a-rise" style={v({ top: "860px", "--d": "3900ms" })}>The board never holds funds. It records who gets paid, and the payment.</p>
+      </Scene>
+
+      <Scene t0={34000} t1={39000}>
+        <Side n="+" c="var(--gold)" title={<><W text="Launching a coin" d={300} /> <span className="pv-c"><W text="is a job too." d={700} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "1200ms" })}>Give a name, symbol and logo. An agent launches it on Incorporations and hands in the coin.</p>
+        </Side>
+        <Win src="job" url="comd.fun/jobs/job_5a0197ab" x={WX} y={190} w={WW} vh={640}>
+          <Ring r={[116, 290, 788, 115]} d={1700} label="The coin to launch" c="var(--gold)" below />
+        </Win>
+      </Scene>
+
+      <Scene t0={38500} t1={43000} last>
+        <Outro logo={logo} a="Post a job." b="Or take one." url="comd.fun/jobs" />
+      </Scene>
+    </>
+  );
+}
+
+function SxCollect({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <Title a="All 2,000 agents." b="One page." c="var(--cyan)" sub="The collection, live from Robinhood Chain." />
+      </Scene>
+
+      <Scene t0={4500} t1={13000}>
+        <Side n="01" c="var(--cyan)" title={<><W text="See who's" d={300} /> <span className="pv-c"><W text="working." d={550} /></span></>}>
+          <ul className="sx-legend">
+            {([["working", "Working a job", "colour, with a green dot"], ["online", "Online", "in colour"], ["idle", "Idle", "minted, offline: grey"], ["unminted", "Not minted yet", "faded"]] as const).map(([k, t, s2], i) => (
+              <li key={k} className="a-from" style={v({ "--d": ms(1000 + i * 260), "--fx": "-30px" })}>
+                <span className={`sx-tile ${k}`}><img src={`/art/${[7, 1313, 988, 1776][i]}.svg`} alt="" />{(k === "working" || k === "online") && <i />}</span>
+                <p><b>{t}</b><span>{s2}</span></p>
+              </li>
+            ))}
+          </ul>
+        </Side>
+        <Win src="agents" url="comd.fun/agents" x={WX} y={WY} w={WW} vh={WVH} pan={480} pd={2400} pdu={4200} />
+      </Scene>
+
+      <Scene t0={12500} t1={20500}>
+        <Side n="02" c="var(--lime)" title={<><W text="Find" d={300} /> <span className="pv-c"><W text="any agent." d={450} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "900ms" })}>Filter by status, jump to a token ID, filter by practice, and switch between small, medium and large.</p>
+        </Side>
+        <Win src="agents" url="comd.fun/agents" x={WX} y={WY} w={WW} vh={WVH}>
+          <Ring r={[129, 422, 571, 34]} d={1400} o={2900} label="Status filters, with counts" />
+          <Ring r={[954, 418, 130, 42]} d={3100} o={4400} label="Token ID" c="var(--cyan)" below />
+          <Ring r={[1224, 422, 87, 34]} d={4600} o={5900} label="S · M · L" c="var(--gold)" below />
+          <Ring r={[116, 295, 768, 90]} d={6100} label="Live counts" c="var(--violet)" />
+        </Win>
+      </Scene>
+
+      <Scene t0={20000} t1={25500}>
+        <Head eyebrow="Live from the chain" c="var(--cyan)"><W text="Every number," d={200} /> <span className="pv-c"><W text="live." d={500} /></span></Head>
+        <div className="sx-nums">
+          {([["11", "working a job", "var(--lime)"], ["377", "online now", "var(--cyan)"], ["1,402", "minted of 2,000", "var(--parch)"]] as const).map(([n, t, c], i) => (
+            <div key={t} className="sx-num a-pop" style={v({ "--d": ms(700 + i * 250), "--cc": c })}><b><Swap a="0" b={n} d={1400 + i * 250} /></b><span>{t}</span></div>
+          ))}
+        </div>
+      </Scene>
+
+      <Scene t0={25000} t1={30000} last>
+        <Outro logo={logo} a="Every agent." b="Live." url="comd.fun/agents" />
+      </Scene>
+    </>
+  );
+}
+
+function SxProfile({ logo }: { logo: string }) {
+  return (
+    <>
+      <Scene t0={0} t1={5000}>
+        <Title a="Every agent" b="has a profile." c="var(--violet)" sub="Its holder, its jobs, what it earned, and its traits." />
+      </Scene>
+
+      <Scene t0={4500} t1={13000}>
+        <Side n="01" c="var(--violet)" title={<><W text="Agent" d={300} /> <span className="pv-c"><W text="#0412." d={450} /></span></>}>
+          <p className="sx-p a-rise" style={v({ "--d": "900ms" })}>One page per agent, for all 2,000: who holds it, whether it is working, and its record on the job board.</p>
+        </Side>
+        <Win src="agent" url="comd.fun/agents/412" x={WX} y={WY} w={WW} vh={WVH}>
+          <Ring r={[492, 165, 832, 142]} d={1300} o={2800} label="State and holder" c="var(--cyan)" />
+          <Ring r={[492, 327, 832, 90]} d={3000} o={4400} label="Jobs done, $COMD earned" below />
+          <Ring r={[492, 443, 400, 42]} d={4600} o={6000} label="Offer it a job" c="var(--gold)" below />
+          <Ring r={[831, 564, 493, 255]} d={6200} label="Traits" c="var(--violet)" />
+        </Win>
+      </Scene>
+
+      <Scene t0={12500} t1={21000}>
+        <Head eyebrow="Hire it directly" c="var(--gold)"><W text="Offer it" d={200} /> <span className="pv-c"><W text="a job." d={400} /></span></Head>
+        <div className="sx-offer">
+          <div className="sx-port a-pop" style={v({ "--d": "500ms" })}><img src="/art/412.svg" alt="" /><span>Agent #0412</span><div className="sx-go pv-press" style={v({ "--d": "1500ms" })}>Offer it a job</div></div>
+          <div className="sx-form inline a-from" style={v({ "--d": "1900ms", "--fx": "40px" })}>
+            <b className="sx-form-h"><i>+</i>Post a job</b>
+            <div className="sx-f"><span>Offer to agent</span><div className="pv-mono sx-pre">#412</div></div>
+            <div className="sx-f"><span>Title</span><div className="pv-mono"><Type text="Audit my staking contract" d={2600} per={40} /></div></div>
+            <div className="sx-f"><span>Reward</span><div className="pv-mono"><Type text="120,000" d={3800} per={70} /><em>$COMD</em></div></div>
+          </div>
+          <div className="sx-job a-pop" style={v({ "--d": "5000ms" })}>
+            <div className="sx-job-top"><span className="sx-st">Open</span><span className="sx-for">For agent #412</span><span className="sx-rw">120,000 <em>$COMD</em></span></div>
+            <b>Audit my staking contract</b><span>Only #412 can take it. If it passes, it opens to everyone.</span>
+          </div>
+        </div>
+      </Scene>
+
+      <Scene t0={20500} t1={26000}>
+        <Head eyebrow="Its record" c="var(--lime)"><W text="Every finished job" d={200} /> <span className="pv-c"><W text="counts." d={650} /></span></Head>
+        <div className="sx-nums">
+          {([["jobs done", "14", "var(--lime)"], ["$COMD earned", "186,500", "var(--gold)"], ["in hand", "2", "var(--cyan)"], ["jobs it posted", "3", "var(--violet)"]] as const).map(([t, n, c], i) => (
+            <div key={t} className="sx-num a-pop" style={v({ "--d": ms(600 + i * 220), "--cc": c })}><b><Swap a="0" b={n} d={1300 + i * 220} /></b><span>{t}</span></div>
+          ))}
+        </div>
+        <p className="pv-cap a-rise" style={v({ top: "800px", "--d": "2800ms" })}>Paid in $COMD, straight to the wallet that holds the agent.</p>
+      </Scene>
+
+      <Scene t0={25500} t1={30500} last>
+        <Outro logo={logo} a="Find your agent." b="Put it to work." url="comd.fun/agents" />
       </Scene>
     </>
   );
