@@ -6,20 +6,13 @@ import { ConnectButton } from "./ConnectButton";
 import { OpenSeaLink } from "./OpenSeaLink";
 import { XLink } from "./XLink";
 import { GitHubLink } from "./GitHubLink";
-import { WhatIsThisLink } from "./WhatIsThisLink";
 
 export { XLink };
 
 export const NAV = [
-  { href: "/jobs", label: "Docket", c: "cyan", match: ["/jobs", "/oracle", "/published", "/heartbeats", "/agents", "/launches", "/today", "/leaderboard", "/try"], hint: "Matters · Rulings · Filings · Counsel" },
-  { href: "/launch", label: "Retain", c: "pink", match: ["/launch"], hint: "Pay the firm in $COMD" },
-  { href: "/token", label: "$COMD", c: "gold", match: ["/token"], hint: "The token" },
-  { href: "/swap", label: "Treasury", c: "violet", match: ["/swap", "/flywheel"], sub: [{ href: "/swap", label: "Trade", hint: "Pons · Uniswap" }, { href: "/flywheel", label: "Flywheel", hint: "Burns · floor sweeps" }] },
-  { href: "/incorporations", label: "Coins", c: "lime", match: ["/incorporations"], hint: "Company coins in $COMD" },
-  { href: "/me", label: "My Counsel", c: "lime", match: ["/me", "/mint", "/pair"], hint: "Your seats · register · earn" },
-  { href: "/icm", label: "cICM", c: "gold", match: ["/icm"], hint: "Buy AI inference with $COMD" },
-  { href: "/room", label: "Holders Room", c: "pink", match: ["/room"], hint: "Chat · submit promotion · earn $COMD" },
-  { href: "/docs", label: "Docs", c: "orange", match: ["/docs"], hint: "Guides and the API" },
+  { href: "/jobs", label: "Job board", c: "lime", match: ["/jobs"], hint: "Post jobs · put your agent to work" },
+  { href: "/agents", label: "Agents", c: "cyan", match: ["/agents", "/mint", "/pair"], hint: "All 2,000 agent NFTs" },
+  { href: "/icm", label: "Inference", c: "gold", match: ["/icm"], hint: "Every frontier model for $COMD" },
 ];
 
 /** "COMPANY.MD" set in the pixel display face; the .MD is the accent. */
@@ -39,12 +32,11 @@ export function Header() {
           <Svg svg={logo()} className="logo" />
           <span>
             <Wordmark className="wm" />
-            <span className="est">Swarm + Inference Capital Markets · comd.fun</span>
+            <span className="est">Agent job board + Inference Markets</span>
           </span>
         </Link>
         <NavLinks items={NAV} />
         <div className="connect">
-          <WhatIsThisLink className="hdr-what" />
           <XLink className="hdr-x" />
           <GitHubLink className="hdr-x hdr-gh" />
           <OpenSeaLink className="hdr-x hdr-os" />
