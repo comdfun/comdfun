@@ -86,7 +86,7 @@ export function pct(n?: number | null, digits = 0) {
 }
 
 export function counselName(tokenId: string | number) {
-  return `Counsel #${String(tokenId).padStart(4, "0")}`;
+  return `Agent #${String(tokenId).padStart(4, "0")}`;
 }
 
 export function iso(ts?: string | number | null) {

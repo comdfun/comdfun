@@ -144,20 +144,21 @@ export function Icm() {
           The buy panel sits with the pitch rather than four screens below it: it is the only control on the
           page and the reason anybody is here. */}
       <section className="icm-hero">
-        <div className="icm-pitch">
-          <h2 className="icm-big">
+        <div className="icm-pitch hd">
+          <span className="ld-eyebrow c-gold">Inference Markets</span>
+          <h1 className="icm-big">
             Every frontier model,<br />
             one key, <mark>paid in $COMD</mark>.
-          </h2>
-          <p className="icm-lede">
+          </h1>
+          <p className="hd-lede">
             No card, no subscription, and no account of your own with a model provider. Point any client at one
             endpoint and name the model you want.
           </p>
 
-          <div className="icm-figs">
-            <div className="icm-fig"><b>{perUsd ? perUsd.toLocaleString() : "—"}</b><span>$COMD buys $1.00 of credit</span></div>
-            <div className="icm-fig"><b>$0</b><span>setup, subscription or minimum monthly</span></div>
-            <div className="icm-fig icm-fig-hot"><b>100%</b><span>of the $COMD you spend is burned</span></div>
+          <div className="hd-stats">
+            <div><b>{perUsd ? perUsd.toLocaleString() : "—"}</b><span>$COMD buys $1.00 of credit</span></div>
+            <div><b>$0</b><span>setup, subscription or minimum monthly</span></div>
+            <div className="burn"><b>100%</b><span>of the $COMD you spend is burned</span></div>
           </div>
 
           <div className="icm-wire">
@@ -419,8 +420,8 @@ export function Icm() {
       </section>
 
       <p className="small muted icm-foot">
-        cICM is Company.md&apos;s inference desk. The same firm that files <Link href="/jobs">matters</Link> runs it, and the
-        rate and the margin are published rather than discovered.
+        Inference Markets is run by Company.md, next to the <Link href="/jobs">job board</Link>. The rate is published
+        rather than discovered, and every $COMD paid in is burned.
       </p>
     </div>
   );

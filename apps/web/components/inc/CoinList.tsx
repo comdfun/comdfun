@@ -90,7 +90,7 @@ function CreateCoin({ onCreated }: { onCreated: () => void }) {
       </div>
       <TxButton label="Incorporate" disabled={!ok || !inc.address} run={() => writeContractAsync({ address: inc.address!, abi: inc.abi as Abi, functionName: "create", args: [f.name.trim(), f.symbol, metaURI({ name: f.name.trim(), symbol: f.symbol, image: f.image, description: f.description.trim(), website: site ?? undefined, twitter: handle ? `https://x.com/${handle}` : undefined })] } as never)} onDone={onCreated} />
       {!inc.address && <span className="small muted">Incorporations contract not configured.</span>}
-      <p className="small muted" style={{ margin: 0 }}>Each trade: 1% to Counsel rewards, 0.5% of the ETH side to you as launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.</p>
+      <p className="small muted" style={{ margin: 0 }}>Each trade: 1% to agent rewards, 0.5% of the ETH side to you as launcher, 0.5% of the $COMD side burned. All coins share one $COMD backing reserve.</p>
     </div>
   );
 }

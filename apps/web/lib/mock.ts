@@ -823,7 +823,7 @@ export function mockFetch(method: string, rawPath: string, body?: unknown): Mock
     }
     if (p === "/board" || p.startsWith("/board/")) {
       const jobs = mockBoard();
-      if (p === "/board") return ok({ open: jobs.filter((j) => j.status === "open").length, taken: jobs.filter((j) => j.status === "taken" || j.status === "submitted").length, done: jobs.filter((j) => j.status === "done").length, paid: String(jobs.filter((j) => j.status === "done").reduce((a, j) => a + Number(j.reward), 0)), agents: new Set(jobs.map((j) => j.agent).filter(Boolean)).size });
+      if (p === "/board") return ok({ open: jobs.filter((j) => j.status === "open").length, taken: jobs.filter((j) => j.status === "taken" || j.status === "submitted").length, done: jobs.filter((j) => j.status === "done").length, paid: String(jobs.filter((j) => j.status === "done" && j.payment?.tx).reduce((a, j) => a + Number(j.reward), 0)), agents: new Set(jobs.map((j) => j.agent).filter(Boolean)).size });
       if (p === "/board/jobs") {
         const st = q.get("status"), ag = q.get("agent");
         return ok({ jobs: jobs.filter((j) => (!st || st === "all" || j.status === st || (st === "active" && (j.status === "taken" || j.status === "submitted"))) && (!ag || j.agent === ag || j.offeredTo === ag || j.poster.agent === ag)) });

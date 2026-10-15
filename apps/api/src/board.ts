@@ -190,7 +190,8 @@ export class Board {
   summary() {
     const all = this.col.all();
     const by = (s: JobStatus) => all.filter((j) => j.status === s).length;
-    const paid = all.filter((j) => j.status === "done").reduce((s, j) => s + BigInt(j.reward), 0n);
+    // paid means a transfer was recorded, not just approved
+    const paid = all.filter((j) => j.status === "done" && j.payment?.tx).reduce((s, j) => s + BigInt(j.payment!.amount), 0n);
     return { open: by("open"), taken: by("taken") + by("submitted"), done: by("done"), paid: paid.toString(), agents: new Set(all.map((j) => j.agent).filter(Boolean)).size };
   }
 

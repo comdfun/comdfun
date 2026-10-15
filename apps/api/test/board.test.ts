@@ -6,6 +6,7 @@ import { strict as assert } from "node:assert";
 import test from "node:test";
 import { privateKeyToAccount, generatePrivateKey, type PrivateKeyAccount } from "viem/accounts";
 import { makeSignedEnvelope } from "@company/protocol";
+import { jobs } from "@company/worker";
 import { harness, post, get, seat, type Harness } from "./helpers.ts";
 
 async function signed(h: Harness, a: PrivateKeyAccount, extra: Record<string, unknown> = {}) {
@@ -45,6 +46,7 @@ test("a wallet posts, an agent takes, submits, and the poster approves and recor
   assert.equal(ok.body.status, "done");
   assert.equal(ok.body.payment.to, HOLDER.address.toLowerCase());
   assert.equal(ok.body.payment.amount, "5000");
+  assert.equal((await get(h, "/board")).body.paid, "0", "approved is not paid until the transfer is recorded");
 
   const paid = await post(h, `/board/jobs/${id}/paid`, await signed(h, POSTER, { tx: "0x" + "ab".repeat(32) }));
   assert.equal(paid.body.payment.tx, "0x" + "ab".repeat(32));
@@ -136,4 +138,41 @@ test("an agent cannot take its own holder's job or more than three at once", asy
   }
   const fourth = (await post(h, "/board/jobs", await signed(h, POSTER, { title: "Job number 4", reward: "10" }))).body.id;
   assert.equal((await post(h, `/board/jobs/${fourth}/take`, await signed(h, HOLDER, { agent: 5 }))).body.error, "busy");
+});
+
+test("the comd worker works the board end to end: list, take, submit and post, signed by the paired machine", async (t) => {
+  const h = await harness();
+  t.after(() => h.close());
+  const s = await seat(h, 412, HOLDER);
+  const cfg = { server: h.url, tokenId: s.tokenId, device: s.key } as any;
+  const out: string[] = [];
+  const io = { fetch, out: (l: string) => out.push(l), err: (l: string) => out.push(l) };
+
+  const p = await post(h, "/board/jobs", await signed(h, POSTER, { title: "Find every wallet that bought in the first hour", reward: "5000" }));
+  const id = p.body.id;
+
+  assert.equal(await jobs(cfg, ["jobs"], {}, io), 0);
+  assert.ok(out.some((l) => l.includes(id) && l.includes("5,000 COMD")), out.join("\n"));
+
+  assert.equal(await jobs(cfg, ["jobs", "take", id], {}, io), 0, out.join("\n"));
+  assert.equal((await get(h, `/board/jobs/${id}`)).body.agent, "412");
+
+  // a signature for one job cannot be replayed against another
+  const other = (await post(h, "/board/jobs", await signed(h, POSTER, { title: "Another job entirely", reward: "10" }))).body.id;
+  const env = makeSignedEnvelope(s.key, "board.take", { jobId: id });
+  const replay = await post(h, `/board/jobs/${other}/take`, env);
+  assert.equal(replay.status, 400, JSON.stringify(replay.body));
+
+  assert.equal(await jobs(cfg, ["jobs", "submit", id], { text: "CSV attached.", url: "https://example.com/buyers.csv" }, io), 0, out.join("\n"));
+  const j = (await get(h, `/board/jobs/${id}`)).body;
+  assert.equal(j.status, "submitted");
+  assert.equal(j.submission.url, "https://example.com/buyers.csv");
+
+  assert.equal(await jobs(cfg, ["jobs", "post"], { title: "Review my pull request", reward: "900" }, io), 0, out.join("\n"));
+  const mine = (await get(h, "/board/jobs?agent=412&status=all")).body.jobs;
+  assert.ok(mine.some((x: any) => x.poster.agent === "412" && x.title === "Review my pull request"));
+
+  // the poster approves: the holder of #412 is who gets paid
+  const ok = await post(h, `/board/jobs/${id}/decide`, await signed(h, POSTER, { decision: "approve" }));
+  assert.equal(ok.body.payment.to, HOLDER.address.toLowerCase());
 });

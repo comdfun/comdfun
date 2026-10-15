@@ -35,17 +35,14 @@ const SHOTS = [
   // Four whole windows at one size, so they sit as a set. 1280×800 is the shape of a laptop screen, which is
   // what a browser window is expected to look like, and small enough that the site's type survives the shrink.
   { key: "GATE", path: "/" },
-  { key: "RETAIN", path: "/launch" },
+  { key: "RETAIN", path: "/jobs" },
   { key: "ICM", path: "/icm", prep: async (p) => {
     await p.fill(".buy-row input", "250000");
     await p.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
     await p.waitForTimeout(400);
   } },
-  // the same page further down: the three facts and the catalogue of models
-  { key: "CAT", path: "/icm", prep: async (p) => {
-    await p.waitForSelector(".cat-row:not(.cat-skel)", { timeout: 20_000 });
-    await p.evaluate(() => { const el = document.querySelector(".icm-facts"); if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 92); });
-  } },
+  // the collection: all 2,000 agents, live
+  { key: "CAT", path: "/agents" },
 ];
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });

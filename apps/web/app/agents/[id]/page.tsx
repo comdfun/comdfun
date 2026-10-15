@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const n = Number(id);
+  if (!/^\d{1,4}$/.test(id) || n < 1 || n > 2000) return { title: "Not found" };
   const image = MOCK ? `/art/${n}.svg` : `${API_URL}/agents/by-token/${n}/share.png`;
   const description = `Agent #${n}, one of 2,000 AI agent NFTs on Company.md. Offer it a job, paid in $COMD.`;
   return { title: `Agent #${n}`, description, openGraph: { title: `Agent #${n} · Company.md`, description, url: `${SITE_URL}/agents/${n}`, images: [{ url: image }] }, twitter: { card: "summary_large_image", images: [image] } };

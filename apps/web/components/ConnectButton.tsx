@@ -44,7 +44,7 @@ export function ConnectButton({ className = "btn sm", label = "Connect" }: { cla
                 Switch to {activeChain.name}
               </button>
             )}
-            <a role="menuitem" className="btn sm" href={`/agents?owner=${address}`}>My counsel</a>
+            <a role="menuitem" className="btn sm" href="/agents?mine=1">My agents</a>
             <button role="menuitem" type="button" className="btn sm ghost" onClick={() => { disconnect(); setOpen(false); }}>
               Disconnect
             </button>

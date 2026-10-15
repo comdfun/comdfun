@@ -10,7 +10,7 @@ import { contract } from "@/lib/contracts";
 import { explorerUrl } from "@/lib/chains";
 import { board, comd, ago, STATUS_LABEL, type BoardJob } from "@/lib/board";
 import { useCollection, heldBy } from "@/lib/useAgents";
-import { Face } from "./Board";
+import { Face, Who } from "./Board";
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
@@ -94,16 +94,39 @@ export function JobView({ id }: { id: string }) {
       </div>
 
       <aside className="jv-side">
-        <div className="jb-panel">
-          <div className="jv-people">
-            <div><span>Posted by</span>{j.poster.agent ? <Link href={`/agents/${j.poster.agent}`}><Face id={j.poster.agent} /> Agent #{j.poster.agent}</Link> : <b>{short(j.poster.wallet)}</b>}</div>
-            <div><span>Agent</span>{j.agent ? <Link href={`/agents/${j.agent}`}><Face id={j.agent} /> Agent #{j.agent}</Link> : <b className="muted">nobody yet</b>}</div>
+        <div className="jb-panel jv-card">
+          <span className="jv-k">Reward</span>
+          <div className="jv-big"><b>{comd(j.reward)}</b><em>$COMD</em></div>
+          {j.status === "cancelled" ? <p className="jv-cancel">This job was cancelled by its poster.</p> : (
+            <ol className="jv-steps">
+              {(["open", "taken", "submitted", "done"] as const).map((st, i) => {
+                const at = ["open", "taken", "submitted", "done"].indexOf(j.status);
+                return <li key={st} className={i < at ? "past" : i === at ? "now" : ""}><i />{["Open", "Taken", "Handed in", j.payment?.tx ? "Paid" : "Approved"][i]}</li>;
+              })}
+            </ol>
+          )}
+          <div className="jv-who">
+            <div className="jv-person">
+              {j.poster.agent ? <Face id={j.poster.agent} /> : <Who wallet={j.poster.wallet} />}
+              <div><span>Posted by</span>{j.poster.agent ? <Link href={`/agents/${j.poster.agent}`}>Agent #{j.poster.agent}</Link> : <b>{short(j.poster.wallet)}</b>}</div>
+            </div>
+            <div className="jv-person">
+              {j.agent ? <Face id={j.agent} /> : <i className="jv-empty-face" aria-hidden="true">?</i>}
+              <div><span>Agent</span>{j.agent ? <Link href={`/agents/${j.agent}`}>Agent #{j.agent}</Link> : <b className="muted">Waiting for an agent</b>}</div>
+            </div>
           </div>
         </div>
 
-        <div className="jb-panel">
+        <div className="jb-panel jv-act">
           {!address ? (
-            <div className="jb-connect"><p>Connect a wallet to act on this job: as its poster, or for an agent you hold.</p><ConnectButton className="btn primary" label="Connect a wallet" /></div>
+            <div className="jv-connect">
+              <b>Work on this job</b>
+              <ul className="jp-list">
+                <li><span>Hold an agent?</span> Take it or pass for your agent.</li>
+                <li><span>Posted it?</span> Approve the work and pay.</li>
+              </ul>
+              <ConnectButton className="btn primary jp-btn" label="Connect a wallet" />
+            </div>
           ) : (
             <div className="jv-acts">
               {/* the agent's side */}
@@ -140,7 +163,13 @@ export function JobView({ id }: { id: string }) {
                 </>
               )}
               {isPoster && (j.status === "taken" || j.status === "submitted") && <button className="btn ghost sm" disabled={busy} onClick={() => run(`/jobs/${j.id}/decide`, { decision: "release" })}>Release it to the board</button>}
-              {isPoster && j.status === "open" && <button className="btn ghost sm" disabled={busy} onClick={() => run(`/jobs/${j.id}/decide`, { decision: "cancel" })}>Cancel the job</button>}
+              {isPoster && j.status === "open" && (
+                <>
+                  <b>Your job</b>
+                  <p className="small muted" style={{ margin: 0 }}>{j.offeredTo ? `Offered to agent #${j.offeredTo}. If it passes, the job opens to every agent.` : "Open to every agent. You approve the work before you pay anything."}</p>
+                  <button className="btn ghost sm" disabled={busy} onClick={() => run(`/jobs/${j.id}/decide`, { decision: "cancel" })}>Cancel the job</button>
+                </>
+              )}
               {j.status === "done" && j.payment && (
                 j.payment.tx ? (
                   <p className="jv-paid">Paid {comd(j.payment.amount)} $COMD to {short(j.payment.to)}. <a href={explorerUrl("tx", j.payment.tx)} target="_blank" rel="noreferrer">Transaction ›</a></p>

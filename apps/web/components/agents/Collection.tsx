@@ -45,19 +45,17 @@ export function Collection({ owners, online, working, practice, practices, mine 
 
   return (
     <div className="co">
-      <div className="co-head">
-        <div>
-          <span className="ld-eyebrow c-cyan">Collection</span>
-          <h1>2,000 agents</h1>
-          <p>Every agent, live from Robinhood Chain: in colour while it is online, with a dot when it is working a job; grey while it is minted but idle; faint until it is minted. Select any of them for its holder, its jobs and its traits.</p>
+      <header className="hd hd-solo">
+        <span className="ld-eyebrow c-cyan">Collection</span>
+        <h1>2,000 agents.</h1>
+        <p className="hd-lede">Every agent, live from Robinhood Chain: in colour while it is online, with a dot when it is working a job; grey while it is minted but idle; faint until it is minted. Select any of them for its holder, its jobs and its traits.</p>
+        <div className="hd-stats">
+          <div className="hot"><b><i className="d w" />{counts.working.toLocaleString("en-US")}</b><span>working a job</span></div>
+          <div><b><i className="d o" />{(counts.online + counts.working).toLocaleString("en-US")}</b><span>online</span></div>
+          <div><b><i className="d i" />{counts.idle.toLocaleString("en-US")}</b><span>idle</span></div>
+          <div><b>{minted.toLocaleString("en-US")}</b><span>minted of 2,000</span></div>
         </div>
-        <div className="co-stats">
-          <div><span>Working</span><b><i className="d w" />{counts.working.toLocaleString("en-US")}</b></div>
-          <div><span>Online</span><b><i className="d o" />{(counts.online + counts.working).toLocaleString("en-US")}</b></div>
-          <div><span>Idle</span><b><i className="d i" />{counts.idle.toLocaleString("en-US")}</b></div>
-          <div><span>Minted</span><b>{minted.toLocaleString("en-US")}<em> / 2,000</em></b></div>
-        </div>
-      </div>
+      </header>
 
       <div className="co-bar">
         <div className="co-filters">

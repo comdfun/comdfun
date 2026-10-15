@@ -1,6 +1,10 @@
 /**
  * Company.md: the website, for real, with a wallet (Pons mode).
  *
+ * NOTE: written for the earlier site. Its /launch (retain, rulings, retainers), /swap and /flywheel steps target pages
+ * that now redirect to the job board and the landing page; the job board itself is covered by board-ui.ts and by
+ * apps/api/test/board.test.ts. Bring these steps over to the new pages before relying on this script.
+ *
  *   cd e2e && npm run e2e:ui          (node --import tsx ui.ts)
  *
  * Boots the same local stack as run.ts (anvil, Permit2, Deploy.s.sol with MockComd, Chambers with the real

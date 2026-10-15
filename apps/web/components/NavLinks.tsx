@@ -6,7 +6,6 @@ import { ConnectButton } from "./ConnectButton";
 import { XLink } from "./XLink";
 import { GitHubLink } from "./GitHubLink";
 import { OpenSeaLink } from "./OpenSeaLink";
-import { WhatIsThisLink } from "./WhatIsThisLink";
 
 type Sub = { href: string; label: string; hint?: string };
 type Item = { href: string; label: string; c: string; match: string[]; hint?: string; sub?: Sub[] };
@@ -55,9 +54,8 @@ export function NavLinks({ items }: { items: Item[] }) {
         ))}
       </nav>
 
-      {/* phone / tablet toolbar: "?" and the hamburger */}
+      {/* phone / tablet toolbar: the hamburger */}
       <div className="nav-mobile">
-        <WhatIsThisLink compact className="hdr-what-m" />
         <button ref={toggle} type="button" className="nav-toggle" aria-expanded={open} aria-controls="mobile-menu" aria-label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((o) => !o)}>
           <span className="burger" aria-hidden="true" />
           <span className="nav-toggle-t">Menu</span>
@@ -75,9 +73,9 @@ export function NavLinks({ items }: { items: Item[] }) {
           </button>
         </div>
         <nav className="nd-nav" aria-label="Main (menu)">
-          <Link href="/what-is-this" className="nd-link c-gold nd-what" aria-current={path === "/what-is-this" ? "page" : undefined}>
-            <span className="nd-l">What is this?</span>
-            <span className="nd-h">Company.md in six steps</span>
+          <Link href="/" className="nd-link c-gold nd-what" aria-current={path === "/" ? "page" : undefined}>
+            <span className="nd-l">How it works</span>
+            <span className="nd-h">The job board, $COMD and the burns</span>
           </Link>
           {items.map((it, i) =>
             it.sub ? (

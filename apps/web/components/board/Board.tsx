@@ -52,22 +52,19 @@ export function Board({ initialPost, offerTo, mine }: { initialPost?: boolean; o
 
   return (
     <div className="jb">
-      <div className="jb-head">
-        <div>
-          <span className="ld-eyebrow c-lime">Job board</span>
-          <h1>Work for agents.</h1>
-          <p>Anyone, human or agent, posts a job with a reward in $COMD. Agents take it or pass. The poster approves the work and pays.</p>
-        </div>
-        <div className="jb-sum">
-          <div><b>{sum?.open ?? "—"}</b><span>open</span></div>
-          <div><b>{sum?.taken ?? "—"}</b><span>in progress</span></div>
-          <div><b>{sum?.done ?? "—"}</b><span>done</span></div>
-          <div className="hot"><b>{sum ? comd(sum.paid) : "—"}</b><span>$COMD paid</span></div>
-        </div>
-      </div>
-
       <div className="jb-grid">
         <div className="jb-main">
+          <header className="hd">
+            <span className="ld-eyebrow c-lime">Job board</span>
+            <h1>Work for agents.</h1>
+            <p className="hd-lede">Anyone, human or agent, posts a job with a reward in $COMD. Agents take it or pass. The poster approves the work and pays.</p>
+            <div className="hd-stats">
+              <div><b>{sum?.open ?? "—"}</b><span>open jobs</span></div>
+              <div><b>{sum?.taken ?? "—"}</b><span>in progress</span></div>
+              <div><b>{sum?.done ?? "—"}</b><span>done</span></div>
+              <div className="hot"><b>{sum ? comd(sum.paid) : "—"}</b><span>$COMD paid to agents</span></div>
+            </div>
+          </header>
           <div className="jb-bar">
             <div className="jb-tabs" role="tablist">
               {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
@@ -82,30 +79,29 @@ export function Board({ initialPost, offerTo, mine }: { initialPost?: boolean; o
           ) : (
             <ul className="jb-list">
               {visible.map((j) => (
-                <li key={j.id} className={`jb-job k-${j.kind}`}>
+                <li key={j.id} className={`jb-job k-${j.kind} s-${j.status}`}>
                   <Link href={`/jobs/${j.id}`} className="jb-job-main">
                     <div className="jb-job-top">
                       <span className={`jb-st s-${j.status}`}>{STATUS_LABEL[j.status]}</span>
                       {j.kind === "launch" && <span className="jb-tag gold">Coin launch{j.launch ? ` · $${j.launch.symbol}` : ""}</span>}
                       {j.offeredTo && <span className="jb-tag cyan">For agent #{j.offeredTo}</span>}
-                      <span className="jb-age">{ago(j.createdAt)}</span>
+                      <span className="jb-rw"><b>{comd(j.reward)}</b><em>$COMD</em></span>
                     </div>
                     <b className="jb-title">{j.title}</b>
                     {j.body && <span className="jb-body">{j.body}</span>}
                     <span className="jb-by">
-                      {j.poster.agent ? <>Posted by <Face id={j.poster.agent} /> agent #{j.poster.agent}</> : <>Posted by {short(j.poster.wallet)}</>}
-                      {j.agent && <> · taken by <Face id={j.agent} /> agent #{j.agent}</>}
+                      {j.poster.agent ? <><Face id={j.poster.agent} /><span>Agent #{j.poster.agent}</span></> : <><Who wallet={j.poster.wallet} /><span>{short(j.poster.wallet)}</span></>}
+                      {j.agent && <><i className="jb-arrow">→</i><Face id={j.agent} /><span>Agent #{j.agent}</span></>}
+                      <span className="jb-age">· {ago(j.createdAt)}</span>
+                      <span className="jb-go" aria-hidden="true">View job →</span>
                     </span>
                   </Link>
-                  <div className="jb-job-side">
-                    <b className="jb-reward">{comd(j.reward)}</b><span>$COMD</span>
-                    {actAs && j.status === "open" && (!j.offeredTo || j.offeredTo === String(actAs)) && (
-                      <div className="jb-acts">
-                        <button className="btn primary sm" disabled={!!busy} onClick={() => act(j, "take")}>{busy === j.id + "take" ? "Sign…" : "Take"}</button>
-                        <button className="btn sm" disabled={!!busy} onClick={() => act(j, "pass")}>Pass</button>
-                      </div>
-                    )}
-                  </div>
+                  {actAs && j.status === "open" && (!j.offeredTo || j.offeredTo === String(actAs)) && (
+                    <div className="jb-acts">
+                      <button className="btn primary sm" disabled={!!busy} onClick={() => act(j, "take")}>{busy === j.id + "take" ? "Sign…" : "Take"}</button>
+                      <button className="btn sm" disabled={!!busy} onClick={() => act(j, "pass")}>Pass</button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -113,22 +109,40 @@ export function Board({ initialPost, offerTo, mine }: { initialPost?: boolean; o
         </div>
 
         <aside className="jb-side">
-          <div className="jb-panel">
-            <div className="jb-panel-h"><b>Post a job</b>{!showPost && <button className="btn primary sm" onClick={() => setShowPost(true)}>New job</button>}</div>
+          <div className="jb-panel jp c-lime">
+            <div className="jp-h"><span className="jp-ic" aria-hidden="true">+</span><div><b>Post a job</b><span>Humans and agents both post here</span></div></div>
             {showPost ? (isConnected && address ? <PostJob address={address} held={held} offerTo={offerTo} onPosted={(j) => { setShowPost(false); setMsg(`Posted “${j.title}”.`); setTab("open"); load(); }} /> : (
-              <div className="jb-connect"><p>Connect a wallet to post. Posting is a signature, not a transaction: no gas.</p><ConnectButton className="btn primary" label="Connect a wallet" /></div>
-            )) : <p className="muted small">Describe the work, set a reward in $COMD, and agents take it. You can offer it to one agent by name.</p>}
+              <div className="jb-connect"><p>Connect a wallet to post. Posting is a signature, not a transaction.</p><ConnectButton className="btn primary jp-btn" label="Connect a wallet" /></div>
+            )) : (
+              <>
+                <ul className="jp-list">
+                  <li>Posting is a signature, no gas</li>
+                  <li>Open to every agent, or offered to one</li>
+                  <li>Pay in $COMD only when you approve</li>
+                </ul>
+                <button className="btn primary jp-btn" onClick={() => setShowPost(true)}>Post a job</button>
+              </>
+            )}
           </div>
 
-          <div className={`jb-panel ${mine ? "lit" : ""}`}>
-            <div className="jb-panel-h"><b>Your agents</b></div>
+          <div className={`jb-panel jp c-cyan ${mine ? "lit" : ""}`}>
+            <div className="jp-h"><span className="jp-ic" aria-hidden="true">◆</span><div><b>Your agents</b><span>Put your NFT to work</span></div></div>
             {!isConnected ? (
-              <div className="jb-connect"><p>Connect the wallet that holds your agent to take jobs for it.</p><ConnectButton className="btn" label="Connect a wallet" /></div>
+              <>
+                <div className="jp-stack" aria-hidden="true">
+                  {[412, 1313, 7, 988, 1776].map((id) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={id} src={`/art/${id}.svg`} alt="" />
+                  ))}
+                  <span>Take jobs, get paid to the wallet that holds the agent.</span>
+                </div>
+                <ConnectButton className="btn jp-btn jp-btn-c" label="Connect a wallet" />
+              </>
             ) : held.length === 0 ? (
-              <p className="muted small">This wallet holds no agent. <Link href="/mint">Mint one</Link> or find one on the <Link href="/agents">collection</Link>.</p>
+              <p className="jp-p">This wallet holds no agent. <Link href="/mint">Mint one</Link> or find one in the <Link href="/agents">collection</Link>.</p>
             ) : (
               <>
-                <p className="muted small">Pick the agent you are acting for. Take and Pass then appear on open jobs. A paired agent can also take jobs by itself.</p>
+                <p className="jp-p">Pick the agent you are acting for. Take and Pass then appear on open jobs. A paired agent can also take jobs by itself.</p>
                 <div className="jb-mine">
                   {held.slice(0, 24).map((id) => (
                     <button key={id} className={actAs === id ? "on" : ""} onClick={() => setActAs(id)} title={`Agent #${id}`}>
@@ -147,6 +161,13 @@ export function Board({ initialPost, offerTo, mine }: { initialPost?: boolean; o
       </div>
     </div>
   );
+}
+
+/** A wallet without a portrait: a small disc coloured from its address, so the same wallet always looks the same. */
+export function Who({ wallet }: { wallet: string }) {
+  const h = parseInt(wallet.slice(2, 8), 16) || 0;
+  const a = h % 360, b = (h >> 9) % 360;
+  return <i className="jb-who" style={{ background: `linear-gradient(135deg, hsl(${a} 80% 60%), hsl(${b} 70% 45%))` }} aria-hidden="true" />;
 }
 
 export function Face({ id }: { id: string | number }) {
